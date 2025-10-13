@@ -1521,9 +1521,6 @@
                 <button type="button" class="events-action" data-events-action="sales" data-id="${row.id}">
                     <i class="fa-solid fa-chart-column"></i><span class="sr-only">View sales</span>
                 </button>
-                <button type="button" class="events-action" data-events-action="end" data-id="${row.id}">
-                    <i class="fa-solid fa-flag-checkered"></i><span class="sr-only">End event</span>
-                </button>
                 <button type="button" class="events-action danger" data-events-action="delete" data-id="${row.id}">
                     <i class="fa-solid fa-trash"></i><span class="sr-only">Delete</span>
                 </button>
