@@ -626,6 +626,8 @@
             event_id: eventId,
             event: event ? event.title || 'Untitled event' : String(order.event || ''),
             buyer_name: order.buyer_name || '',
+            buyer_email: order.buyer_email ? String(order.buyer_email) : '',
+            buyer_phone: order.buyer_phone ? String(order.buyer_phone) : '',
             tickets: ticketsTotal,
             amount: computedAmount || fallbackAmount,
             status,
@@ -1360,13 +1362,23 @@
                 : Array.isArray(order.line_items)
                     ? order.line_items.reduce((sum, item) => sum + (item.quantity || 0), 0)
                     : 0;
+            const contactLines = [];
+            if (order.buyer_email) {
+                contactLines.push(`<div class="events-table-sub">${escapeHtml(order.buyer_email)}</div>`);
+            }
+            if (order.buyer_phone) {
+                contactLines.push(`<div class="events-table-sub">${escapeHtml(order.buyer_phone)}</div>`);
+            }
             tr.innerHTML = `
                 <td>${escapeHtml(order.id || '')}</td>
                 <td>
                     <div class="events-table-title">${escapeHtml(order.event || 'Event')}</div>
                     ${order.event_id ? `<div class="events-table-sub">#${escapeHtml(order.event_id)}</div>` : ''}
                 </td>
-                <td>${escapeHtml(order.buyer_name || '')}</td>
+                <td>
+                    <div class="events-table-title">${escapeHtml(order.buyer_name || '')}</div>
+                    ${contactLines.join('')}
+                </td>
                 <td>${totalTickets}</td>
                 <td>${formatCurrency(order.amount ?? 0)}</td>
                 <td data-status></td>
@@ -1627,6 +1639,14 @@
         if (buyerInput) {
             buyerInput.value = detail.buyer_name || '';
         }
+        const buyerEmailInput = form.querySelector('[name="buyer_email"]');
+        if (buyerEmailInput) {
+            buyerEmailInput.value = detail.buyer_email || '';
+        }
+        const buyerPhoneInput = form.querySelector('[name="buyer_phone"]');
+        if (buyerPhoneInput) {
+            buyerPhoneInput.value = detail.buyer_phone || '';
+        }
         const orderedAtInput = form.querySelector('[name="ordered_at"]');
         if (orderedAtInput) {
             orderedAtInput.value = toLocalDateTimeInput(detail.ordered_at);
@@ -1780,6 +1800,8 @@
             showToast('Buyer name is required.', 'error');
             return null;
         }
+        const buyerEmail = String(formData.get('buyer_email') || '').trim();
+        const buyerPhone = String(formData.get('buyer_phone') || '').trim();
         const status = String(formData.get('status') || 'paid').toLowerCase();
         const orderedAtRaw = String(formData.get('ordered_at') || '').trim();
         const orderedAt = orderedAtRaw ? fromLocalDateTimeInput(orderedAtRaw) : '';
@@ -1797,6 +1819,8 @@
             id,
             event_id: String(formData.get('event_id') || '').trim(),
             buyer_name: buyerName,
+            buyer_email: buyerEmail,
+            buyer_phone: buyerPhone,
             status,
             ordered_at,
             tickets,
@@ -2201,6 +2225,12 @@
         });
         if (typeof payload.image === 'string') {
             payload.image = payload.image.trim();
+        }
+        if (typeof payload.buyer_email === 'string') {
+            payload.buyer_email = payload.buyer_email.trim();
+        }
+        if (typeof payload.buyer_phone === 'string') {
+            payload.buyer_phone = payload.buyer_phone.trim();
         }
         return payload;
     }
