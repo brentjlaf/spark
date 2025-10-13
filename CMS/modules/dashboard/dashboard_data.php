@@ -16,7 +16,6 @@ $eventsFile = __DIR__ . '/../../data/events.json';
 $eventOrdersFile = __DIR__ . '/../../data/event_orders.json';
 $calendarEventsFile = __DIR__ . '/../../data/calendar_events.json';
 $calendarCategoriesFile = __DIR__ . '/../../data/calendar_categories.json';
-$commerceFile = __DIR__ . '/../../data/commerce.json';
 $dataDirectory = __DIR__ . '/../../data';
 
 $pages = read_json_file($pagesFile);
@@ -31,7 +30,6 @@ $events = read_json_file($eventsFile);
 $eventOrders = read_json_file($eventOrdersFile);
 $calendarEvents = read_json_file($calendarEventsFile);
 $calendarCategories = read_json_file($calendarCategoriesFile);
-$commerce = read_json_file($commerceFile);
 
 if (!is_array($pages)) {
     $pages = [];
@@ -68,9 +66,6 @@ if (!is_array($calendarEvents)) {
 }
 if (!is_array($calendarCategories)) {
     $calendarCategories = [];
-}
-if (!is_array($commerce)) {
-    $commerce = [];
 }
 
 $events = array_values(array_filter($events, 'is_array'));
@@ -521,13 +516,10 @@ $eventsTicketsSold = 0;
 $eventsRevenue = 0.0;
 $eventsPendingOrders = 0;
 $eventsCurrency = 'USD';
-
-$commerceSettings = [];
-if (isset($commerce['settings']) && is_array($commerce['settings'])) {
-    $commerceSettings = $commerce['settings'];
-}
-if (!empty($commerceSettings['currency'])) {
-    $eventsCurrency = strtoupper((string)$commerceSettings['currency']);
+if (!empty($settings['events_currency'])) {
+    $eventsCurrency = strtoupper((string)$settings['events_currency']);
+} elseif (!empty($settings['currency'])) {
+    $eventsCurrency = strtoupper((string)$settings['currency']);
 }
 
 $now = time();
@@ -591,51 +583,6 @@ foreach ($calendarEvents as $calendarEvent) {
     }
 }
 $calendarCategoryCount = count($calendarCategories);
-
-$commerceSummary = isset($commerce['summary']) && is_array($commerce['summary']) ? $commerce['summary'] : [];
-$commerceCatalog = isset($commerce['catalog']) && is_array($commerce['catalog'])
-    ? array_values(array_filter($commerce['catalog'], 'is_array'))
-    : [];
-$commerceOrdersList = isset($commerce['orders']) && is_array($commerce['orders'])
-    ? array_values(array_filter($commerce['orders'], 'is_array'))
-    : [];
-
-$commerceCurrency = $eventsCurrency;
-if (!empty($commerceSettings['currency'])) {
-    $commerceCurrency = strtoupper((string)$commerceSettings['currency']);
-}
-$lowInventoryThreshold = isset($commerceSettings['low_inventory_threshold'])
-    ? (int)$commerceSettings['low_inventory_threshold']
-    : 10;
-
-$commerceRevenue = isset($commerceSummary['total_revenue']) ? (float)$commerceSummary['total_revenue'] : 0.0;
-$commerceOrders = isset($commerceSummary['orders']) ? (int)$commerceSummary['orders'] : count($commerceOrdersList);
-$commerceAverageOrder = isset($commerceSummary['average_order_value']) ? (float)$commerceSummary['average_order_value'] : 0.0;
-$commerceConversionRate = isset($commerceSummary['conversion_rate']) ? (float)$commerceSummary['conversion_rate'] : 0.0;
-$commerceRefundRate = isset($commerceSummary['refund_rate']) ? (float)$commerceSummary['refund_rate'] : 0.0;
-
-$commerceLowStock = 0;
-foreach ($commerceCatalog as $product) {
-    $inventory = isset($product['inventory']) ? (int)$product['inventory'] : 0;
-    if ($inventory <= $lowInventoryThreshold) {
-        $commerceLowStock++;
-    }
-}
-
-$commercePendingOrders = 0;
-$commerceRefundRequests = 0;
-foreach ($commerceOrdersList as $order) {
-    $status = strtolower(trim((string)($order['status'] ?? '')));
-    if ($status === '') {
-        continue;
-    }
-    if (strpos($status, 'pending') !== false || strpos($status, 'processing') !== false || strpos($status, 'awaiting') !== false) {
-        $commercePendingOrders++;
-    }
-    if (strpos($status, 'refund') !== false) {
-        $commerceRefundRequests++;
-    }
-}
 
 $pagesStatus = 'ok';
 if ($totalPages === 0) {
@@ -797,38 +744,6 @@ if ($calendarNextEvent) {
 }
 $calendarCta = $calendarTotal === 0 ? 'Add calendar event' : 'Open calendar';
 
-$commerceStatus = 'ok';
-$storefrontStatus = strtolower(trim((string)($commerceSettings['storefront_status'] ?? '')));
-if ($commerceOrders === 0 && $commerceRevenue <= 0.0) {
-    $commerceStatus = 'urgent';
-}
-if ($commerceLowStock > 0 || $commercePendingOrders > 0 || $commerceRefundRequests > 0) {
-    $commerceStatus = $commerceStatus === 'urgent' ? 'urgent' : 'warning';
-}
-if ($storefrontStatus !== '' && !in_array($storefrontStatus, ['live', 'enabled'], true)) {
-    $commerceStatus = in_array($storefrontStatus, ['paused', 'offline', 'maintenance'], true) ? 'urgent' : 'warning';
-}
-$commerceSecondary = 'Orders: ' . dashboard_format_number($commerceOrders) . ' • Avg order: ' . dashboard_format_currency($commerceAverageOrder, $commerceCurrency);
-$commerceTrendParts = [];
-if ($commerceLowStock > 0) {
-    $commerceTrendParts[] = 'Low stock: ' . dashboard_format_number($commerceLowStock);
-}
-if ($commercePendingOrders > 0) {
-    $commerceTrendParts[] = 'Pending: ' . dashboard_format_number($commercePendingOrders);
-}
-if ($commerceRefundRequests > 0) {
-    $commerceTrendParts[] = 'Refunds: ' . dashboard_format_number($commerceRefundRequests);
-}
-$commerceTrend = $commerceTrendParts ? implode(' • ', $commerceTrendParts) : 'Store operating normally';
-$commerceCta = 'Open commerce';
-if ($commerceStatus === 'urgent' && $commerceOrders === 0 && $commerceRevenue <= 0.0) {
-    $commerceCta = 'Launch store';
-} elseif ($commerceLowStock > 0) {
-    $commerceCta = 'Review inventory';
-} elseif ($commercePendingOrders > 0) {
-    $commerceCta = 'Manage orders';
-}
-
 $moduleSummaries = [
     [
         'id' => 'pages',
@@ -869,16 +784,6 @@ $moduleSummaries = [
         'statusLabel' => dashboard_status_label($eventsStatus),
         'trend' => $eventsTrend,
         'cta' => $eventsCta,
-    ],
-    [
-        'id' => 'commerce',
-        'module' => 'Commerce',
-        'primary' => dashboard_format_currency($commerceRevenue, $commerceCurrency) . ' revenue',
-        'secondary' => $commerceSecondary,
-        'status' => $commerceStatus,
-        'statusLabel' => dashboard_status_label($commerceStatus),
-        'trend' => $commerceTrend,
-        'cta' => $commerceCta,
     ],
     [
         'id' => 'forms',
@@ -1087,16 +992,6 @@ $data = [
     'speedHeaviestPage' => $largestPage['title'],
     'speedHeaviestPageLength' => $largestPage['length'],
     'dataFileCount' => $dataFileCount,
-    'commerceRevenue' => $commerceRevenue,
-    'commerceOrders' => $commerceOrders,
-    'commerceAverageOrder' => $commerceAverageOrder,
-    'commerceConversionRate' => $commerceConversionRate,
-    'commerceRefundRate' => $commerceRefundRate,
-    'commerceLowStock' => $commerceLowStock,
-    'commercePendingOrders' => $commercePendingOrders,
-    'commerceRefundRequests' => $commerceRefundRequests,
-    'commerceStorefrontStatus' => $storefrontStatus,
-    'commerceCurrency' => $commerceCurrency,
     'eventsCurrency' => $eventsCurrency,
     'seoOptimised' => $seoSummary['optimised'],
     'seoMissingTitle' => $seoSummary['missing_title'],
