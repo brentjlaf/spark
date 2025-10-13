@@ -397,6 +397,29 @@ $(function(){
             return $el.closest('[data-page-item]');
         }
 
+        function buildPageRequestPayload(data, overrides){
+            const basePayload = {
+                title: data.title,
+                slug: data.slug,
+                content: data.content,
+                published: data.published,
+                template: data.template,
+                meta_title: data.meta_title,
+                meta_description: data.meta_description,
+                canonical_url: data.canonical_url,
+                og_title: data.og_title,
+                og_description: data.og_description,
+                og_image: data.og_image,
+                access: data.access
+            };
+
+            if (overrides && typeof overrides === 'object') {
+                return Object.assign({}, basePayload, overrides);
+            }
+
+            return basePayload;
+        }
+
         function getPageItemsById(id){
             return $(`[data-page-item][data-id="${id}"]`);
         }
@@ -587,19 +610,11 @@ $(function(){
                 return;
             }
             const data = row.data();
-            $.post('modules/pages/save_page.php', {
-                title: data.title + ' Copy',
-                slug: data.slug + '-copy',
-                content: data.content,
-                published: data.published,
-                template: data.template,
-                meta_title: data.meta_title,
-                meta_description: data.meta_description,
-                og_title: data.og_title,
-                og_description: data.og_description,
-                og_image: data.og_image,
-                access: data.access
-            })
+            const payload = buildPageRequestPayload(data, {
+                title: `${data.title} Copy`,
+                slug: `${data.slug}-copy`
+            });
+            $.post('modules/pages/save_page.php', payload)
                 .done(function(){
                     rememberToast('success', 'Page duplicated successfully.');
                     location.reload();
@@ -617,20 +632,11 @@ $(function(){
             }
             const data = row.data();
             const newStatus = data.published ? 0 : 1;
-            $.post('modules/pages/save_page.php', {
+            const payload = buildPageRequestPayload(data, {
                 id: data.id,
-                title: data.title,
-                slug: data.slug,
-                content: data.content,
-                published: newStatus,
-                template: data.template,
-                meta_title: data.meta_title,
-                meta_description: data.meta_description,
-                og_title: data.og_title,
-                og_description: data.og_description,
-                og_image: data.og_image,
-                access: data.access
-            })
+                published: newStatus
+            });
+            $.post('modules/pages/save_page.php', payload)
                 .done(function(){
                     const message = newStatus ? 'Page published successfully.' : 'Page unpublished successfully.';
                     rememberToast('success', message);
