@@ -323,6 +323,13 @@ foreach ($pages as $page) {
         }
     }
 
+    if (!$metrics['hasCanonical']) {
+        $fallbackCanonical = trim((string)($page['canonical_url'] ?? ''));
+        if ($fallbackCanonical !== '') {
+            $metrics['hasCanonical'] = true;
+        }
+    }
+
     $issues = [];
     $violations = [
         'critical' => 0,
