@@ -12166,6 +12166,69 @@ body.calendar-modal-open {
     margin-bottom: 1rem;
 }
 
+.events-recurrence {
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    background: #f8fafc;
+}
+
+.events-recurrence legend {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.events-recurrence fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.events-recurrence-custom {
+    margin-top: 0.75rem;
+}
+
+.events-recurrence-interval {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.events-recurrence-interval input[type='number'] {
+    width: 6rem;
+}
+
+.events-recurrence-end {
+    margin-top: 1rem;
+}
+
+.events-recurrence-end legend {
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 0.35rem;
+}
+
+.events-recurrence-end-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.events-recurrence-end-inputs {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.events-recurrence-end-inline input[type='number'] {
+    width: 5rem;
+}
+
+.events-recurrence-end-inline input[type='date'] {
+    max-width: 220px;
+}
+
 .events-form-field span,
 .events-form-field legend {
     font-weight: 600;

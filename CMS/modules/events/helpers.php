@@ -237,6 +237,135 @@ if (!function_exists('events_filter_category_ids')) {
     }
 }
 
+if (!function_exists('events_default_recurrence')) {
+    function events_default_recurrence(): array
+    {
+        return [
+            'frequency' => 'none',
+            'interval' => 1,
+            'unit' => 'days',
+            'end_type' => 'never',
+            'end_count' => 0,
+            'end_date' => '',
+        ];
+    }
+}
+
+if (!function_exists('events_normalize_recurrence')) {
+    function events_normalize_recurrence($recurrence): array
+    {
+        $defaults = events_default_recurrence();
+        if (!is_array($recurrence)) {
+            $recurrence = [];
+        }
+
+        $frequency = strtolower((string) ($recurrence['frequency'] ?? 'none'));
+        if (!in_array($frequency, ['none', 'daily', 'weekly', 'custom'], true)) {
+            $frequency = 'none';
+        }
+
+        $interval = (int) ($recurrence['interval'] ?? 1);
+        if ($interval < 1) {
+            $interval = 1;
+        }
+
+        $unit = strtolower((string) ($recurrence['unit'] ?? 'days'));
+        if (!in_array($unit, ['days', 'weeks'], true)) {
+            $unit = 'days';
+        }
+
+        if ($frequency === 'daily') {
+            $unit = 'days';
+        } elseif ($frequency === 'weekly') {
+            $unit = 'weeks';
+        }
+
+        $endType = strtolower((string) ($recurrence['end_type'] ?? 'never'));
+        if (!in_array($endType, ['never', 'after', 'on_date'], true)) {
+            $endType = 'never';
+        }
+
+        $endCount = (int) ($recurrence['end_count'] ?? 0);
+        if ($endCount < 1) {
+            $endCount = 0;
+        }
+
+        $endDate = trim((string) ($recurrence['end_date'] ?? ''));
+        if ($endDate !== '') {
+            $timestamp = strtotime($endDate);
+            if ($timestamp === false) {
+                $endDate = '';
+            } else {
+                $endDate = gmdate('Y-m-d', $timestamp);
+            }
+        }
+
+        if ($frequency === 'none') {
+            $endType = 'never';
+            $endCount = 0;
+            $endDate = '';
+        }
+
+        if ($endType !== 'after') {
+            $endCount = 0;
+        }
+
+        if ($endType !== 'on_date') {
+            $endDate = '';
+        }
+
+        return [
+            'frequency' => $frequency,
+            'interval' => $interval,
+            'unit' => $unit,
+            'end_type' => $endType,
+            'end_count' => $endCount,
+            'end_date' => $endDate,
+        ] + $defaults;
+    }
+}
+
+if (!function_exists('events_recurrence_summary')) {
+    function events_recurrence_summary(array $event): string
+    {
+        $recurrence = events_normalize_recurrence($event['recurrence'] ?? []);
+        if ($recurrence['frequency'] === 'none') {
+            return '';
+        }
+
+        $parts = [];
+        $interval = max(1, (int) ($recurrence['interval'] ?? 1));
+
+        switch ($recurrence['frequency']) {
+            case 'daily':
+                $parts[] = $interval === 1 ? 'Repeats daily' : sprintf('Repeats every %d days', $interval);
+                break;
+            case 'weekly':
+                $parts[] = $interval === 1 ? 'Repeats weekly' : sprintf('Repeats every %d weeks', $interval);
+                break;
+            case 'custom':
+                $unit = $recurrence['unit'] === 'weeks' ? 'week' : 'day';
+                $parts[] = sprintf('Repeats every %d %s', $interval, $interval === 1 ? $unit : $unit . 's');
+                break;
+            default:
+                $parts[] = 'Repeats';
+                break;
+        }
+
+        if ($recurrence['end_type'] === 'after' && $recurrence['end_count'] > 0) {
+            $count = (int) $recurrence['end_count'];
+            $parts[] = $count === 1 ? 'Ends after 1 occurrence' : sprintf('Ends after %d occurrences', $count);
+        } elseif ($recurrence['end_type'] === 'on_date' && $recurrence['end_date'] !== '') {
+            $timestamp = strtotime($recurrence['end_date']);
+            if ($timestamp !== false) {
+                $parts[] = 'Ends on ' . date('M j, Y', $timestamp);
+            }
+        }
+
+        return implode(' · ', array_filter($parts));
+    }
+}
+
 if (!function_exists('events_normalize_event')) {
     function events_normalize_event(array $event, array $categories = []): array
     {
@@ -256,6 +385,8 @@ if (!function_exists('events_normalize_event')) {
             : 'draft';
         $event['tickets'] = array_values(array_map('events_normalize_ticket', $event['tickets'] ?? []));
         $event['categories'] = events_filter_category_ids($event['categories'] ?? [], $categories);
+        $event['recurrence'] = events_normalize_recurrence($event['recurrence'] ?? []);
+        $event['recurrence_summary'] = events_recurrence_summary($event);
         if (!isset($event['published_at']) && $event['status'] === 'published') {
             $event['published_at'] = $now;
         }
@@ -546,14 +677,153 @@ if (!function_exists('events_compute_sales')) {
     }
 }
 
+if (!function_exists('events_recurrence_interval_seconds')) {
+    function events_recurrence_interval_seconds(array $recurrence): int
+    {
+        $interval = max(1, (int) ($recurrence['interval'] ?? 1));
+        $unit = $recurrence['unit'] ?? 'days';
+        $daySeconds = 86400;
+        if ($unit === 'weeks') {
+            return $interval * 7 * $daySeconds;
+        }
+        return $interval * $daySeconds;
+    }
+}
+
+if (!function_exists('events_event_occurrences')) {
+    function events_event_occurrences(array $event, int $fromTimestamp, int $limit = 5): array
+    {
+        $occurrences = [];
+        $fromTimestamp = max(0, $fromTimestamp);
+        $startValue = (string) ($event['start'] ?? '');
+        if ($startValue === '') {
+            return $occurrences;
+        }
+
+        $startTimestamp = strtotime($startValue);
+        if ($startTimestamp === false) {
+            return $occurrences;
+        }
+
+        $endValue = (string) ($event['end'] ?? '');
+        $endTimestamp = $endValue !== '' ? strtotime($endValue) : false;
+        $duration = $endTimestamp !== false && $endTimestamp >= $startTimestamp
+            ? $endTimestamp - $startTimestamp
+            : null;
+
+        $recurrence = events_normalize_recurrence($event['recurrence'] ?? []);
+        if ($recurrence['frequency'] === 'none') {
+            if ($startTimestamp >= $fromTimestamp) {
+                $occurrences[] = [
+                    'index' => 0,
+                    'start' => gmdate('Y-m-d\TH:i', $startTimestamp),
+                    'end' => $duration !== null ? gmdate('Y-m-d\TH:i', $startTimestamp + $duration) : '',
+                ];
+            }
+            return $occurrences;
+        }
+
+        $intervalSeconds = events_recurrence_interval_seconds($recurrence);
+        if ($intervalSeconds <= 0) {
+            return $occurrences;
+        }
+
+        $maxLimit = max(1, (int) $limit);
+        $maxCount = null;
+        if ($recurrence['end_type'] === 'after' && $recurrence['end_count'] > 0) {
+            $maxCount = (int) $recurrence['end_count'];
+        }
+
+        $endDateLimit = null;
+        if ($recurrence['end_type'] === 'on_date' && $recurrence['end_date'] !== '') {
+            $endDateLimit = strtotime($recurrence['end_date'] . ' 23:59:59');
+            if ($endDateLimit === false) {
+                $endDateLimit = null;
+            }
+        }
+
+        $index = 0;
+        $currentStart = $startTimestamp;
+
+        if ($fromTimestamp > $startTimestamp) {
+            $diff = $fromTimestamp - $startTimestamp;
+            $steps = (int) floor($diff / $intervalSeconds);
+            $candidate = $startTimestamp + ($steps * $intervalSeconds);
+            if ($candidate < $fromTimestamp) {
+                $steps++;
+                $candidate = $startTimestamp + ($steps * $intervalSeconds);
+            }
+            $index = $steps;
+            $currentStart = $candidate;
+        }
+
+        while (count($occurrences) < $maxLimit) {
+            if ($maxCount !== null && $index >= $maxCount) {
+                break;
+            }
+            if ($endDateLimit !== null && $currentStart > $endDateLimit) {
+                break;
+            }
+            if ($currentStart >= $fromTimestamp) {
+                $occurrences[] = [
+                    'index' => $index,
+                    'start' => gmdate('Y-m-d\TH:i', $currentStart),
+                    'end' => $duration !== null ? gmdate('Y-m-d\TH:i', $currentStart + $duration) : '',
+                ];
+            }
+            $index++;
+            $currentStart += $intervalSeconds;
+            if ($index > 1000) {
+                break;
+            }
+        }
+
+        return $occurrences;
+    }
+}
+
+if (!function_exists('events_event_next_occurrence')) {
+    function events_event_next_occurrence(array $event, ?int $fromTimestamp = null): ?array
+    {
+        $fromTimestamp = $fromTimestamp ?? time();
+        $occurrences = events_event_occurrences($event, $fromTimestamp, 1);
+        return $occurrences[0] ?? null;
+    }
+}
+
 if (!function_exists('events_filter_upcoming')) {
     function events_filter_upcoming(array $events): array
     {
         $now = time();
-        $upcoming = array_filter($events, static function ($event) use ($now) {
-            $start = isset($event['start']) ? strtotime((string) $event['start']) : false;
-            return $start !== false && $start >= $now;
-        });
+        $upcoming = [];
+        foreach ($events as $event) {
+            if (!is_array($event)) {
+                continue;
+            }
+            $recurrence = events_normalize_recurrence($event['recurrence'] ?? []);
+            $occurrences = events_event_occurrences($event, $now, 5);
+            foreach ($occurrences as $occurrence) {
+                $clone = $event;
+                $clone['start'] = $occurrence['start'];
+                if ($occurrence['end'] !== '') {
+                    $clone['end'] = $occurrence['end'];
+                } else {
+                    unset($clone['end']);
+                }
+                $clone['recurrence'] = $recurrence;
+                if (!isset($clone['recurrence_summary'])) {
+                    $clone['recurrence_summary'] = events_recurrence_summary(['recurrence' => $recurrence]);
+                }
+                $clone['occurrence'] = [
+                    'series_id' => (string) ($event['id'] ?? ''),
+                    'index' => $occurrence['index'],
+                    'start' => $occurrence['start'],
+                    'end' => $occurrence['end'],
+                    'is_recurring' => $recurrence['frequency'] !== 'none',
+                ];
+                $upcoming[] = $clone;
+            }
+        }
         usort($upcoming, static function ($a, $b) {
             $aTime = isset($a['start']) ? strtotime((string) $a['start']) : 0;
             $bTime = isset($b['start']) ? strtotime((string) $b['start']) : 0;
@@ -562,7 +832,7 @@ if (!function_exists('events_filter_upcoming')) {
             }
             return $aTime <=> $bTime;
         });
-        return array_values($upcoming);
+        return array_slice(array_values($upcoming), 0, 50);
     }
 }
 

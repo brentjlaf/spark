@@ -91,14 +91,16 @@ function handle_overview(array $events, array $orders, array $salesByEvent): voi
     foreach (array_slice($upcoming, 0, 5) as $event) {
         $id = (string) ($event['id'] ?? '');
         $metrics = $salesByEvent[$id] ?? ['tickets_sold' => 0, 'revenue' => 0];
-        $start = isset($event['start']) ? strtotime((string) $event['start']) : false;
         $upcomingPreview[] = [
             'id' => $id,
             'title' => $event['title'] ?? 'Untitled',
             'image' => $event['image'] ?? '',
             'start' => $event['start'] ?? '',
+            'end' => $event['end'] ?? '',
             'tickets_sold' => $metrics['tickets_sold'] ?? 0,
             'revenue' => $metrics['revenue'] ?? 0,
+            'occurrence' => $event['occurrence'] ?? null,
+            'recurrence_summary' => $event['recurrence_summary'] ?? '',
         ];
     }
 
@@ -122,18 +124,23 @@ function handle_list_events(array $events, array $salesByEvent): void
         $metrics = $salesByEvent[$id] ?? ['tickets_sold' => 0, 'revenue' => 0];
         $start = $event['start'] ?? '';
         $end = $event['end'] ?? '';
+        $nextOccurrence = events_event_next_occurrence($event);
         $rows[] = [
             'id' => $id,
             'title' => $event['title'] ?? 'Untitled Event',
             'location' => $event['location'] ?? '',
             'start' => $start,
             'end' => $end,
+            'next_start' => $nextOccurrence['start'] ?? $start,
+            'next_end' => $nextOccurrence['end'] ?? $end,
             'image' => $event['image'] ?? '',
             'status' => $event['status'] ?? 'draft',
             'tickets_sold' => $metrics['tickets_sold'] ?? 0,
             'revenue' => $metrics['revenue'] ?? 0,
             'capacity' => events_ticket_capacity($event, true),
             'categories' => array_values($event['categories'] ?? []),
+            'recurrence' => $event['recurrence'] ?? events_default_recurrence(),
+            'recurrence_summary' => $event['recurrence_summary'] ?? '',
         ];
     }
 
@@ -189,6 +196,14 @@ function handle_save_event(array $events, array $categories): void
         'status' => $payload['status'] ?? 'draft',
         'tickets' => $payload['tickets'] ?? [],
         'categories' => $payload['categories'] ?? [],
+        'recurrence' => $payload['recurrence'] ?? [
+            'frequency' => $payload['recurrence_frequency'] ?? 'none',
+            'interval' => $payload['recurrence_interval'] ?? null,
+            'unit' => $payload['recurrence_unit'] ?? null,
+            'end_type' => $payload['recurrence_end_type'] ?? null,
+            'end_count' => $payload['recurrence_end_count'] ?? null,
+            'end_date' => $payload['recurrence_end_date'] ?? null,
+        ],
     ];
 
     $eventData = events_normalize_event($eventData, $categories);

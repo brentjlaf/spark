@@ -391,12 +391,23 @@
             return null;
         }
 
+        const occurrence =
+            item.occurrence && typeof item.occurrence === 'object'
+                ? {
+                      series_id: String(item.occurrence.series_id ?? item.id ?? ''),
+                      index: Number.parseInt(item.occurrence.index ?? 0, 10) || 0,
+                  }
+                : null;
+
         return {
             id: String(item.id ?? ''),
             title: item.title ?? 'Untitled event',
             start: item.start ?? '',
+            end: item.end ?? '',
             tickets_sold: Number.parseInt(item.tickets_sold ?? 0, 10) || 0,
             revenue: Number(item.revenue ?? 0) || 0,
+            recurrence_summary: typeof item.recurrence_summary === 'string' ? item.recurrence_summary : '',
+            occurrence,
         };
     }
 
@@ -1082,7 +1093,14 @@
 
             const date = document.createElement('span');
             date.className = 'events-upcoming-date';
-            date.textContent = formatDate(item.start);
+            const details = [formatDate(item.start)];
+            if (item.occurrence && item.occurrence.index > 0) {
+                details.push(`Occurrence #${item.occurrence.index + 1}`);
+            }
+            if (item.recurrence_summary) {
+                details.push(item.recurrence_summary);
+            }
+            date.textContent = details.filter((part) => part && part !== 'Date TBD').join(' · ') || 'Date TBD';
             primary.appendChild(date);
 
             const meta = document.createElement('div');
@@ -1227,16 +1245,22 @@
     function createEventRow(row) {
         const tr = document.createElement('tr');
         tr.dataset.eventId = row.id;
-        const startLabel = formatDate(row.start);
-        const endLabel = row.end ? formatDate(row.end) : '';
+        const startValue = row.next_start || row.start;
+        const endValue = row.next_end || row.end;
+        const startLabel = formatDate(startValue);
+        const endLabel = endValue ? formatDate(endValue) : '';
+        const recurrenceSummary = row.recurrence_summary
+            ? `<div class="events-table-sub">${escapeHtml(row.recurrence_summary)}</div>`
+            : '';
         tr.innerHTML = `
             <td>
                 <div class="events-table-title">${row.title}</div>
                 <div class="events-table-sub">${row.location || ''}</div>
             </td>
             <td>
-                <div>${startLabel}</div>
-                ${endLabel ? `<div class="events-table-sub">Ends ${endLabel}</div>` : ''}
+                <div>${escapeHtml(startLabel)}</div>
+                ${endLabel ? `<div class="events-table-sub">Ends ${escapeHtml(endLabel)}</div>` : ''}
+                ${recurrenceSummary}
             </td>
             <td>${row.location || 'TBA'}</td>
             <td>${row.tickets_sold ?? 0} / ${row.capacity ?? 0}</td>
@@ -1304,8 +1328,10 @@
         select.appendChild(defaultOption);
         Array.from(state.events.values())
             .sort((a, b) => {
-                const aTime = a.start ? new Date(a.start).getTime() : 0;
-                const bTime = b.start ? new Date(b.start).getTime() : 0;
+                const aStart = a.next_start || a.start;
+                const bStart = b.next_start || b.start;
+                const aTime = aStart ? new Date(aStart).getTime() : 0;
+                const bTime = bStart ? new Date(bStart).getTime() : 0;
                 return aTime - bTime;
             })
             .forEach((event) => {
@@ -2051,6 +2077,9 @@
             if (tickets) {
                 tickets.innerHTML = '<div class="events-ticket-empty">No ticket types yet. Add one to begin selling.</div>';
             }
+            if (form.__recurrenceControls && typeof form.__recurrenceControls.sync === 'function') {
+                form.__recurrenceControls.sync();
+            }
         }
     }
 
@@ -2103,6 +2132,33 @@
         form.querySelector('[name="start"]').value = eventData?.start ? eventData.start.substring(0, 16) : '';
         form.querySelector('[name="end"]').value = eventData?.end ? eventData.end.substring(0, 16) : '';
         form.querySelector(`[name="status"][value="${eventData?.status || 'draft'}"]`).checked = true;
+        const recurrenceControls = setupRecurrence(form);
+        const recurrenceData = eventData?.recurrence || {};
+        if (recurrenceControls) {
+            if (recurrenceControls.frequency) {
+                recurrenceControls.frequency.value = recurrenceData.frequency || 'none';
+            }
+            if (recurrenceControls.interval) {
+                recurrenceControls.interval.value = recurrenceData.interval ?? 1;
+            }
+            if (recurrenceControls.unit) {
+                recurrenceControls.unit.value = recurrenceData.unit || 'days';
+            }
+            const endTypeValue = recurrenceData.end_type || 'never';
+            recurrenceControls.endType.forEach((radio) => {
+                radio.checked = radio.value === endTypeValue;
+            });
+            if (recurrenceControls.endCount) {
+                const countValue = Number.parseInt(recurrenceData.end_count ?? 0, 10);
+                recurrenceControls.endCount.value = countValue > 0 ? String(countValue) : '';
+            }
+            if (recurrenceControls.endDate) {
+                recurrenceControls.endDate.value = recurrenceData.end_date || '';
+            }
+            if (typeof recurrenceControls.sync === 'function') {
+                recurrenceControls.sync();
+            }
+        }
         const editor = form.querySelector('[data-events-editor]');
         const target = form.querySelector('[data-events-editor-target]');
         if (editor && target) {
@@ -2183,6 +2239,22 @@
         if (typeof payload.image === 'string') {
             payload.image = payload.image.trim();
         }
+
+        const recurrence = {
+            frequency: payload.recurrence_frequency || 'none',
+            interval: Number.parseInt(payload.recurrence_interval ?? '', 10) || 1,
+            unit: payload.recurrence_unit || 'days',
+            end_type: payload.recurrence_end_type || 'never',
+            end_count: Number.parseInt(payload.recurrence_end_count ?? '', 10) || 0,
+            end_date: (payload.recurrence_end_date || '').trim(),
+        };
+        payload.recurrence = recurrence;
+        delete payload.recurrence_frequency;
+        delete payload.recurrence_interval;
+        delete payload.recurrence_unit;
+        delete payload.recurrence_end_type;
+        delete payload.recurrence_end_count;
+        delete payload.recurrence_end_date;
         return payload;
     }
 
@@ -2207,6 +2279,85 @@
         });
     }
 
+    function setupRecurrence(form) {
+        if (!form) {
+            return null;
+        }
+        if (form.__recurrenceControls) {
+            return form.__recurrenceControls;
+        }
+        const controls = {
+            frequency: form.querySelector('[data-events-recurrence-frequency]'),
+            interval: form.querySelector('[data-events-recurrence-interval]'),
+            unit: form.querySelector('[data-events-recurrence-unit]'),
+            endType: Array.from(form.querySelectorAll('[data-events-recurrence-end]')),
+            endCountGroup: form.querySelector('[data-events-recurrence-count-group]'),
+            endCountFields: form.querySelector('[data-events-recurrence-count-fields]'),
+            endDateGroup: form.querySelector('[data-events-recurrence-date-group]'),
+            endCount: form.querySelector('[data-events-recurrence-count]'),
+            endDate: form.querySelector('[data-events-recurrence-date]'),
+            custom: form.querySelector('[data-events-recurrence-custom]'),
+        };
+
+        function sync() {
+            const frequency = controls.frequency ? controls.frequency.value : 'none';
+            const isCustom = frequency === 'custom';
+            if (controls.custom) {
+                controls.custom.hidden = !isCustom;
+            }
+            if (controls.interval) {
+                controls.interval.disabled = !isCustom;
+            }
+            if (controls.unit) {
+                controls.unit.disabled = !isCustom;
+            }
+
+            const selectedEnd = controls.endType.find((radio) => radio.checked)?.value || 'never';
+            const isAfter = selectedEnd === 'after';
+            const isOnDate = selectedEnd === 'on_date';
+
+            if (controls.endCountGroup) {
+                controls.endCountGroup.classList.toggle('is-active', isAfter);
+            }
+            if (controls.endCountFields) {
+                controls.endCountFields.hidden = !isAfter;
+            }
+            if (controls.endCount) {
+                controls.endCount.disabled = !isAfter;
+                if (!isAfter) {
+                    controls.endCount.value = controls.endCount.value || '';
+                }
+            }
+
+            if (controls.endDateGroup) {
+                controls.endDateGroup.classList.toggle('is-active', isOnDate);
+            }
+            if (controls.endDate) {
+                controls.endDate.disabled = !isOnDate;
+                controls.endDate.hidden = !isOnDate;
+                if (!isOnDate) {
+                    controls.endDate.value = controls.endDate.value || '';
+                }
+            }
+        }
+
+        controls.sync = sync;
+
+        if (controls.frequency) {
+            controls.frequency.addEventListener('change', sync);
+        }
+        controls.endType.forEach((radio) => {
+            radio.addEventListener('change', sync);
+        });
+        form.addEventListener('reset', () => {
+            setTimeout(sync, 0);
+        });
+
+        sync();
+        form.__recurrenceControls = controls;
+        return controls;
+    }
+
     function handleEventForm() {
         const modal = selectors.modal;
         if (!modal) {
@@ -2214,6 +2365,7 @@
         }
         const form = modal.querySelector('[data-events-form="event"]');
         setupEditor(form);
+        setupRecurrence(form);
         if (!form.__imagePicker) {
             form.__imagePicker = initImagePicker(form);
         }
@@ -2322,6 +2474,24 @@
                         existing.status = row.status;
                         existing.categories = Array.isArray(row.categories) ? row.categories : [];
                         existing.image = row.image || '';
+                        if (row.start) {
+                            existing.start = row.start;
+                        }
+                        if (row.end !== undefined) {
+                            existing.end = row.end;
+                        }
+                        if (row.next_start) {
+                            existing.next_start = row.next_start;
+                        }
+                        if (row.next_end !== undefined) {
+                            existing.next_end = row.next_end;
+                        }
+                        if (row.recurrence) {
+                            existing.recurrence = row.recurrence;
+                        }
+                        if (row.recurrence_summary !== undefined) {
+                            existing.recurrence_summary = row.recurrence_summary;
+                        }
                     }
                 });
                 renderEventsTable();

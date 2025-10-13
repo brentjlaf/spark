@@ -114,7 +114,29 @@ $initialPayload = [
                             <?php else: ?>
                                 <?php foreach ($upcomingPreview as $event):
                                     $timestamp = isset($event['start']) ? strtotime((string) $event['start']) : false;
-                                    $dateLabel = $timestamp ? date('M j, Y g:i A', $timestamp) : 'Date TBD';
+                                    $details = [];
+                                    if ($timestamp) {
+                                        $details[] = date('M j, Y g:i A', $timestamp);
+                                    } else {
+                                        $details[] = 'Date TBD';
+                                    }
+                                    $occurrenceIndex = isset($event['occurrence']['index']) ? (int) $event['occurrence']['index'] : null;
+                                    if ($occurrenceIndex !== null && $occurrenceIndex > 0) {
+                                        $details[] = 'Occurrence #' . ($occurrenceIndex + 1);
+                                    }
+                                    if (!empty($event['recurrence_summary'])) {
+                                        $details[] = (string) $event['recurrence_summary'];
+                                    }
+                                    $details = array_values(array_filter($details));
+                                    if (count($details) > 1) {
+                                        $details = array_values(array_filter($details, static function ($value) {
+                                            return $value !== 'Date TBD';
+                                        }));
+                                    }
+                                    if (empty($details)) {
+                                        $details[] = 'Date TBD';
+                                    }
+                                    $dateLabel = implode(' · ', $details);
                                 ?>
                                 <li class="events-upcoming-item" data-event-id="<?php echo htmlspecialchars($event['id'], ENT_QUOTES, 'UTF-8'); ?>">
                                     <div class="events-upcoming-primary">
@@ -387,6 +409,51 @@ $initialPayload = [
                         <span>End date &amp; time</span>
                         <input type="datetime-local" name="end">
                     </label>
+                    <fieldset class="events-form-field span-2 events-recurrence" data-events-recurrence>
+                        <legend>Recurrence</legend>
+                        <p class="events-form-help">Schedule repeating occurrences for this event.</p>
+                        <label class="events-form-field">
+                            <span>Frequency</span>
+                            <select name="recurrence_frequency" data-events-recurrence-frequency>
+                                <option value="none" selected>Does not repeat</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                        </label>
+                        <div class="events-recurrence-custom" data-events-recurrence-custom hidden>
+                            <label class="events-form-field">
+                                <span>Repeat every</span>
+                                <div class="events-recurrence-interval">
+                                    <input type="number" min="1" value="1" name="recurrence_interval" data-events-recurrence-interval>
+                                    <select name="recurrence_unit" data-events-recurrence-unit>
+                                        <option value="days">day(s)</option>
+                                        <option value="weeks">week(s)</option>
+                                    </select>
+                                </div>
+                            </label>
+                        </div>
+                        <fieldset class="events-recurrence-end">
+                            <legend>End</legend>
+                            <label class="events-radio">
+                                <input type="radio" name="recurrence_end_type" value="never" checked data-events-recurrence-end>
+                                <span>Never</span>
+                            </label>
+                            <label class="events-radio events-recurrence-end-inline" data-events-recurrence-count-group>
+                                <input type="radio" name="recurrence_end_type" value="after" data-events-recurrence-end>
+                                <span>After</span>
+                                <span class="events-recurrence-end-inputs" data-events-recurrence-count-fields>
+                                    <input type="number" min="1" value="10" name="recurrence_end_count" data-events-recurrence-count disabled>
+                                    <span>occurrences</span>
+                                </span>
+                            </label>
+                            <label class="events-radio events-recurrence-end-inline" data-events-recurrence-date-group>
+                                <input type="radio" name="recurrence_end_type" value="on_date" data-events-recurrence-end>
+                                <span>On</span>
+                                <input type="date" name="recurrence_end_date" data-events-recurrence-date disabled>
+                            </label>
+                        </fieldset>
+                    </fieldset>
                     <fieldset class="events-form-field span-2">
                         <legend>Categories</legend>
                         <p class="events-form-help">Tag this event to improve filtering and reporting.</p>
