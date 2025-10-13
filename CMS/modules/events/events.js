@@ -397,6 +397,9 @@
             start: item.start ?? '',
             tickets_sold: Number.parseInt(item.tickets_sold ?? 0, 10) || 0,
             revenue: Number(item.revenue ?? 0) || 0,
+            image: item.image ?? '',
+            image_alt: item.image_alt ?? '',
+            image_caption: item.image_caption ?? '',
         };
     }
 
@@ -911,15 +914,28 @@
         const preview = picker.querySelector('[data-events-image-preview]');
         const chooseBtn = picker.querySelector('[data-events-image-open]');
         const clearBtn = picker.querySelector('[data-events-image-clear]');
+        const altInput = picker.querySelector('input[name="image_alt"]');
+        const captionInput = picker.querySelector('input[name="image_caption"]');
         if (!input || !preview || !chooseBtn || !clearBtn) {
             return null;
         }
 
-        function setValue(value) {
-            const normalized = typeof value === 'string' ? value.trim() : '';
-            input.value = normalized;
+        function updatePreview() {
+            const normalized = (input.value || '').trim();
             if (normalized) {
-                preview.innerHTML = `<img src="${escapeAttribute(normalized)}" alt="Event featured image preview">`;
+                const altText = altInput && altInput.value.trim() !== ''
+                    ? altInput.value.trim()
+                    : 'Event featured image preview';
+                const captionText = captionInput ? captionInput.value.trim() : '';
+                const captionHtml = captionText
+                    ? `<figcaption class="events-image-preview-caption">${escapeHtml(captionText)}</figcaption>`
+                    : '';
+                preview.innerHTML = `
+                    <figure class="events-image-preview-figure">
+                        <img src="${escapeAttribute(normalized)}" alt="${escapeAttribute(altText)}">
+                        ${captionHtml}
+                    </figure>
+                `;
                 preview.classList.add('has-image');
                 clearBtn.hidden = false;
             } else {
@@ -929,26 +945,68 @@
             }
         }
 
+        function setValue(value, meta = {}) {
+            const normalized = typeof value === 'string' ? value.trim() : '';
+            input.value = normalized;
+            if (altInput) {
+                if (Object.prototype.hasOwnProperty.call(meta, 'alt')) {
+                    altInput.value = meta.alt ?? '';
+                } else if (!normalized) {
+                    altInput.value = '';
+                }
+            }
+            if (captionInput) {
+                if (Object.prototype.hasOwnProperty.call(meta, 'caption')) {
+                    captionInput.value = meta.caption ?? '';
+                } else if (!normalized) {
+                    captionInput.value = '';
+                }
+            }
+            updatePreview();
+        }
+
         chooseBtn.addEventListener('click', (event) => {
             event.preventDefault();
-            state.media.currentSetter = setValue;
+            state.media.currentSetter = (file) => {
+                setValue(file, { alt: '', caption: '' });
+                if (altInput) {
+                    requestAnimationFrame(() => {
+                        altInput.focus();
+                    });
+                }
+            };
             openMediaPicker();
         });
 
         clearBtn.addEventListener('click', (event) => {
             event.preventDefault();
-            setValue('');
+            setValue('', { alt: '', caption: '' });
         });
 
         input.addEventListener('change', () => {
             setValue(input.value);
         });
 
+        if (altInput) {
+            altInput.addEventListener('input', () => {
+                updatePreview();
+            });
+        }
+
+        if (captionInput) {
+            captionInput.addEventListener('input', () => {
+                updatePreview();
+            });
+        }
+
         form.addEventListener('reset', () => {
-            setTimeout(() => setValue(''), 0);
+            setTimeout(() => setValue('', { alt: '', caption: '' }), 0);
         });
 
-        setValue(input.value);
+        setValue(input.value, {
+            alt: altInput ? altInput.value : '',
+            caption: captionInput ? captionInput.value : '',
+        });
 
         return { setValue };
     }
@@ -2092,12 +2150,24 @@
         if (!form.__imagePicker) {
             form.__imagePicker = initImagePicker(form);
         }
+        const imageMeta = {
+            alt: eventData?.image_alt || '',
+            caption: eventData?.image_caption || '',
+        };
         if (form.__imagePicker && typeof form.__imagePicker.setValue === 'function') {
-            form.__imagePicker.setValue(eventData?.image || '');
+            form.__imagePicker.setValue(eventData?.image || '', imageMeta);
         } else {
             const imageInput = form.querySelector('[name="image"]');
             if (imageInput) {
                 imageInput.value = eventData?.image || '';
+            }
+            const altInput = form.querySelector('[name="image_alt"]');
+            if (altInput) {
+                altInput.value = imageMeta.alt;
+            }
+            const captionInput = form.querySelector('[name="image_caption"]');
+            if (captionInput) {
+                captionInput.value = imageMeta.caption;
             }
         }
         form.querySelector('[name="start"]').value = eventData?.start ? eventData.start.substring(0, 16) : '';
@@ -2183,6 +2253,16 @@
         if (typeof payload.image === 'string') {
             payload.image = payload.image.trim();
         }
+        if (typeof payload.image_alt === 'string') {
+            payload.image_alt = payload.image_alt.trim();
+        }
+        if (typeof payload.image_caption === 'string') {
+            payload.image_caption = payload.image_caption.trim();
+        }
+        if (!payload.image) {
+            payload.image_alt = '';
+            payload.image_caption = '';
+        }
         return payload;
     }
 
@@ -2221,6 +2301,15 @@
             event.preventDefault();
             const payload = serializeForm(form);
             payload.tickets = gatherTickets(form.querySelector('[data-events-tickets]'));
+            const status = String(payload.status || 'draft').toLowerCase();
+            if (payload.image && status === 'published' && !payload.image_alt) {
+                showToast('Add alternative text for the featured image before publishing.', 'error');
+                const altField = form.querySelector('[name="image_alt"]');
+                if (altField) {
+                    altField.focus();
+                }
+                return;
+            }
             return fetchJSON('save_event', { method: 'POST', body: payload })
                 .then((response) => {
                     if (response?.event?.id) {
@@ -2322,6 +2411,8 @@
                         existing.status = row.status;
                         existing.categories = Array.isArray(row.categories) ? row.categories : [];
                         existing.image = row.image || '';
+                        existing.image_alt = row.image_alt || '';
+                        existing.image_caption = row.image_caption || '';
                     }
                 });
                 renderEventsTable();

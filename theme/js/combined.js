@@ -805,6 +805,29 @@
       item.appendChild(dateWrap);
     }
 
+    if (event.raw.image) {
+      var media = document.createElement('figure');
+      media.className = 'events-block__media';
+      var img = document.createElement('img');
+      img.className = 'events-block__media-image';
+      img.src = event.raw.image;
+      var altText = (event.raw.image_alt || '').trim();
+      if (!altText) {
+        altText = event.raw.title ? 'Featured image for ' + event.raw.title : 'Event featured image';
+      }
+      img.alt = altText;
+      img.loading = 'lazy';
+      media.appendChild(img);
+      var captionText = (event.raw.image_caption || '').trim();
+      if (captionText) {
+        var caption = document.createElement('figcaption');
+        caption.className = 'events-block__media-caption';
+        caption.textContent = captionText;
+        media.appendChild(caption);
+      }
+      item.appendChild(media);
+    }
+
     var body = document.createElement('div');
     body.className = 'events-block__body';
     var title = document.createElement('h3');

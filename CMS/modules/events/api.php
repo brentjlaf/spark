@@ -96,6 +96,8 @@ function handle_overview(array $events, array $orders, array $salesByEvent): voi
             'id' => $id,
             'title' => $event['title'] ?? 'Untitled',
             'image' => $event['image'] ?? '',
+            'image_alt' => $event['image_alt'] ?? '',
+            'image_caption' => $event['image_caption'] ?? '',
             'start' => $event['start'] ?? '',
             'tickets_sold' => $metrics['tickets_sold'] ?? 0,
             'revenue' => $metrics['revenue'] ?? 0,
@@ -129,6 +131,8 @@ function handle_list_events(array $events, array $salesByEvent): void
             'start' => $start,
             'end' => $end,
             'image' => $event['image'] ?? '',
+            'image_alt' => $event['image_alt'] ?? '',
+            'image_caption' => $event['image_caption'] ?? '',
             'status' => $event['status'] ?? 'draft',
             'tickets_sold' => $metrics['tickets_sold'] ?? 0,
             'revenue' => $metrics['revenue'] ?? 0,
@@ -178,15 +182,25 @@ function handle_save_event(array $events, array $categories): void
         }
     }
 
+    $image = isset($payload['image']) ? trim((string) $payload['image']) : '';
+    $imageAlt = isset($payload['image_alt']) ? trim((string) $payload['image_alt']) : '';
+    $imageCaption = isset($payload['image_caption']) ? trim((string) $payload['image_caption']) : '';
+    $status = strtolower(trim((string) ($payload['status'] ?? 'draft')));
+    if ($image !== '' && $status === 'published' && $imageAlt === '') {
+        respond_json(['error' => 'Alternative text is required when publishing an event with a featured image.'], 422);
+    }
+
     $eventData = [
         'id' => $payload['id'] ?? null,
         'title' => $payload['title'] ?? '',
         'description' => $payload['description'] ?? '',
         'location' => $payload['location'] ?? '',
-        'image' => $payload['image'] ?? '',
+        'image' => $image,
+        'image_alt' => $imageAlt,
+        'image_caption' => $imageCaption,
         'start' => $payload['start'] ?? '',
         'end' => $payload['end'] ?? '',
-        'status' => $payload['status'] ?? 'draft',
+        'status' => $status,
         'tickets' => $payload['tickets'] ?? [],
         'categories' => $payload['categories'] ?? [],
     ];

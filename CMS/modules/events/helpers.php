@@ -249,6 +249,12 @@ if (!function_exists('events_normalize_event')) {
         $event['description'] = (string) ($event['description'] ?? '');
         $event['location'] = trim((string) ($event['location'] ?? ''));
         $event['image'] = trim((string) ($event['image'] ?? ''));
+        $event['image_alt'] = trim((string) ($event['image_alt'] ?? ''));
+        $event['image_caption'] = trim((string) ($event['image_caption'] ?? ''));
+        if ($event['image'] === '') {
+            $event['image_alt'] = '';
+            $event['image_caption'] = '';
+        }
         $event['start'] = (string) ($event['start'] ?? '');
         $event['end'] = (string) ($event['end'] ?? '');
         $event['status'] = in_array($event['status'] ?? '', ['draft', 'published', 'ended'], true)

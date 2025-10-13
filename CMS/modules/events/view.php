@@ -367,6 +367,17 @@ $initialPayload = [
                                     <span>Remove image</span>
                                 </button>
                             </div>
+                            <div class="events-image-metadata">
+                                <label class="events-image-meta-field">
+                                    <span>Alternative text <span class="events-field-note">Required for publication</span></span>
+                                    <input type="text" name="image_alt" placeholder="Describe the featured image for screen readers">
+                                    <p class="events-image-meta-help">Provide a short description of the image content so assistive technologies can convey it to attendees.</p>
+                                </label>
+                                <label class="events-image-meta-field">
+                                    <span>Caption <span class="events-field-note">Optional</span></span>
+                                    <input type="text" name="image_caption" placeholder="Shown alongside the image where supported">
+                                </label>
+                            </div>
                         </div>
                     </div>
                     <div class="events-form-field span-2">
