@@ -299,6 +299,36 @@ if (!function_exists('events_filter_category_ids')) {
     }
 }
 
+if (!function_exists('events_apply_schedule')) {
+    function events_apply_schedule(array $event, ?int $referenceTime = null): array
+    {
+        $now = $referenceTime ?? time();
+        $status = in_array($event['status'] ?? '', ['draft', 'published', 'ended'], true)
+            ? (string) $event['status']
+            : 'draft';
+
+        $publishAtRaw = trim((string) ($event['publish_at'] ?? ''));
+        $unpublishAtRaw = trim((string) ($event['unpublish_at'] ?? ''));
+
+        $publishAt = $publishAtRaw !== '' ? strtotime($publishAtRaw) : false;
+        $unpublishAt = $unpublishAtRaw !== '' ? strtotime($unpublishAtRaw) : false;
+
+        if ($unpublishAt !== false && $unpublishAt <= $now) {
+            $status = 'ended';
+        } elseif ($publishAt !== false && $publishAt <= $now && $status !== 'ended') {
+            $status = 'published';
+        } elseif ($publishAt !== false && $publishAt > $now && $status === 'published') {
+            $status = 'draft';
+        }
+
+        $event['publish_at'] = $publishAtRaw;
+        $event['unpublish_at'] = $unpublishAtRaw;
+        $event['status'] = $status;
+
+        return $event;
+    }
+}
+
 if (!function_exists('events_normalize_event')) {
     function events_normalize_event(array $event, array $categories = []): array
     {
@@ -314,8 +344,25 @@ if (!function_exists('events_normalize_event')) {
         $event['start'] = (string) ($event['start'] ?? '');
         $event['end'] = (string) ($event['end'] ?? '');
         $event['status'] = in_array($event['status'] ?? '', ['draft', 'published', 'ended'], true)
-            ? $event['status']
+            ? (string) $event['status']
             : 'draft';
+
+        $publishAt = trim((string) ($event['publish_at'] ?? ''));
+        $publishAtTime = $publishAt !== '' ? strtotime($publishAt) : false;
+        if ($publishAt !== '' && $publishAtTime === false) {
+            $publishAt = '';
+        }
+        $event['publish_at'] = $publishAt;
+
+        $unpublishAt = trim((string) ($event['unpublish_at'] ?? ''));
+        $unpublishAtTime = $unpublishAt !== '' ? strtotime($unpublishAt) : false;
+        if ($unpublishAt !== '' && $unpublishAtTime === false) {
+            $unpublishAt = '';
+        }
+        $event['unpublish_at'] = $unpublishAt;
+
+        $event = events_apply_schedule($event);
+
         $event['tickets'] = array_values(array_map('events_normalize_ticket', $event['tickets'] ?? []));
         $event['categories'] = events_filter_category_ids($event['categories'] ?? [], $categories);
         if (!isset($event['published_at']) && $event['status'] === 'published') {
