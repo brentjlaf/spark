@@ -18,12 +18,26 @@
                     {
                         "label": "Our History",
                         "link": "/about-us#history"
+                    },
+                    {
+                        "label": "Testimonials",
+                        "link": "/testimonials"
+                    },
+                    {
+                        "label": "Careers",
+                        "link": "/careers"
                     }
                 ]
             },
             {
                 "label": "Services",
-                "link": "/services"
+                "link": "/services",
+                "children": [
+                    {
+                        "label": "Portfolio",
+                        "link": "/portfolio"
+                    }
+                ]
             },
             {
                 "label": "Blogs",
@@ -31,23 +45,13 @@
             },
             {
                 "label": "Contact Us",
-                "link": "/contact-us"
-            },
-            {
-                "label": "Testimonials",
-                "link": "/testimonials"
-            },
-            {
-                "label": "Careers",
-                "link": "/careers"
-            },
-            {
-                "label": "FAQ",
-                "link": "/faq"
-            },
-            {
-                "label": "Portfolio",
-                "link": "/portfolio"
+                "link": "/contact-us",
+                "children": [
+                    {
+                        "label": "FAQ",
+                        "link": "/faq"
+                    }
+                ]
             }
         ]
     },
