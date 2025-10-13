@@ -114,17 +114,20 @@ $(document).ready(function(){
             return window.__cmsBasePath;
         }
         const path = window.location.pathname || '';
-        const cmsMarker = '/CMS/';
+        const cmsSegment = '/CMS';
+        const markerWithSlash = `${cmsSegment}/`;
         let base = '';
-        const markerIndex = path.indexOf(cmsMarker);
+        const markerIndex = path.indexOf(markerWithSlash);
         if(markerIndex !== -1){
-            base = path.substring(0, markerIndex);
+            base = `${path.substring(0, markerIndex)}${cmsSegment}`;
         } else {
-            const fallbackIndex = path.indexOf('/CMS');
-            base = fallbackIndex !== -1 ? path.substring(0, fallbackIndex) : '';
+            const fallbackIndex = path.indexOf(cmsSegment);
+            base = fallbackIndex !== -1
+                ? `${path.substring(0, fallbackIndex)}${cmsSegment}`
+                : '';
         }
-        window.__cmsBasePath = base;
-        return base;
+        window.__cmsBasePath = base.replace(/\/$/, '');
+        return window.__cmsBasePath;
     }
 
     function isAbsoluteResource(path){
