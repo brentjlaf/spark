@@ -1183,9 +1183,17 @@
       if (recurrenceEnd && start > recurrenceEnd) {
         break;
       }
-      var include = !windowStart || start >= windowStart;
-      if (include && (!windowEnd || start <= windowEnd)) {
-        var end = duration ? new Date(start.getTime() + duration) : null;
+      var end = duration ? new Date(start.getTime() + duration) : null;
+      var startTime = start.getTime();
+      var endTime = end ? end.getTime() : startTime;
+      var include = true;
+      if (windowStart) {
+        include = include && endTime >= windowStart.getTime();
+      }
+      if (include && windowEnd) {
+        include = include && startTime <= windowEnd.getTime();
+      }
+      if (include) {
         occurrences.push({
           id: event.id,
           title: event.title,
