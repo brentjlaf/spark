@@ -123,10 +123,9 @@
     };
 
     if (Array.isArray(initialPayload.events)) {
+        const now = Date.now();
         initialPayload.events.forEach((event) => {
-            if (event && event.id) {
-                state.events.set(String(event.id), event);
-            }
+            updateEventInState(event, { merge: false, now });
         });
     }
     if (Array.isArray(initialPayload.categories)) {
@@ -409,6 +408,104 @@
             return null;
         }
         return date;
+    }
+
+    function resolveNow(value) {
+        if (typeof value === 'number') {
+            return value;
+        }
+        if (value instanceof Date) {
+            return value.getTime();
+        }
+        if (value && typeof value.getTime === 'function') {
+            return value.getTime();
+        }
+        return Date.now();
+    }
+
+    function deriveEventStatus(event, now = Date.now()) {
+        const baseStatus = String(event?.status || 'draft').toLowerCase();
+        if (baseStatus === 'ended') {
+            return 'ended';
+        }
+        const currentTime = resolveNow(now);
+        const publishDate = parseDateValue(event?.publish_at ?? event?.publishAt);
+        const unpublishDate = parseDateValue(event?.unpublish_at ?? event?.unpublishAt);
+        if (unpublishDate && currentTime >= unpublishDate.getTime()) {
+            return 'ended';
+        }
+        if (publishDate && currentTime < publishDate.getTime()) {
+            return 'draft';
+        }
+        if (publishDate && currentTime >= publishDate.getTime()) {
+            return 'published';
+        }
+        if (baseStatus === 'published') {
+            return 'published';
+        }
+        return baseStatus;
+    }
+
+    function getNextStatusChange(event, now = Date.now()) {
+        const currentTime = resolveNow(now);
+        const publishDate = parseDateValue(event?.publish_at ?? event?.publishAt);
+        const unpublishDate = parseDateValue(event?.unpublish_at ?? event?.unpublishAt);
+        const currentStatus = deriveEventStatus(event, currentTime);
+        if (publishDate && currentTime < publishDate.getTime()) {
+            const formatted = formatDate(publishDate);
+            return {
+                type: 'publish',
+                at: publishDate.getTime(),
+                label: `Publishes on ${formatted}`,
+                tooltip: `Scheduled to publish on ${formatted}.`,
+            };
+        }
+        if (currentStatus === 'published' && unpublishDate && currentTime < unpublishDate.getTime()) {
+            const formatted = formatDate(unpublishDate);
+            return {
+                type: 'unpublish',
+                at: unpublishDate.getTime(),
+                label: `Unpublishes on ${formatted}`,
+                tooltip: `Scheduled to unpublish on ${formatted}.`,
+            };
+        }
+        return null;
+    }
+
+    function normalizeEventRecord(event, now = Date.now()) {
+        if (!event || typeof event !== 'object') {
+            return null;
+        }
+        const normalized = { ...event };
+        normalized.id = String(event.id ?? '');
+        normalized.publish_at = event.publish_at ?? event.publishAt ?? '';
+        normalized.unpublish_at = event.unpublish_at ?? event.unpublishAt ?? '';
+        normalized.status = deriveEventStatus(normalized, now);
+        const nextChange = getNextStatusChange(normalized, now);
+        if (nextChange) {
+            normalized.next_status_change = nextChange;
+        } else {
+            delete normalized.next_status_change;
+        }
+        return normalized;
+    }
+
+    function updateEventInState(event, { merge = true, now } = {}) {
+        const normalized = normalizeEventRecord(event, now ?? Date.now());
+        if (!normalized || !normalized.id) {
+            return null;
+        }
+        if (merge && state.events.has(normalized.id)) {
+            const existing = state.events.get(normalized.id);
+            const merged = { ...existing, ...normalized };
+            if (!normalized.next_status_change && existing?.next_status_change) {
+                delete merged.next_status_change;
+            }
+            state.events.set(normalized.id, merged);
+            return merged;
+        }
+        state.events.set(normalized.id, normalized);
+        return normalized;
     }
 
     function startOfMonth(date) {
@@ -1259,6 +1356,15 @@
         `;
         const badgeCell = tr.querySelector('[data-status]');
         badgeCell.appendChild(createStatusBadge(row.status));
+        if (row.next_status_change?.label) {
+            const note = document.createElement('div');
+            note.className = 'events-table-sub';
+            note.textContent = row.next_status_change.label;
+            if (row.next_status_change.tooltip) {
+                note.title = row.next_status_change.tooltip;
+            }
+            badgeCell.appendChild(note);
+        }
         return tr;
     }
 
@@ -2103,6 +2209,16 @@
         form.querySelector('[name="start"]').value = eventData?.start ? eventData.start.substring(0, 16) : '';
         form.querySelector('[name="end"]').value = eventData?.end ? eventData.end.substring(0, 16) : '';
         form.querySelector(`[name="status"][value="${eventData?.status || 'draft'}"]`).checked = true;
+        const publishAtInput = form.querySelector('[name="publish_at"]');
+        if (publishAtInput) {
+            const publishValue = eventData?.publish_at ?? eventData?.publishAt ?? '';
+            publishAtInput.value = publishValue ? publishValue.substring(0, 16) : '';
+        }
+        const unpublishAtInput = form.querySelector('[name="unpublish_at"]');
+        if (unpublishAtInput) {
+            const unpublishValue = eventData?.unpublish_at ?? eventData?.unpublishAt ?? '';
+            unpublishAtInput.value = unpublishValue ? unpublishValue.substring(0, 16) : '';
+        }
         const editor = form.querySelector('[data-events-editor]');
         const target = form.querySelector('[data-events-editor-target]');
         if (editor && target) {
@@ -2183,6 +2299,12 @@
         if (typeof payload.image === 'string') {
             payload.image = payload.image.trim();
         }
+        if (typeof payload.publish_at === 'string') {
+            payload.publish_at = payload.publish_at.trim();
+        }
+        if (typeof payload.unpublish_at === 'string') {
+            payload.unpublish_at = payload.unpublish_at.trim();
+        }
         return payload;
     }
 
@@ -2223,8 +2345,8 @@
             payload.tickets = gatherTickets(form.querySelector('[data-events-tickets]'));
             return fetchJSON('save_event', { method: 'POST', body: payload })
                 .then((response) => {
-                    if (response?.event?.id) {
-                        state.events.set(response.event.id, response.event);
+                    if (response?.event) {
+                        updateEventInState(response.event);
                     }
                     closeModal(selectors.modal);
                     showToast('Event saved successfully.');
@@ -2315,13 +2437,19 @@
     function refreshEvents() {
         return fetchJSON('list_events')
             .then((response) => {
-                state.eventRows = Array.isArray(response.events) ? response.events : [];
-                response.events.forEach((row) => {
-                    const existing = state.events.get(row.id);
-                    if (existing) {
-                        existing.status = row.status;
-                        existing.categories = Array.isArray(row.categories) ? row.categories : [];
-                        existing.image = row.image || '';
+                const rows = Array.isArray(response.events) ? response.events : [];
+                const now = Date.now();
+                state.eventRows = rows
+                    .map((row) => normalizeEventRecord(row, now))
+                    .filter((row) => row && row.id);
+                rows.forEach((row) => {
+                    updateEventInState(row, { now });
+                });
+                state.salesSummary.forEach((item) => {
+                    const eventId = String(item.event_id ?? '');
+                    const event = state.events.get(eventId);
+                    if (event) {
+                        item.status = event.status;
                     }
                 });
                 renderEventsTable();
@@ -2352,10 +2480,15 @@
         return fetchJSON('reports_summary')
             .then((response) => {
                 const reports = Array.isArray(response.reports) ? response.reports : [];
-                state.salesSummary = reports.map((report) => ({
-                    ...report,
-                    refunded: report.refunded ?? 0,
-                }));
+                state.salesSummary = reports.map((report) => {
+                    const eventId = String(report.event_id ?? report.eventId ?? '');
+                    const event = state.events.get(eventId);
+                    return {
+                        ...report,
+                        refunded: report.refunded ?? 0,
+                        status: event?.status ?? report.status ?? 'draft',
+                    };
+                });
                 renderReportsTable();
                 updateInsightsAndMetrics();
             })

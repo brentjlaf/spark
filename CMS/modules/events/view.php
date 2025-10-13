@@ -398,16 +398,29 @@ $initialPayload = [
                             <span>Manage categories</span>
                         </button>
                     </fieldset>
-                    <fieldset class="events-form-field">
-                        <legend>Status</legend>
-                        <label class="events-radio">
-                            <input type="radio" name="status" value="draft" checked>
-                            <span>Save as draft</span>
-                        </label>
-                        <label class="events-radio">
-                            <input type="radio" name="status" value="published">
-                            <span>Publish now</span>
-                        </label>
+                    <fieldset class="events-form-field span-2">
+                        <legend>Status &amp; scheduling</legend>
+                        <div class="events-status-options">
+                            <label class="events-radio">
+                                <input type="radio" name="status" value="draft" checked>
+                                <span>Save as draft</span>
+                            </label>
+                            <label class="events-radio">
+                                <input type="radio" name="status" value="published">
+                                <span>Publish now</span>
+                            </label>
+                        </div>
+                        <div class="events-status-scheduling">
+                            <label class="events-form-field">
+                                <span>Publish at (optional)</span>
+                                <input type="datetime-local" name="publish_at">
+                            </label>
+                            <label class="events-form-field">
+                                <span>Unpublish at (optional)</span>
+                                <input type="datetime-local" name="unpublish_at">
+                            </label>
+                            <p class="events-form-help">Set scheduling to automatically publish or end the event.</p>
+                        </div>
                     </fieldset>
                 </div>
 

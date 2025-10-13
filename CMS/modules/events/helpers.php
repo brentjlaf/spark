@@ -241,6 +241,7 @@ if (!function_exists('events_normalize_event')) {
     function events_normalize_event(array $event, array $categories = []): array
     {
         $now = gmdate('c');
+        $nowTimestamp = time();
         if (empty($event['id'])) {
             $event['id'] = uniqid('evt_', true);
             $event['created_at'] = $now;
@@ -254,10 +255,27 @@ if (!function_exists('events_normalize_event')) {
         $event['status'] = in_array($event['status'] ?? '', ['draft', 'published', 'ended'], true)
             ? $event['status']
             : 'draft';
+        $publishInput = trim((string) ($event['publish_at'] ?? ''));
+        $unpublishInput = trim((string) ($event['unpublish_at'] ?? ''));
+        $publishTimestamp = $publishInput !== '' ? strtotime($publishInput) : false;
+        $unpublishTimestamp = $unpublishInput !== '' ? strtotime($unpublishInput) : false;
+        $event['publish_at'] = $publishTimestamp !== false ? gmdate('c', $publishTimestamp) : '';
+        $event['unpublish_at'] = $unpublishTimestamp !== false ? gmdate('c', $unpublishTimestamp) : '';
+        if ($event['status'] !== 'ended') {
+            if ($unpublishTimestamp !== false && $nowTimestamp >= $unpublishTimestamp) {
+                $event['status'] = 'ended';
+            } elseif ($publishTimestamp !== false && $nowTimestamp < $publishTimestamp) {
+                $event['status'] = 'draft';
+            } elseif ($publishTimestamp !== false && $nowTimestamp >= $publishTimestamp) {
+                $event['status'] = 'published';
+            }
+        }
         $event['tickets'] = array_values(array_map('events_normalize_ticket', $event['tickets'] ?? []));
         $event['categories'] = events_filter_category_ids($event['categories'] ?? [], $categories);
-        if (!isset($event['published_at']) && $event['status'] === 'published') {
-            $event['published_at'] = $now;
+        if (($event['published_at'] ?? '') === '' && $event['status'] === 'published') {
+            $event['published_at'] = $publishTimestamp !== false && $nowTimestamp >= $publishTimestamp
+                ? gmdate('c', $publishTimestamp)
+                : $now;
         }
         $event['updated_at'] = $now;
         return $event;
