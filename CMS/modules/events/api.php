@@ -118,6 +118,7 @@ function handle_list_events(array $events, array $salesByEvent): void
 {
     $rows = [];
     foreach ($events as $event) {
+        $event = events_apply_schedule($event);
         $id = (string) ($event['id'] ?? '');
         $metrics = $salesByEvent[$id] ?? ['tickets_sold' => 0, 'revenue' => 0];
         $start = $event['start'] ?? '';
@@ -130,6 +131,8 @@ function handle_list_events(array $events, array $salesByEvent): void
             'end' => $end,
             'image' => $event['image'] ?? '',
             'status' => $event['status'] ?? 'draft',
+            'publish_at' => $event['publish_at'] ?? '',
+            'unpublish_at' => $event['unpublish_at'] ?? '',
             'tickets_sold' => $metrics['tickets_sold'] ?? 0,
             'revenue' => $metrics['revenue'] ?? 0,
             'capacity' => events_ticket_capacity($event, true),
@@ -162,7 +165,7 @@ function handle_get_event(array $events): void
         respond_json(['error' => 'Event not found.'], 404);
     }
 
-    respond_json(['event' => $event]);
+    respond_json(['event' => events_apply_schedule($event)]);
 }
 
 function handle_save_event(array $events, array $categories): void
@@ -187,6 +190,8 @@ function handle_save_event(array $events, array $categories): void
         'start' => $payload['start'] ?? '',
         'end' => $payload['end'] ?? '',
         'status' => $payload['status'] ?? 'draft',
+        'publish_at' => $payload['publish_at'] ?? '',
+        'unpublish_at' => $payload['unpublish_at'] ?? '',
         'tickets' => $payload['tickets'] ?? [],
         'categories' => $payload['categories'] ?? [],
     ];

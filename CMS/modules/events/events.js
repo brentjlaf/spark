@@ -123,11 +123,15 @@
     };
 
     if (Array.isArray(initialPayload.events)) {
-        initialPayload.events.forEach((event) => {
-            if (event && event.id) {
-                state.events.set(String(event.id), event);
-            }
-        });
+        const normalizedEvents = initialPayload.events
+            .map((event) => {
+                storeEvent(event);
+                return normalizeEventRecord(event);
+            })
+            .filter((event) => event !== null);
+        if (normalizedEvents.length > 0) {
+            state.eventRows = normalizedEvents;
+        }
     }
     if (Array.isArray(initialPayload.categories)) {
         state.categories = sortCategories(initialPayload.categories);
@@ -384,6 +388,126 @@
             currency: 'USD',
             minimumFractionDigits: 2,
         }).format(Number(value || 0));
+    }
+
+    function getInputDateValue(value) {
+        if (!value) {
+            return '';
+        }
+        if (typeof value === 'string' && value.length >= 16 && value.includes('T')) {
+            return value.slice(0, 16);
+        }
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return '';
+        }
+        const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+        return local.toISOString().slice(0, 16);
+    }
+
+    function withSchedule(event) {
+        if (!event || typeof event !== 'object') {
+            return { status: 'draft', schedule_note: '', schedule_type: null };
+        }
+        const result = { ...event };
+        const now = Date.now();
+        const publishRaw = result.publish_at ?? '';
+        const unpublishRaw = result.unpublish_at ?? '';
+        const publishTime = publishRaw ? Date.parse(publishRaw) : Number.NaN;
+        const unpublishTime = unpublishRaw ? Date.parse(unpublishRaw) : Number.NaN;
+
+        let status = String(result.status || 'draft').toLowerCase();
+
+        if (!Number.isNaN(unpublishTime) && unpublishTime <= now) {
+            status = 'ended';
+        } else if (!Number.isNaN(publishTime) && publishTime <= now && status !== 'ended') {
+            status = 'published';
+        } else if (!Number.isNaN(publishTime) && publishTime > now && status === 'published') {
+            status = 'draft';
+        }
+
+        const upcoming = [];
+        if (status !== 'ended' && !Number.isNaN(publishTime) && publishTime > now) {
+            upcoming.push({ type: 'publish', time: publishTime });
+        }
+        if (status !== 'ended' && !Number.isNaN(unpublishTime) && unpublishTime > now) {
+            upcoming.push({ type: 'unpublish', time: unpublishTime });
+        }
+
+        upcoming.sort((a, b) => a.time - b.time);
+
+        let scheduleType = null;
+        let scheduleNote = '';
+        if (upcoming.length > 0) {
+            const nextChange = upcoming[0];
+            scheduleType = nextChange.type;
+            const label = formatDate(new Date(nextChange.time));
+            scheduleNote = nextChange.type === 'publish' ? `Publishes ${label}` : `Ends ${label}`;
+        }
+
+        result.status = status;
+        result.schedule_type = scheduleType;
+        result.schedule_note = scheduleNote;
+
+        return result;
+    }
+
+    function normalizeEventRecord(event) {
+        if (!event || typeof event !== 'object') {
+            return null;
+        }
+        const id = String(event.id ?? '').trim();
+        if (id === '') {
+            return null;
+        }
+        const base = {
+            ...event,
+            id,
+            title: event.title ?? 'Untitled Event',
+            location: event.location ?? '',
+            start: event.start ?? '',
+            end: event.end ?? '',
+            image: event.image ?? '',
+            status: String(event.status ?? 'draft').toLowerCase(),
+            publish_at: event.publish_at ?? '',
+            unpublish_at: event.unpublish_at ?? '',
+            categories: Array.isArray(event.categories) ? event.categories : [],
+            tickets_sold: Number(event.tickets_sold ?? 0) || 0,
+            revenue: Number(event.revenue ?? 0) || 0,
+            capacity: Number(event.capacity ?? 0) || 0,
+        };
+        return withSchedule(base);
+    }
+
+    function storeEvent(event) {
+        if (!event || typeof event !== 'object' || !event.id) {
+            return;
+        }
+        const id = String(event.id);
+        const existing = state.events.get(id) || {};
+        const merged = {
+            ...existing,
+            ...event,
+        };
+        merged.id = id;
+        if (!Array.isArray(merged.categories)) {
+            merged.categories = Array.isArray(event.categories)
+                ? event.categories
+                : Array.isArray(existing.categories)
+                ? existing.categories
+                : [];
+        }
+        if (!Array.isArray(merged.tickets)) {
+            merged.tickets = Array.isArray(event.tickets)
+                ? event.tickets
+                : Array.isArray(existing.tickets)
+                ? existing.tickets
+                : [];
+        }
+        merged.publish_at = merged.publish_at ?? '';
+        merged.unpublish_at = merged.unpublish_at ?? '';
+        merged.status = String(merged.status ?? 'draft').toLowerCase();
+        state.events.set(id, withSchedule(merged));
     }
 
     function normalizeUpcomingItem(item) {
@@ -1279,17 +1403,34 @@
             </td>
         `;
         const badgeCell = tr.querySelector('[data-status]');
-        badgeCell.appendChild(createStatusBadge(row.status));
+        const badge = createStatusBadge(row.status);
+        if (row.schedule_note) {
+            badge.title = row.schedule_note;
+            badgeCell.title = row.schedule_note;
+        }
+        badgeCell.appendChild(badge);
+        if (row.schedule_note) {
+            const note = document.createElement('div');
+            note.className = 'events-table-sub events-status-note';
+            note.textContent = row.schedule_note;
+            badgeCell.appendChild(note);
+        }
         return tr;
     }
 
     function applyEventFilters(rows) {
-        return rows.filter((row) => {
-            const matchesStatus = !state.filters.status || row.status === state.filters.status;
-            const term = state.filters.search.trim().toLowerCase();
-            const matchesSearch = !term || `${row.title} ${row.location}`.toLowerCase().includes(term);
-            return matchesStatus && matchesSearch;
+        const term = state.filters.search.trim().toLowerCase();
+        const filtered = [];
+        rows.forEach((row) => {
+            const derived = withSchedule(row);
+            const matchesStatus = !state.filters.status || derived.status === state.filters.status;
+            const matchesSearch =
+                !term || `${derived.title} ${derived.location}`.toLowerCase().includes(term);
+            if (matchesStatus && matchesSearch) {
+                filtered.push(derived);
+            }
         });
+        return filtered;
     }
 
     function renderEventsTable() {
@@ -2143,9 +2284,27 @@
                 imageInput.value = eventData?.image || '';
             }
         }
-        form.querySelector('[name="start"]').value = eventData?.start ? eventData.start.substring(0, 16) : '';
-        form.querySelector('[name="end"]').value = eventData?.end ? eventData.end.substring(0, 16) : '';
-        form.querySelector(`[name="status"][value="${eventData?.status || 'draft'}"]`).checked = true;
+        const startInput = form.querySelector('[name="start"]');
+        if (startInput) {
+            startInput.value = getInputDateValue(eventData?.start);
+        }
+        const endInput = form.querySelector('[name="end"]');
+        if (endInput) {
+            endInput.value = getInputDateValue(eventData?.end);
+        }
+        const statusValue = eventData?.status || 'draft';
+        const statusInput = form.querySelector(`[name="status"][value="${statusValue}"]`);
+        if (statusInput) {
+            statusInput.checked = true;
+        }
+        const publishInput = form.querySelector('[name="publish_at"]');
+        if (publishInput) {
+            publishInput.value = getInputDateValue(eventData?.publish_at);
+        }
+        const unpublishInput = form.querySelector('[name="unpublish_at"]');
+        if (unpublishInput) {
+            unpublishInput.value = getInputDateValue(eventData?.unpublish_at);
+        }
         const editor = form.querySelector('[data-events-editor]');
         const target = form.querySelector('[data-events-editor-target]');
         if (editor && target) {
@@ -2232,6 +2391,12 @@
         if (typeof payload.buyer_phone === 'string') {
             payload.buyer_phone = payload.buyer_phone.trim();
         }
+        if (typeof payload.publish_at === 'string') {
+            payload.publish_at = payload.publish_at.trim();
+        }
+        if (typeof payload.unpublish_at === 'string') {
+            payload.unpublish_at = payload.unpublish_at.trim();
+        }
         return payload;
     }
 
@@ -2273,7 +2438,7 @@
             return fetchJSON('save_event', { method: 'POST', body: payload })
                 .then((response) => {
                     if (response?.event?.id) {
-                        state.events.set(response.event.id, response.event);
+                        storeEvent(response.event);
                     }
                     closeModal(selectors.modal);
                     showToast('Event saved successfully.');
@@ -2311,7 +2476,11 @@
         if (eventId) {
             fetchJSON('get_event', { params: { id: eventId } })
                 .then((response) => {
-                    fillEventForm(response.event || {});
+                    const event = response.event ? withSchedule(response.event) : {};
+                    if (event.id) {
+                        storeEvent(event);
+                    }
+                    fillEventForm(event);
                     openModal(modal.closest('.events-modal-backdrop'));
                 })
                 .catch(() => {
@@ -2364,14 +2533,12 @@
     function refreshEvents() {
         return fetchJSON('list_events')
             .then((response) => {
-                state.eventRows = Array.isArray(response.events) ? response.events : [];
-                response.events.forEach((row) => {
-                    const existing = state.events.get(row.id);
-                    if (existing) {
-                        existing.status = row.status;
-                        existing.categories = Array.isArray(row.categories) ? row.categories : [];
-                        existing.image = row.image || '';
-                    }
+                const rows = Array.isArray(response.events) ? response.events : [];
+                state.eventRows = rows
+                    .map((row) => normalizeEventRecord(row))
+                    .filter((row) => row !== null);
+                rows.forEach((row) => {
+                    storeEvent(row);
                 });
                 renderEventsTable();
                 populateEventSelect(selectors.orders.filterEvent);

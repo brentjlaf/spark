@@ -399,7 +399,8 @@ $initialPayload = [
                         </button>
                     </fieldset>
                     <fieldset class="events-form-field">
-                        <legend>Status</legend>
+                        <legend>Status &amp; scheduling</legend>
+                        <p class="events-form-help">Choose the visibility state and optionally automate when it changes.</p>
                         <label class="events-radio">
                             <input type="radio" name="status" value="draft" checked>
                             <span>Save as draft</span>
@@ -408,6 +409,16 @@ $initialPayload = [
                             <input type="radio" name="status" value="published">
                             <span>Publish now</span>
                         </label>
+                        <div class="events-schedule-fields">
+                            <label class="events-schedule-field">
+                                <span>Publish at (optional)</span>
+                                <input type="datetime-local" name="publish_at">
+                            </label>
+                            <label class="events-schedule-field">
+                                <span>Unpublish at (optional)</span>
+                                <input type="datetime-local" name="unpublish_at">
+                            </label>
+                        </div>
                     </fieldset>
                 </div>
 
