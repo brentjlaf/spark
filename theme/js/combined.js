@@ -805,11 +805,55 @@
       item.appendChild(dateWrap);
     }
 
+    var linkUrl = resolveEventDetailUrl(options.detailBase, event.raw);
+
+    var media = document.createElement('div');
+    media.className = 'events-block__media';
+    var imageSource = event.raw.image || event.image;
+    if (typeof imageSource === 'string' && imageSource.trim() !== '') {
+      var image = document.createElement('img');
+      image.className = 'events-block__image';
+      image.loading = 'lazy';
+      image.src = imageSource;
+      var altText =
+        event.raw.imageAlt ||
+        event.raw.image_alt ||
+        event.imageAlt ||
+        event.image_alt ||
+        '';
+      if (!altText) {
+        if (event.raw.title) {
+          altText = event.raw.title + ' event image';
+        } else {
+          altText = 'Event image';
+        }
+      }
+      image.alt = altText;
+      if (linkUrl) {
+        var mediaLink = document.createElement('a');
+        mediaLink.className = 'events-block__media-link';
+        mediaLink.href = linkUrl;
+        mediaLink.appendChild(image);
+        media.appendChild(mediaLink);
+      } else {
+        media.appendChild(image);
+      }
+      item.classList.add('events-block__item--has-image');
+    } else {
+      media.classList.add('events-block__media--fallback');
+      media.setAttribute('aria-hidden', 'true');
+      var fallback = document.createElement('span');
+      fallback.className = 'events-block__media-fallback';
+      fallback.textContent = 'Event image coming soon';
+      media.appendChild(fallback);
+      item.classList.add('events-block__item--no-image');
+    }
+    item.appendChild(media);
+
     var body = document.createElement('div');
     body.className = 'events-block__body';
     var title = document.createElement('h3');
     title.className = 'events-block__title';
-    var linkUrl = resolveEventDetailUrl(options.detailBase, event.raw);
     if (linkUrl) {
       var link = document.createElement('a');
       link.className = 'events-block__title-link';
