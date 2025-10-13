@@ -22,12 +22,25 @@ $totalEvents = count($events);
 $totalTicketsSold = array_sum(array_column($salesByEvent, 'tickets_sold'));
 $totalRevenue = array_sum(array_column($salesByEvent, 'revenue'));
 $upcoming = array_slice(events_filter_upcoming($events), 0, 5);
+$upcomingPreview = [];
+foreach ($upcoming as $event) {
+    $id = (string) ($event['id'] ?? '');
+    $metrics = $salesByEvent[$id] ?? ['tickets_sold' => 0, 'revenue' => 0];
+    $upcomingPreview[] = [
+        'id' => $id,
+        'title' => $event['title'] ?? 'Untitled event',
+        'start' => $event['start'] ?? '',
+        'tickets_sold' => (int) ($metrics['tickets_sold'] ?? 0),
+        'revenue' => (float) ($metrics['revenue'] ?? 0),
+    ];
+}
 
 $initialPayload = [
     'events' => $events,
     'orders' => $orderSummaries,
     'sales' => $salesByEvent,
     'categories' => $categories,
+    'upcoming' => $upcomingPreview,
 ];
 ?>
 <div class="content-section" id="events">
@@ -81,29 +94,69 @@ $initialPayload = [
                 </div>
             </header>
             <div class="events-upcoming">
-                <?php if (empty($upcoming)): ?>
-                    <p class="events-empty">No upcoming events scheduled. Create one to get started.</p>
-                <?php else: ?>
-                    <ul class="events-upcoming-list" data-events-upcoming>
-                        <?php foreach ($upcoming as $event):
-                            $id = (string) ($event['id'] ?? '');
-                            $metrics = $salesByEvent[$id] ?? ['tickets_sold' => 0, 'revenue' => 0];
-                            $timestamp = isset($event['start']) ? strtotime((string) $event['start']) : false;
-                            $dateLabel = $timestamp ? date('M j, Y g:i A', $timestamp) : 'Date TBD';
-                        ?>
-                        <li class="events-upcoming-item" data-event-id="<?php echo htmlspecialchars($id, ENT_QUOTES, 'UTF-8'); ?>">
-                            <div class="events-upcoming-primary">
-                                <span class="events-upcoming-title"><?php echo htmlspecialchars($event['title'] ?? 'Untitled event', ENT_QUOTES, 'UTF-8'); ?></span>
-                                <span class="events-upcoming-date"><?php echo htmlspecialchars($dateLabel, ENT_QUOTES, 'UTF-8'); ?></span>
+                <div class="events-upcoming-toolbar">
+                    <div class="events-view-toggle" role="group" aria-label="Upcoming events view">
+                        <button type="button" class="events-view-toggle-btn is-active" data-events-upcoming-view="list" aria-pressed="true">
+                            <i class="fa-solid fa-list" aria-hidden="true"></i>
+                            <span>List view</span>
+                        </button>
+                        <button type="button" class="events-view-toggle-btn" data-events-upcoming-view="calendar" aria-pressed="false">
+                            <i class="fa-solid fa-calendar" aria-hidden="true"></i>
+                            <span>Calendar view</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="events-upcoming-views" data-events-upcoming-views>
+                    <div class="events-upcoming-panel is-active" data-events-upcoming-panel="list">
+                        <ul class="events-upcoming-list" data-events-upcoming-list>
+                            <?php if (empty($upcomingPreview)): ?>
+                                <li class="events-empty">No upcoming events scheduled. Create one to get started.</li>
+                            <?php else: ?>
+                                <?php foreach ($upcomingPreview as $event):
+                                    $timestamp = isset($event['start']) ? strtotime((string) $event['start']) : false;
+                                    $dateLabel = $timestamp ? date('M j, Y g:i A', $timestamp) : 'Date TBD';
+                                ?>
+                                <li class="events-upcoming-item" data-event-id="<?php echo htmlspecialchars($event['id'], ENT_QUOTES, 'UTF-8'); ?>">
+                                    <div class="events-upcoming-primary">
+                                        <span class="events-upcoming-title"><?php echo htmlspecialchars($event['title'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                        <span class="events-upcoming-date"><?php echo htmlspecialchars($dateLabel, ENT_QUOTES, 'UTF-8'); ?></span>
+                                    </div>
+                                    <div class="events-upcoming-meta">
+                                        <span class="events-upcoming-stat" data-label="Tickets sold"><?php echo (int) $event['tickets_sold']; ?></span>
+                                        <span class="events-upcoming-stat" data-label="Revenue"><?php echo events_format_currency((float) $event['revenue']); ?></span>
+                                    </div>
+                                </li>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </ul>
+                    </div>
+                    <div class="events-upcoming-panel" data-events-upcoming-panel="calendar" hidden>
+                        <div class="events-calendar" data-events-calendar>
+                            <div class="events-calendar-header">
+                                <button type="button" class="events-calendar-nav" data-events-calendar-nav="prev">
+                                    <span class="sr-only">Previous month</span>
+                                    <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                                </button>
+                                <div class="events-calendar-label" data-events-calendar-label><?php echo date('F Y'); ?></div>
+                                <button type="button" class="events-calendar-nav" data-events-calendar-nav="next">
+                                    <span class="sr-only">Next month</span>
+                                    <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                                </button>
                             </div>
-                            <div class="events-upcoming-meta">
-                                <span class="events-upcoming-stat" data-label="Tickets sold"><?php echo (int) ($metrics['tickets_sold'] ?? 0); ?></span>
-                                <span class="events-upcoming-stat" data-label="Revenue"><?php echo events_format_currency((float) ($metrics['revenue'] ?? 0)); ?></span>
+                            <div class="events-calendar-weekdays">
+                                <span>Sun</span>
+                                <span>Mon</span>
+                                <span>Tue</span>
+                                <span>Wed</span>
+                                <span>Thu</span>
+                                <span>Fri</span>
+                                <span>Sat</span>
                             </div>
-                        </li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php endif; ?>
+                            <div class="events-calendar-grid" data-events-calendar-grid></div>
+                            <p class="events-calendar-empty events-empty" data-events-calendar-empty<?php echo empty($upcomingPreview) ? '' : ' hidden'; ?>>No upcoming events scheduled. Create one to get started.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 

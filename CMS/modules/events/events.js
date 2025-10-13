@@ -20,7 +20,19 @@
             tickets: root.querySelector('[data-events-stat="tickets"]'),
             revenue: root.querySelector('[data-events-stat="revenue"]'),
         },
-        upcoming: root.querySelector('[data-events-upcoming]'),
+        upcoming: {
+            list: root.querySelector('[data-events-upcoming-list]'),
+            viewButtons: Array.from(root.querySelectorAll('[data-events-upcoming-view]')),
+            panels: Array.from(root.querySelectorAll('[data-events-upcoming-panel]')),
+            calendar: {
+                container: root.querySelector('[data-events-calendar]'),
+                label: root.querySelector('[data-events-calendar-label]'),
+                grid: root.querySelector('[data-events-calendar-grid]'),
+                prev: root.querySelector('[data-events-calendar-nav="prev"]'),
+                next: root.querySelector('[data-events-calendar-nav="next"]'),
+                empty: root.querySelector('[data-events-calendar-empty]'),
+            },
+        },
         tableBody: root.querySelector('[data-events-table]'),
         filters: {
             status: root.querySelector('[data-events-filter="status"]'),
@@ -84,6 +96,11 @@
         orders: [],
         salesSummary: [],
         categories: [],
+        upcoming: [],
+        upcomingView: 'list',
+        calendar: {
+            currentMonth: null,
+        },
         filters: {
             status: '',
             search: '',
@@ -131,7 +148,15 @@
             .filter((order) => order !== null);
     }
 
+    if (Array.isArray(initialPayload.upcoming)) {
+        state.upcoming = initialPayload.upcoming
+            .map((item) => normalizeUpcomingItem(item))
+            .filter((item) => item !== null);
+    }
+
     initializeTabs();
+    initializeUpcoming();
+    renderUpcoming(state.upcoming);
 
     function initializeTabs() {
         const tabButtons = selectors.tabs.buttons;
@@ -243,6 +268,99 @@
         activate(activeId);
     }
 
+    function initializeUpcoming() {
+        const upcomingSelectors = selectors.upcoming;
+        if (!upcomingSelectors) {
+            return;
+        }
+
+        const { viewButtons, panels, calendar } = upcomingSelectors;
+
+        if (Array.isArray(viewButtons) && viewButtons.length > 0 && Array.isArray(panels) && panels.length > 0) {
+            setUpcomingView(state.upcomingView);
+
+            viewButtons.forEach((button) => {
+                button.addEventListener('click', () => {
+                    const targetView = button.dataset.eventsUpcomingView || 'list';
+                    if (state.upcomingView !== targetView) {
+                        setUpcomingView(targetView);
+                    }
+                });
+
+                button.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+                        event.preventDefault();
+                        const targetView = button.dataset.eventsUpcomingView || 'list';
+                        if (state.upcomingView !== targetView) {
+                            setUpcomingView(targetView);
+                        }
+                    }
+                });
+            });
+        }
+
+        if (calendar?.prev) {
+            calendar.prev.addEventListener('click', () => {
+                changeCalendarMonth(-1);
+            });
+        }
+
+        if (calendar?.next) {
+            calendar.next.addEventListener('click', () => {
+                changeCalendarMonth(1);
+            });
+        }
+    }
+
+    function setUpcomingView(view) {
+        const upcomingSelectors = selectors.upcoming;
+        if (!upcomingSelectors) {
+            state.upcomingView = view;
+            return;
+        }
+
+        const { viewButtons = [], panels = [] } = upcomingSelectors;
+        state.upcomingView = view;
+
+        viewButtons.forEach((button) => {
+            const isActive = (button.dataset.eventsUpcomingView || 'list') === view;
+            button.classList.toggle('is-active', isActive);
+            button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+
+        panels.forEach((panel) => {
+            const isActive = (panel.dataset.eventsUpcomingPanel || 'list') === view;
+            panel.classList.toggle('is-active', isActive);
+            panel.hidden = !isActive;
+        });
+
+        if (view === 'calendar') {
+            renderUpcomingCalendar();
+        }
+    }
+
+    function changeCalendarMonth(offset) {
+        const todayMonth = startOfMonth(new Date());
+        const currentMonth = state.calendar.currentMonth ? startOfMonth(state.calendar.currentMonth) : todayMonth;
+        let target = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + offset, 1);
+        const latestMonth = getLatestEventMonth();
+
+        if (offset < 0 && target < todayMonth) {
+            target = todayMonth;
+        }
+
+        if (offset > 0 && latestMonth && target > latestMonth) {
+            target = startOfMonth(latestMonth);
+        }
+
+        if (offset > 0 && !latestMonth) {
+            target = todayMonth;
+        }
+
+        state.calendar.currentMonth = startOfMonth(target);
+        renderUpcomingCalendar();
+    }
+
     function formatDate(value) {
         if (!value) {
             return 'Date TBD';
@@ -266,6 +384,119 @@
             currency: 'USD',
             minimumFractionDigits: 2,
         }).format(Number(value || 0));
+    }
+
+    function normalizeUpcomingItem(item) {
+        if (!item || typeof item !== 'object') {
+            return null;
+        }
+
+        return {
+            id: String(item.id ?? ''),
+            title: item.title ?? 'Untitled event',
+            start: item.start ?? '',
+            tickets_sold: Number.parseInt(item.tickets_sold ?? 0, 10) || 0,
+            revenue: Number(item.revenue ?? 0) || 0,
+        };
+    }
+
+    function parseDateValue(value) {
+        if (!value) {
+            return null;
+        }
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return null;
+        }
+        return date;
+    }
+
+    function startOfMonth(date) {
+        const reference = date instanceof Date ? date : new Date(date);
+        if (Number.isNaN(reference.getTime())) {
+            const fallback = new Date();
+            return new Date(fallback.getFullYear(), fallback.getMonth(), 1);
+        }
+        return new Date(reference.getFullYear(), reference.getMonth(), 1);
+    }
+
+    function formatMonthLabel(date) {
+        if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+            return '';
+        }
+        return new Intl.DateTimeFormat('en-US', {
+            month: 'long',
+            year: 'numeric',
+        }).format(date);
+    }
+
+    function formatTimeLabel(value) {
+        const date = parseDateValue(value);
+        if (!date) {
+            return '';
+        }
+        return new Intl.DateTimeFormat('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+        }).format(date);
+    }
+
+    function formatDateKey(date) {
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${date.getFullYear()}-${month}-${day}`;
+    }
+
+    function compareUpcomingByStart(a, b) {
+        const dateA = parseDateValue(a?.start);
+        const dateB = parseDateValue(b?.start);
+        if (!dateA && !dateB) {
+            return 0;
+        }
+        if (!dateA) {
+            return 1;
+        }
+        if (!dateB) {
+            return -1;
+        }
+        return dateA.getTime() - dateB.getTime();
+    }
+
+    function getEarliestEventMonth(list = state.upcoming) {
+        let earliest = null;
+        list.forEach((item) => {
+            const date = parseDateValue(item.start);
+            if (!date) {
+                return;
+            }
+            const month = startOfMonth(date);
+            if (!earliest || month.getTime() < earliest.getTime()) {
+                earliest = month;
+            }
+        });
+        return earliest;
+    }
+
+    function getLatestEventMonth(list = state.upcoming) {
+        let latest = null;
+        list.forEach((item) => {
+            const date = parseDateValue(item.start);
+            if (!date) {
+                return;
+            }
+            const month = startOfMonth(date);
+            if (!latest || month.getTime() > latest.getTime()) {
+                latest = month;
+            }
+        });
+        return latest;
+    }
+
+    function isSameMonth(dateA, dateB) {
+        if (!(dateA instanceof Date) || !(dateB instanceof Date)) {
+            return false;
+        }
+        return dateA.getFullYear() === dateB.getFullYear() && dateA.getMonth() === dateB.getMonth();
     }
 
     function toLocalDateTimeInput(value) {
@@ -783,33 +1014,206 @@
     }
 
     function renderUpcoming(list) {
-        if (!selectors.upcoming) {
+        const normalized = Array.isArray(list)
+            ? list.map((item) => normalizeUpcomingItem(item)).filter((item) => item !== null)
+            : [];
+
+        state.upcoming = normalized;
+        const todayMonth = startOfMonth(new Date());
+        const earliestMonth = getEarliestEventMonth(normalized);
+        const latestMonth = getLatestEventMonth(normalized);
+
+        if (!state.calendar.currentMonth) {
+            state.calendar.currentMonth = earliestMonth ? startOfMonth(earliestMonth) : todayMonth;
+        } else {
+            state.calendar.currentMonth = startOfMonth(state.calendar.currentMonth);
+            if (state.calendar.currentMonth.getTime() < todayMonth.getTime()) {
+                state.calendar.currentMonth = todayMonth;
+            }
+            if (latestMonth && state.calendar.currentMonth.getTime() > latestMonth.getTime()) {
+                state.calendar.currentMonth = startOfMonth(latestMonth);
+            }
+        }
+
+        if (normalized.length > 0) {
+            const monthHasEvent = normalized.some((item) => {
+                const date = parseDateValue(item.start);
+                return date && isSameMonth(date, state.calendar.currentMonth);
+            });
+            if (!monthHasEvent && earliestMonth) {
+                state.calendar.currentMonth = startOfMonth(earliestMonth);
+            }
+        } else {
+            state.calendar.currentMonth = todayMonth;
+        }
+
+        renderUpcomingList(normalized);
+        renderUpcomingCalendar();
+    }
+
+    function renderUpcomingList(list) {
+        const listElement = selectors.upcoming?.list;
+        if (!listElement) {
             return;
         }
-        selectors.upcoming.innerHTML = '';
+
+        listElement.innerHTML = '';
+
         if (!Array.isArray(list) || list.length === 0) {
             const li = document.createElement('li');
             li.className = 'events-empty';
             li.textContent = 'No upcoming events scheduled. Create one to get started.';
-            selectors.upcoming.appendChild(li);
+            listElement.appendChild(li);
             return;
         }
+
         list.forEach((item) => {
             const li = document.createElement('li');
             li.className = 'events-upcoming-item';
-            li.dataset.eventId = item.id;
-            li.innerHTML = `
-                <div class="events-upcoming-primary">
-                    <span class="events-upcoming-title">${item.title || 'Untitled event'}</span>
-                    <span class="events-upcoming-date">${formatDate(item.start)}</span>
-                </div>
-                <div class="events-upcoming-meta">
-                    <span class="events-upcoming-stat" data-label="Tickets sold">${item.tickets_sold ?? 0}</span>
-                    <span class="events-upcoming-stat" data-label="Revenue">${formatCurrency(item.revenue ?? 0)}</span>
-                </div>
-            `;
-            selectors.upcoming.appendChild(li);
+            li.dataset.eventId = item.id || '';
+
+            const primary = document.createElement('div');
+            primary.className = 'events-upcoming-primary';
+
+            const title = document.createElement('span');
+            title.className = 'events-upcoming-title';
+            title.textContent = item.title || 'Untitled event';
+            primary.appendChild(title);
+
+            const date = document.createElement('span');
+            date.className = 'events-upcoming-date';
+            date.textContent = formatDate(item.start);
+            primary.appendChild(date);
+
+            const meta = document.createElement('div');
+            meta.className = 'events-upcoming-meta';
+
+            const tickets = document.createElement('span');
+            tickets.className = 'events-upcoming-stat';
+            tickets.dataset.label = 'Tickets sold';
+            tickets.textContent = String(item.tickets_sold ?? 0);
+            meta.appendChild(tickets);
+
+            const revenue = document.createElement('span');
+            revenue.className = 'events-upcoming-stat';
+            revenue.dataset.label = 'Revenue';
+            revenue.textContent = formatCurrency(item.revenue ?? 0);
+            meta.appendChild(revenue);
+
+            li.appendChild(primary);
+            li.appendChild(meta);
+            listElement.appendChild(li);
         });
+    }
+
+    function renderUpcomingCalendar() {
+        const calendarSelectors = selectors.upcoming?.calendar;
+        if (!calendarSelectors || !calendarSelectors.grid) {
+            return;
+        }
+
+        const todayMonth = startOfMonth(new Date());
+        const monthDate = state.calendar.currentMonth ? startOfMonth(state.calendar.currentMonth) : todayMonth;
+        state.calendar.currentMonth = monthDate;
+
+        if (calendarSelectors.label) {
+            calendarSelectors.label.textContent = formatMonthLabel(monthDate);
+        }
+
+        if (calendarSelectors.empty) {
+            calendarSelectors.empty.hidden = state.upcoming.length > 0;
+        }
+
+        const eventsByDay = new Map();
+        state.upcoming.forEach((event) => {
+            const date = parseDateValue(event.start);
+            if (!date) {
+                return;
+            }
+            const key = formatDateKey(date);
+            if (eventsByDay.has(key)) {
+                eventsByDay.get(key).push(event);
+            } else {
+                eventsByDay.set(key, [event]);
+            }
+        });
+
+        const firstOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+        const startDay = firstOfMonth.getDay();
+        const daysInMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate();
+        const totalCells = Math.ceil((startDay + daysInMonth) / 7) * 7;
+
+        calendarSelectors.grid.innerHTML = '';
+
+        for (let index = 0; index < totalCells; index += 1) {
+            const dayNumber = index - startDay + 1;
+            const cell = document.createElement('div');
+            cell.className = 'events-calendar-day';
+
+            if (dayNumber < 1 || dayNumber > daysInMonth) {
+                cell.classList.add('is-muted');
+                calendarSelectors.grid.appendChild(cell);
+                continue;
+            }
+
+            const cellDate = new Date(monthDate.getFullYear(), monthDate.getMonth(), dayNumber);
+            const key = formatDateKey(cellDate);
+            cell.dataset.date = key;
+
+            const dateLabel = document.createElement('div');
+            dateLabel.className = 'events-calendar-date';
+            dateLabel.textContent = String(dayNumber);
+            cell.appendChild(dateLabel);
+
+            const dayEvents = eventsByDay.has(key)
+                ? eventsByDay.get(key).slice().sort(compareUpcomingByStart)
+                : [];
+
+            if (dayEvents.length > 0) {
+                cell.classList.add('has-events');
+                const listElement = document.createElement('ul');
+                listElement.className = 'events-calendar-events';
+
+                dayEvents.forEach((event) => {
+                    const item = document.createElement('li');
+                    item.className = 'events-calendar-event';
+                    item.dataset.eventId = event.id || '';
+
+                    const timeLabel = formatTimeLabel(event.start);
+                    if (timeLabel) {
+                        const timeSpan = document.createElement('span');
+                        timeSpan.className = 'events-calendar-event-time';
+                        timeSpan.textContent = timeLabel;
+                        item.appendChild(timeSpan);
+                    }
+
+                    const titleSpan = document.createElement('span');
+                    titleSpan.className = 'events-calendar-event-title';
+                    titleSpan.textContent = event.title || 'Untitled event';
+                    item.appendChild(titleSpan);
+
+                    listElement.appendChild(item);
+                });
+
+                cell.appendChild(listElement);
+            }
+
+            calendarSelectors.grid.appendChild(cell);
+        }
+
+        if (calendarSelectors.prev) {
+            const disablePrev = monthDate.getTime() <= todayMonth.getTime();
+            calendarSelectors.prev.disabled = disablePrev;
+        }
+
+        if (calendarSelectors.next) {
+            const latestMonth = getLatestEventMonth();
+            if (latestMonth) {
+                calendarSelectors.next.disabled = monthDate.getTime() >= latestMonth.getTime();
+            } else {
+                calendarSelectors.next.disabled = true;
+            }
+        }
     }
 
     function createStatusBadge(status) {
@@ -1936,10 +2340,7 @@
                     total_tickets_sold: response.stats?.total_tickets_sold,
                     total_revenue: response.stats?.total_revenue,
                 });
-                const upcoming = (response.upcoming || []).map((item) => ({
-                    ...item,
-                    revenue: item.revenue,
-                }));
+                const upcoming = Array.isArray(response.upcoming) ? response.upcoming : [];
                 renderUpcoming(upcoming);
             })
             .catch(() => {
