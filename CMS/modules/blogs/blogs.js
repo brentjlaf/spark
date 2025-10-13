@@ -63,6 +63,37 @@ $(document).ready(function(){
         categories = Array.from(unique).sort((a,b)=>a.localeCompare(b));
     }
 
+    function recalculateNextPostId(){
+        const maxId = posts.reduce((max, post) => {
+            const id = parseInt(post.id, 10);
+            return Number.isNaN(id) ? max : Math.max(max, id);
+        }, 0);
+        nextPostId = maxId + 1;
+    }
+
+    function sendJsonRequest(url, options, defaultErrorMessage){
+        return fetch(url, options).then(response => {
+            return response.text().then(text => {
+                const trimmedText = (text || '').trim();
+                let data = null;
+                if(trimmedText){
+                    try{
+                        data = JSON.parse(trimmedText);
+                    }catch(parseError){
+                        if(response.ok){
+                            throw new Error(defaultErrorMessage);
+                        }
+                    }
+                }
+                if(response.ok){
+                    return data === null ? {} : data;
+                }
+                const message = data && data.error ? data.error : (trimmedText || defaultErrorMessage);
+                throw new Error(message || defaultErrorMessage);
+            });
+        });
+    }
+
     function loadPostsFromServer(){
         if(isLoadingPosts){
             return;
@@ -75,11 +106,7 @@ $(document).ready(function(){
                 if(Array.isArray(data)){
                     postsLoadError = false;
                     posts = data.map(normalizePostFromServer);
-                    const maxId = posts.reduce((max, post) => {
-                        const id = parseInt(post.id, 10);
-                        return Number.isNaN(id) ? max : Math.max(max, id);
-                    }, 0);
-                    nextPostId = maxId + 1;
+                    recalculateNextPostId();
                     refreshCategoriesFromPosts();
                     updateStats();
                     populateFilters();
@@ -89,6 +116,7 @@ $(document).ready(function(){
                     postsLoadError = false;
                     posts = [];
                     refreshCategoriesFromPosts();
+                    recalculateNextPostId();
                     updateStats();
                     populateFilters();
                     renderTableMessage('No blog posts found.', { countLabel: 'Showing 0 posts' });
@@ -99,6 +127,7 @@ $(document).ready(function(){
                 postsLoadError = true;
                 posts = [];
                 refreshCategoriesFromPosts();
+                recalculateNextPostId();
                 updateStats();
                 populateFilters();
                 renderTableMessage('Unable to load blog posts. Please try again later.', { isError: true, countLabel: 'Showing 0 posts' });
@@ -829,52 +858,95 @@ $(document).ready(function(){
 
     function deletePost(id){
         confirmModal('Are you sure you want to delete this post?').then(ok => {
-            if(ok){
+            if(!ok){
+                return;
+            }
+            sendJsonRequest(resolveCmsPath('modules/blogs/delete_post.php'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id })
+            }, 'Failed to delete post.')
+            .then(() => {
                 posts = posts.filter(p=>p.id!==id);
                 refreshCategoriesFromPosts();
                 populateFilters();
+                recalculateNextPostId();
                 renderPosts();
                 updateStats();
                 renderCategories();
-            }
+            })
+            .catch(err => {
+                console.error(err);
+                alert(err.message || 'Failed to delete post.');
+            });
         });
     }
 
     function savePost(){
-        const formData = new FormData($('#postForm')[0]);
+        const form = $('#postForm')[0];
+        if(!form){
+            console.error('Post form element not found.');
+            return;
+        }
+        const isValid = typeof form.checkValidity === 'function' ? form.checkValidity() : true;
+        if(!isValid){
+            if(typeof form.reportValidity === 'function'){
+                form.reportValidity();
+            }
+            return;
+        }
+        const formData = new FormData(form);
         const imageUrl = normalizeImageValue(formData.get('image'));
         const imageAlt = (formData.get('imageAlt') || '').trim();
+        const publishDateValue = formData.get('publishDate');
+        const tagsValue = formData.get('tags');
         const data = {
-            title: formData.get('title'),
-            slug: formData.get('slug'),
-            excerpt: formData.get('excerpt'),
+            title: (formData.get('title') || '').toString().trim(),
+            slug: (formData.get('slug') || '').toString().trim(),
+            excerpt: (formData.get('excerpt') || '').toString().trim(),
             content: $('#postContent').html(),
-            category: formData.get('category'),
-            author: formData.get('author'),
-            status: formData.get('status'),
-            tags: formData.get('tags'),
-            publishDate: formData.get('publishDate'),
+            category: (formData.get('category') || '').toString().trim(),
+            author: (formData.get('author') || '').toString().trim(),
+            status: (formData.get('status') || '').toString().trim(),
+            tags: tagsValue == null ? '' : tagsValue.toString(),
+            publishDate: publishDateValue ? publishDateValue.toString().trim() : '',
             image: imageUrl,
             imageAlt
         };
-        if(data.status === 'published' && !data.publishDate){
-            data.publishDate = new Date().toISOString();
-        }
         const id = $('#postId').val();
         if(id){
-            const idx = posts.findIndex(p=>p.id===parseInt(id));
-            posts[idx] = {...posts[idx], ...data};
-        } else {
-            data.id = nextPostId++;
-            data.createdAt = new Date().toISOString();
-            posts.push(data);
+            data.id = parseInt(id, 10);
         }
-        refreshCategoriesFromPosts();
-        populateFilters();
-        closeModal('postModal');
-        renderPosts();
-        updateStats();
-        renderCategories();
+
+        sendJsonRequest(resolveCmsPath('modules/blogs/save_post.php'), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        }, 'Failed to save post.')
+        .then(saved => {
+            const normalized = normalizePostFromServer(saved);
+            const existingIndex = posts.findIndex(p=>p.id===normalized.id);
+            if(existingIndex !== -1){
+                posts[existingIndex] = Object.assign({}, posts[existingIndex], normalized);
+            } else {
+                posts.push(normalized);
+            }
+            refreshCategoriesFromPosts();
+            populateFilters();
+            recalculateNextPostId();
+            closeModal('postModal');
+            renderPosts();
+            updateStats();
+            renderCategories();
+        })
+        .catch(err => {
+            console.error(err);
+            alert(err.message || 'Failed to save post.');
+        });
     }
 
     function publishPost(id){
@@ -882,19 +954,30 @@ $(document).ready(function(){
         if(!post) return;
         confirmModal('Publish this post now?').then(ok => {
             if(!ok) return;
-            post.status = 'published';
-            const now = new Date();
-            const nowIso = now.toISOString();
-            if(!post.publishDate){
-                post.publishDate = nowIso;
-            } else {
-                const currentDate = new Date(post.publishDate);
-                if(Number.isNaN(currentDate.getTime()) || currentDate > now){
-                    post.publishDate = nowIso;
+            sendJsonRequest(resolveCmsPath('modules/blogs/publish_post.php'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id })
+            }, 'Failed to publish post.')
+            .then(updated => {
+                const normalized = normalizePostFromServer(updated);
+                const existingIndex = posts.findIndex(p=>p.id===normalized.id);
+                if(existingIndex !== -1){
+                    posts[existingIndex] = Object.assign({}, posts[existingIndex], normalized);
+                } else {
+                    posts.push(normalized);
                 }
-            }
-            renderPosts();
-            updateStats();
+                refreshCategoriesFromPosts();
+                recalculateNextPostId();
+                renderPosts();
+                updateStats();
+            })
+            .catch(err => {
+                console.error(err);
+                alert(err.message || 'Failed to publish post.');
+            });
         });
     }
 
