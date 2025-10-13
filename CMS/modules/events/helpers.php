@@ -10,7 +10,31 @@ if (!function_exists('events_data_paths')) {
             'events' => $baseDir . '/events.json',
             'orders' => $baseDir . '/event_orders.json',
             'categories' => $baseDir . '/event_categories.json',
-            'forms' => $baseDir . '/forms.json',
+            'forms' => $baseDir . '/event_forms.json',
+        ];
+    }
+}
+
+if (!function_exists('events_default_forms')) {
+    function events_default_forms(): array
+    {
+        return [
+            [
+                'id' => 'evt_form_registration',
+                'name' => 'Event registration',
+            ],
+            [
+                'id' => 'evt_form_vip_rsvp',
+                'name' => 'VIP RSVP',
+            ],
+            [
+                'id' => 'evt_form_webinar',
+                'name' => 'Webinar signup',
+            ],
+            [
+                'id' => 'evt_form_waitlist',
+                'name' => 'Waitlist request',
+            ],
         ];
     }
 }
@@ -19,9 +43,20 @@ if (!function_exists('events_ensure_storage')) {
     function events_ensure_storage(): void
     {
         $paths = events_data_paths();
-        foreach ($paths as $path) {
+        foreach ($paths as $key => $path) {
             if (!is_file($path)) {
+                if ($key === 'forms') {
+                    write_json_file($path, events_default_forms());
+                    continue;
+                }
                 file_put_contents($path, "[]\n");
+                continue;
+            }
+            if ($key === 'forms') {
+                $forms = read_json_file($path);
+                if (!is_array($forms) || empty($forms)) {
+                    write_json_file($path, events_default_forms());
+                }
             }
         }
     }
@@ -123,8 +158,8 @@ if (!function_exists('events_read_forms')) {
         events_ensure_storage();
         $paths = events_data_paths();
         $forms = read_json_file($paths['forms']);
-        if (!is_array($forms)) {
-            return [];
+        if (!is_array($forms) || empty($forms)) {
+            $forms = events_default_forms();
         }
         $normalized = [];
         foreach ($forms as $form) {
