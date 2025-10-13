@@ -133,9 +133,15 @@ function handle_list_events(array $events, array $salesByEvent): void
             'status' => $event['status'] ?? 'draft',
             'publish_at' => $event['publish_at'] ?? '',
             'unpublish_at' => $event['unpublish_at'] ?? '',
+            'form_id' => $event['form_id'] ?? '',
             'tickets_sold' => $metrics['tickets_sold'] ?? 0,
             'revenue' => $metrics['revenue'] ?? 0,
             'capacity' => events_ticket_capacity($event, true),
+            'net_revenue' => $metrics['net_revenue'] ?? 0,
+            'orders' => $metrics['orders'] ?? 0,
+            'paid_orders' => $metrics['paid_orders'] ?? 0,
+            'pending_orders' => $metrics['pending_orders'] ?? 0,
+            'sell_through_rate' => $metrics['sell_through_rate'] ?? 0,
             'categories' => array_values($event['categories'] ?? []),
         ];
     }
@@ -189,6 +195,7 @@ function handle_save_event(array $events, array $categories): void
         'image' => $payload['image'] ?? '',
         'start' => $payload['start'] ?? '',
         'end' => $payload['end'] ?? '',
+        'form_id' => $payload['form_id'] ?? '',
         'status' => $payload['status'] ?? 'draft',
         'publish_at' => $payload['publish_at'] ?? '',
         'unpublish_at' => $payload['unpublish_at'] ?? '',
@@ -347,6 +354,13 @@ function handle_reports_summary(array $events, array $orders, array $salesByEven
             'tickets_sold' => $metrics['tickets_sold'] ?? 0,
             'revenue' => $metrics['revenue'] ?? 0,
             'refunded' => $metrics['refunded'] ?? 0,
+            'net_revenue' => $metrics['net_revenue'] ?? 0,
+            'average_order' => $metrics['average_order'] ?? 0,
+            'orders' => $metrics['orders'] ?? 0,
+            'paid_orders' => $metrics['paid_orders'] ?? 0,
+            'pending_orders' => $metrics['pending_orders'] ?? 0,
+            'capacity' => events_ticket_capacity($event, true),
+            'sell_through_rate' => $metrics['sell_through_rate'] ?? 0,
             'status' => $event['status'] ?? 'draft',
         ];
     }

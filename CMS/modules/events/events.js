@@ -97,6 +97,7 @@
         salesSummary: [],
         categories: [],
         upcoming: [],
+        forms: [],
         upcomingView: 'list',
         calendar: {
             currentMonth: null,
@@ -122,6 +123,11 @@
         },
     };
 
+    if (Array.isArray(initialPayload.forms)) {
+        state.forms = initialPayload.forms
+            .map((form) => normalizeFormOption(form))
+            .filter((form) => form !== null);
+    }
     if (Array.isArray(initialPayload.events)) {
         const normalizedEvents = initialPayload.events
             .map((event) => {
@@ -137,14 +143,18 @@
         state.categories = sortCategories(initialPayload.categories);
     }
     if (initialPayload.sales && typeof initialPayload.sales === 'object') {
-        state.salesSummary = Object.entries(initialPayload.sales).map(([eventId, metrics]) => ({
-            event_id: eventId,
-            title: state.events.get(String(eventId))?.title || 'Event',
-            tickets_sold: metrics.tickets_sold ?? 0,
-            revenue: metrics.revenue ?? 0,
-            refunded: metrics.refunded ?? 0,
-            status: state.events.get(String(eventId))?.status || 'draft',
-        }));
+        state.salesSummary = Object.entries(initialPayload.sales)
+            .map(([eventId, metrics]) => {
+                const eventRecord = state.events.get(String(eventId));
+                return normalizeReportRow({
+                    event_id: eventId,
+                    title: eventRecord?.title || 'Event',
+                    status: eventRecord?.status || 'draft',
+                    capacity: eventRecord?.capacity ?? 0,
+                    ...metrics,
+                });
+            })
+            .filter((report) => report !== null);
     }
     if (Array.isArray(initialPayload.orders)) {
         state.orders = initialPayload.orders
@@ -390,6 +400,19 @@
         }).format(Number(value || 0));
     }
 
+    const percentageFormatter = new Intl.NumberFormat('en-US', {
+        style: 'percent',
+        maximumFractionDigits: 1,
+    });
+
+    function formatPercentage(value) {
+        const number = Number(value);
+        if (!Number.isFinite(number) || number <= 0) {
+            return '0%';
+        }
+        return percentageFormatter.format(Math.max(0, Math.min(1, number)));
+    }
+
     function getInputDateValue(value) {
         if (!value) {
             return '';
@@ -452,6 +475,65 @@
         return result;
     }
 
+    function normalizeFormOption(form) {
+        if (!form || typeof form !== 'object') {
+            return null;
+        }
+        const id = String(form.id ?? '').trim();
+        const name = String(form.name ?? '').trim();
+        if (id === '' || name === '') {
+            return null;
+        }
+        return { id, name };
+    }
+
+    function getFormName(formId) {
+        const id = String(formId ?? '').trim();
+        if (id === '') {
+            return '';
+        }
+        const match = state.forms.find((form) => form.id === id);
+        return match ? match.name : '';
+    }
+
+    function normalizeReportRow(report) {
+        if (!report || typeof report !== 'object') {
+            return null;
+        }
+        const eventId = String(report.event_id ?? '').trim();
+        const title = report.title ?? 'Event';
+        const ticketsSold = Number(report.tickets_sold ?? 0) || 0;
+        const revenue = Number(report.revenue ?? 0) || 0;
+        const refunded = Number(report.refunded ?? 0) || 0;
+        const capacity = Number(report.capacity ?? 0) || 0;
+        const netRevenue = Number(report.net_revenue ?? report.netRevenue ?? revenue - refunded) || 0;
+        const averageOrder = Number(report.average_order ?? report.averageOrder ?? 0) || 0;
+        const orders = Number(report.orders ?? 0) || 0;
+        const paidOrders = Number(report.paid_orders ?? report.paidOrders ?? 0) || 0;
+        const pendingOrders = Number(report.pending_orders ?? report.pendingOrders ?? 0) || 0;
+        let sellThrough = Number(report.sell_through_rate ?? report.sellThroughRate ?? Number.NaN);
+        if (!Number.isFinite(sellThrough)) {
+            sellThrough = capacity > 0 ? ticketsSold / capacity : 0;
+        }
+        sellThrough = Math.max(0, Math.min(1, sellThrough));
+        const status = String(report.status ?? 'draft').toLowerCase();
+        return {
+            event_id: eventId,
+            title,
+            tickets_sold: ticketsSold,
+            revenue,
+            refunded,
+            net_revenue: netRevenue,
+            average_order: averageOrder,
+            orders,
+            paid_orders: paidOrders,
+            pending_orders: pendingOrders,
+            capacity,
+            sell_through_rate: sellThrough,
+            status,
+        };
+    }
+
     function normalizeEventRecord(event) {
         if (!event || typeof event !== 'object') {
             return null;
@@ -460,6 +542,17 @@
         if (id === '') {
             return null;
         }
+        const ticketsSold = Number(event.tickets_sold ?? 0) || 0;
+        const capacity = Number(event.capacity ?? 0) || 0;
+        const revenue = Number(event.revenue ?? 0) || 0;
+        const refunded = Number(event.refunded ?? 0) || 0;
+        const netRevenue = Number(event.net_revenue ?? event.netRevenue ?? revenue - refunded) || 0;
+        let sellThrough = Number(event.sell_through_rate ?? event.sellThroughRate ?? Number.NaN);
+        if (!Number.isFinite(sellThrough)) {
+            sellThrough = capacity > 0 ? ticketsSold / capacity : 0;
+        }
+        sellThrough = Math.max(0, Math.min(1, sellThrough));
+        const formId = String(event.form_id ?? '').trim();
         const base = {
             ...event,
             id,
@@ -472,9 +565,17 @@
             publish_at: event.publish_at ?? '',
             unpublish_at: event.unpublish_at ?? '',
             categories: Array.isArray(event.categories) ? event.categories : [],
-            tickets_sold: Number(event.tickets_sold ?? 0) || 0,
-            revenue: Number(event.revenue ?? 0) || 0,
-            capacity: Number(event.capacity ?? 0) || 0,
+            tickets_sold: ticketsSold,
+            revenue,
+            net_revenue: netRevenue,
+            average_order: Number(event.average_order ?? event.averageOrder ?? 0) || 0,
+            orders: Number(event.orders ?? 0) || 0,
+            paid_orders: Number(event.paid_orders ?? event.paidOrders ?? 0) || 0,
+            pending_orders: Number(event.pending_orders ?? event.pendingOrders ?? 0) || 0,
+            capacity,
+            sell_through_rate: sellThrough,
+            form_id: formId,
+            form_name: getFormName(formId),
         };
         return withSchedule(base);
     }
@@ -507,6 +608,8 @@
         merged.publish_at = merged.publish_at ?? '';
         merged.unpublish_at = merged.unpublish_at ?? '';
         merged.status = String(merged.status ?? 'draft').toLowerCase();
+        merged.form_id = String(merged.form_id ?? '').trim();
+        merged.form_name = getFormName(merged.form_id);
         state.events.set(id, withSchedule(merged));
     }
 
@@ -1389,18 +1492,26 @@
                   .map((name) => `<span class="events-table-category">${escapeHtml(name)}</span>`)
                   .join('')}</div>`
             : '';
+        const titleMarkup = `<div class="events-table-title">${escapeHtml(row.title || 'Untitled Event')}</div>`;
+        const locationSub = row.location ? `<div class="events-table-sub">${escapeHtml(row.location)}</div>` : '';
+        const locationCell = row.location ? escapeHtml(row.location) : 'TBA';
+        const ticketsLabel = row.capacity > 0 ? `${row.tickets_sold ?? 0} / ${row.capacity}` : `${row.tickets_sold ?? 0}`;
+        const formCell = row.form_name
+            ? `<div class="events-table-title">${escapeHtml(row.form_name)}</div>`
+            : '<div class="events-table-sub">No form selected</div>';
         tr.innerHTML = `
             <td>
-                <div class="events-table-title">${row.title}</div>
+                ${titleMarkup}
                 ${categoriesMarkup}
-                <div class="events-table-sub">${row.location || ''}</div>
+                ${locationSub}
             </td>
             <td>
                 <div>${startLabel}</div>
                 ${endLabel ? `<div class="events-table-sub">Ends ${endLabel}</div>` : ''}
             </td>
-            <td>${row.location || 'TBA'}</td>
-            <td>${row.tickets_sold ?? 0} / ${row.capacity ?? 0}</td>
+            <td>${locationCell}</td>
+            <td>${formCell}</td>
+            <td>${ticketsLabel}</td>
             <td>${formatCurrency(row.revenue ?? 0)}</td>
             <td data-status></td>
             <td class="events-table-actions">
@@ -1458,7 +1569,7 @@
         if (filtered.length === 0) {
             const row = document.createElement('tr');
             const cell = document.createElement('td');
-            cell.colSpan = 4;
+            cell.colSpan = 8;
             cell.className = 'events-empty';
             cell.textContent = 'No events match the current filters.';
             row.appendChild(cell);
@@ -1563,7 +1674,7 @@
         if (!Array.isArray(state.salesSummary) || state.salesSummary.length === 0) {
             const row = document.createElement('tr');
             const cell = document.createElement('td');
-            cell.colSpan = 5;
+            cell.colSpan = 7;
             cell.className = 'events-empty';
             cell.textContent = 'No report data available yet.';
             row.appendChild(cell);
@@ -1572,13 +1683,34 @@
         }
         state.salesSummary.forEach((report) => {
             const row = document.createElement('tr');
+            const ticketsLabel = report.capacity > 0 ? `${report.tickets_sold ?? 0} / ${report.capacity}` : `${report.tickets_sold ?? 0}`;
+            const sellThroughText = formatPercentage(report.sell_through_rate ?? 0);
+            const revenueText = formatCurrency(report.revenue ?? 0);
+            const netRevenueText = formatCurrency(report.net_revenue ?? 0);
+            const avgOrderText = formatCurrency(report.average_order ?? 0);
+            const refundsMeta = Number(report.refunded ?? 0) > 0
+                ? `<div class="events-table-sub">Refunded ${formatCurrency(report.refunded ?? 0)}</div>`
+                : '';
+            const ordersMeta = report.orders > 0
+                ? `<div class="events-table-sub">${report.orders} total · ${report.paid_orders || 0} paid${report.pending_orders ? ` · ${report.pending_orders} pending` : ''}</div>`
+                : '<div class="events-table-sub">No orders yet</div>';
             row.innerHTML = `
                 <td>
                     <div class="events-table-title">${escapeHtml(report.title || 'Untitled event')}</div>
                 </td>
-                <td>${report.tickets_sold ?? 0}</td>
-                <td>${formatCurrency(report.revenue ?? 0)}</td>
-                <td>${formatCurrency(report.refunded ?? 0)}</td>
+                <td>${ticketsLabel}</td>
+                <td>${sellThroughText}</td>
+                <td>
+                    <div class="events-table-title">${revenueText}</div>
+                </td>
+                <td>
+                    <div class="events-table-title">${netRevenueText}</div>
+                    ${refundsMeta}
+                </td>
+                <td>
+                    <div class="events-table-title">${avgOrderText}</div>
+                    ${ordersMeta}
+                </td>
                 <td data-status></td>
             `;
             const statusCell = row.querySelector('[data-status]');
@@ -2289,6 +2421,8 @@
         form.querySelector('[name="id"]').value = eventData?.id || '';
         form.querySelector('[name="title"]').value = eventData?.title || '';
         form.querySelector('[name="location"]').value = eventData?.location || '';
+        const formSelect = form.querySelector('[data-events-event-form]');
+        renderEventFormOptions(formSelect, eventData?.form_id || '');
         if (!form.__imagePicker) {
             form.__imagePicker = initImagePicker(form);
         }
@@ -2335,6 +2469,38 @@
             ticketContainer.innerHTML = '<div class="events-ticket-empty">No ticket types yet. Add one to begin selling.</div>';
         } else {
             tickets.forEach((ticket) => addTicketRow(ticketContainer, ticket));
+        }
+    }
+
+    function renderEventFormOptions(select, selectedId = '') {
+        if (!select) {
+            return;
+        }
+        const hasForms = Array.isArray(state.forms) && state.forms.length > 0;
+        select.innerHTML = '';
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = hasForms ? 'No form selected' : 'No forms available';
+        select.appendChild(placeholder);
+        if (!hasForms) {
+            select.disabled = true;
+            select.value = '';
+            return;
+        }
+        select.disabled = false;
+        state.forms.forEach((formOption) => {
+            const option = document.createElement('option');
+            option.value = formOption.id;
+            option.textContent = formOption.name;
+            select.appendChild(option);
+        });
+        if (selectedId) {
+            select.value = String(selectedId);
+            if (select.value !== String(selectedId)) {
+                select.value = '';
+            }
+        } else {
+            select.value = '';
         }
     }
 
@@ -2430,6 +2596,9 @@
         }
         if (typeof payload.unpublish_at === 'string') {
             payload.unpublish_at = payload.unpublish_at.trim();
+        }
+        if (typeof payload.form_id === 'string') {
+            payload.form_id = payload.form_id.trim();
         }
         return payload;
     }
@@ -2602,10 +2771,9 @@
         return fetchJSON('reports_summary')
             .then((response) => {
                 const reports = Array.isArray(response.reports) ? response.reports : [];
-                state.salesSummary = reports.map((report) => ({
-                    ...report,
-                    refunded: report.refunded ?? 0,
-                }));
+                state.salesSummary = reports
+                    .map((report) => normalizeReportRow(report))
+                    .filter((report) => report !== null);
                 renderReportsTable();
                 updateInsightsAndMetrics();
             })
