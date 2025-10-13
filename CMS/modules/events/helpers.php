@@ -10,6 +10,7 @@ if (!function_exists('events_data_paths')) {
             'events' => $baseDir . '/events.json',
             'orders' => $baseDir . '/event_orders.json',
             'categories' => $baseDir . '/event_categories.json',
+            'forms' => $baseDir . '/forms.json',
         ];
     }
 }
@@ -113,6 +114,37 @@ if (!function_exists('events_read_categories')) {
             return [];
         }
         return events_sort_categories($categories);
+    }
+}
+
+if (!function_exists('events_read_forms')) {
+    function events_read_forms(): array
+    {
+        events_ensure_storage();
+        $paths = events_data_paths();
+        $forms = read_json_file($paths['forms']);
+        if (!is_array($forms)) {
+            return [];
+        }
+        $normalized = [];
+        foreach ($forms as $form) {
+            if (!is_array($form)) {
+                continue;
+            }
+            $id = (string) ($form['id'] ?? '');
+            $name = trim((string) ($form['name'] ?? ''));
+            if ($id === '' || $name === '') {
+                continue;
+            }
+            $normalized[] = [
+                'id' => $id,
+                'name' => $name,
+            ];
+        }
+        usort($normalized, static function ($a, $b) {
+            return strcasecmp($a['name'], $b['name']);
+        });
+        return array_values($normalized);
     }
 }
 
@@ -343,6 +375,8 @@ if (!function_exists('events_normalize_event')) {
         $event['image'] = trim((string) ($event['image'] ?? ''));
         $event['start'] = (string) ($event['start'] ?? '');
         $event['end'] = (string) ($event['end'] ?? '');
+        $formId = isset($event['form_id']) ? trim((string) $event['form_id']) : '';
+        $event['form_id'] = $formId !== '' ? $formId : '';
         $event['status'] = in_array($event['status'] ?? '', ['draft', 'published', 'ended'], true)
             ? (string) $event['status']
             : 'draft';
@@ -644,6 +678,14 @@ if (!function_exists('events_compute_sales')) {
                 'tickets_sold' => 0,
                 'revenue' => 0.0,
                 'refunded' => 0.0,
+                'orders' => 0,
+                'pending_orders' => 0,
+                'paid_orders' => 0,
+                'paid_amount' => 0.0,
+                'capacity' => events_ticket_capacity($event, true),
+                'net_revenue' => 0.0,
+                'average_order' => 0.0,
+                'sell_through_rate' => 0.0,
             ];
         }
         foreach ($orders as $order) {
@@ -662,8 +704,30 @@ if (!function_exists('events_compute_sales')) {
             } else {
                 $salesByEvent[$eventId]['tickets_sold'] += $quantity;
                 $salesByEvent[$eventId]['revenue'] += $amount;
+                $salesByEvent[$eventId]['orders'] += 1;
+                if ($status === 'pending') {
+                    $salesByEvent[$eventId]['pending_orders'] += 1;
+                }
+                if ($status === 'paid') {
+                    $salesByEvent[$eventId]['paid_orders'] += 1;
+                    $salesByEvent[$eventId]['paid_amount'] += $amount;
+                }
             }
         }
+
+        foreach ($salesByEvent as &$metrics) {
+            $revenue = (float) ($metrics['revenue'] ?? 0.0);
+            $refunded = (float) ($metrics['refunded'] ?? 0.0);
+            $metrics['net_revenue'] = max(0.0, $revenue - $refunded);
+            $paidOrders = (int) ($metrics['paid_orders'] ?? 0);
+            $paidAmount = (float) ($metrics['paid_amount'] ?? 0.0);
+            $metrics['average_order'] = $paidOrders > 0 ? $paidAmount / $paidOrders : 0.0;
+            $capacity = max(0, (int) ($metrics['capacity'] ?? 0));
+            $ticketsSold = max(0, (int) ($metrics['tickets_sold'] ?? 0));
+            $metrics['sell_through_rate'] = $capacity > 0 ? min(1.0, $ticketsSold / $capacity) : 0.0;
+            unset($metrics['paid_amount']);
+        }
+        unset($metrics);
 
         return $salesByEvent;
     }

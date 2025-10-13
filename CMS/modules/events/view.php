@@ -11,6 +11,7 @@ events_ensure_storage();
 $events = events_read_events();
 $orders = events_read_orders();
 $categories = events_read_categories();
+$forms = events_read_forms();
 $salesByEvent = events_compute_sales($events, $orders);
 
 $orderSummaries = [];
@@ -41,6 +42,7 @@ $initialPayload = [
     'sales' => $salesByEvent,
     'categories' => $categories,
     'upcoming' => $upcomingPreview,
+    'forms' => $forms,
 ];
 ?>
 <div class="content-section" id="events">
@@ -189,6 +191,7 @@ $initialPayload = [
                             <th scope="col">Event Name</th>
                             <th scope="col">Date &amp; Time</th>
                             <th scope="col">Venue</th>
+                            <th scope="col">Registration Form</th>
                             <th scope="col">Tickets Sold</th>
                             <th scope="col">Revenue</th>
                             <th scope="col">Status</th>
@@ -197,7 +200,7 @@ $initialPayload = [
                     </thead>
                     <tbody data-events-table>
                         <tr>
-                            <td colspan="7" class="events-empty">Loading events…</td>
+                            <td colspan="8" class="events-empty">Loading events…</td>
                         </tr>
                     </tbody>
                 </table>
@@ -316,14 +319,16 @@ $initialPayload = [
                         <tr>
                             <th scope="col">Event</th>
                             <th scope="col">Tickets sold</th>
+                            <th scope="col">Sell-through</th>
                             <th scope="col">Revenue</th>
-                            <th scope="col">Refunded</th>
+                            <th scope="col">Net revenue</th>
+                            <th scope="col">Avg order</th>
                             <th scope="col">Status</th>
                         </tr>
                     </thead>
                     <tbody data-events-reports-table>
                         <tr>
-                            <td colspan="5" class="events-empty">Loading report data…</td>
+                            <td colspan="7" class="events-empty">Loading report data…</td>
                         </tr>
                     </tbody>
                 </table>
@@ -349,6 +354,18 @@ $initialPayload = [
                     <label class="events-form-field">
                         <span>Location / Venue</span>
                         <input type="text" name="location" placeholder="Venue or meeting link">
+                    </label>
+                    <label class="events-form-field">
+                        <span>Registration form</span>
+                        <select name="form_id" data-events-event-form>
+                            <option value="">No form selected</option>
+                            <?php foreach ($forms as $form): ?>
+                                <option value="<?php echo htmlspecialchars($form['id'], ENT_QUOTES, 'UTF-8'); ?>">
+                                    <?php echo htmlspecialchars($form['name'], ENT_QUOTES, 'UTF-8'); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="events-form-help">Choose which form to use for attendee registrations. Leave empty to manage signups elsewhere.</p>
                     </label>
                     <div class="events-form-field">
                         <span>Featured image</span>
