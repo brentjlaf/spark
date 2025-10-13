@@ -441,6 +441,22 @@
         }).format(date);
     }
 
+    function formatDateTimeLocal(value) {
+        if (!value) {
+            return '';
+        }
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return '';
+        }
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+
     function formatDateKey(date) {
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
@@ -2126,6 +2142,8 @@
         }
         const row = document.createElement('div');
         row.className = 'events-ticket-row';
+        const onSaleValue = formatDateTimeLocal(ticket.on_sale || ticket.onSale || '');
+        const offSaleValue = formatDateTimeLocal(ticket.off_sale || ticket.offSale || '');
         row.innerHTML = `
             <input type="hidden" data-ticket-field="id" value="${ticket.id || ''}">
             <label>
@@ -2139,6 +2157,14 @@
             <label>
                 <span>Quantity</span>
                 <input type="number" min="0" step="1" data-ticket-field="quantity" value="${ticket.quantity ?? 0}" required>
+            </label>
+            <label>
+                <span>On-sale starts (optional)</span>
+                <input type="datetime-local" data-ticket-field="on_sale" value="${escapeAttribute(onSaleValue)}">
+            </label>
+            <label>
+                <span>Off-sale ends (optional)</span>
+                <input type="datetime-local" data-ticket-field="off_sale" value="${escapeAttribute(offSaleValue)}">
             </label>
             <label class="events-ticket-toggle">
                 <input type="checkbox" data-ticket-field="enabled" ${ticket.enabled === false ? '' : 'checked'}>
@@ -2157,13 +2183,21 @@
 
     function gatherTickets(container) {
         const rows = Array.from(container.querySelectorAll('.events-ticket-row'));
-        return rows.map((row) => ({
-            id: row.querySelector('[data-ticket-field="id"]').value || undefined,
-            name: row.querySelector('[data-ticket-field="name"]').value.trim(),
-            price: parseFloat(row.querySelector('[data-ticket-field="price"]').value || '0'),
-            quantity: parseInt(row.querySelector('[data-ticket-field="quantity"]').value || '0', 10),
-            enabled: row.querySelector('[data-ticket-field="enabled"]').checked,
-        })).filter((ticket) => ticket.name !== '');
+        return rows
+            .map((row) => {
+                const onSaleInput = row.querySelector('[data-ticket-field="on_sale"]');
+                const offSaleInput = row.querySelector('[data-ticket-field="off_sale"]');
+                return {
+                    id: row.querySelector('[data-ticket-field="id"]').value || undefined,
+                    name: row.querySelector('[data-ticket-field="name"]').value.trim(),
+                    price: parseFloat(row.querySelector('[data-ticket-field="price"]').value || '0'),
+                    quantity: parseInt(row.querySelector('[data-ticket-field="quantity"]').value || '0', 10),
+                    enabled: row.querySelector('[data-ticket-field="enabled"]').checked,
+                    on_sale: onSaleInput ? onSaleInput.value.trim() : '',
+                    off_sale: offSaleInput ? offSaleInput.value.trim() : '',
+                };
+            })
+            .filter((ticket) => ticket.name !== '');
     }
 
     function serializeForm(form) {

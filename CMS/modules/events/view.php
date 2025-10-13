@@ -415,7 +415,7 @@ $initialPayload = [
                     <header class="events-ticketing-header">
                         <div>
                             <h3 id="eventsTicketsTitle">Ticket types</h3>
-                            <p>Add multiple ticket tiers with pricing and availability.</p>
+                            <p>Add multiple ticket tiers with pricing, availability, and optional sale windows.</p>
                         </div>
                         <button type="button" class="a11y-btn a11y-btn--secondary" data-events-ticket-add>
                             <i class="fa-solid fa-ticket" aria-hidden="true"></i>

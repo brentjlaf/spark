@@ -195,15 +195,77 @@ if (!function_exists('events_find_order')) {
     }
 }
 
+if (!function_exists('events_ticket_datetime_to_timestamp')) {
+    function events_ticket_datetime_to_timestamp($value): ?int
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return $value->getTimestamp();
+        }
+        if (is_int($value)) {
+            return $value > 0 ? $value : null;
+        }
+        if (is_numeric($value)) {
+            $numeric = (int) $value;
+            return $numeric > 0 ? $numeric : null;
+        }
+        if (!is_string($value)) {
+            return null;
+        }
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+        $timestamp = strtotime($value);
+        return $timestamp === false ? null : $timestamp;
+    }
+}
+
+if (!function_exists('events_normalize_ticket_datetime')) {
+    function events_normalize_ticket_datetime($value): string
+    {
+        $timestamp = events_ticket_datetime_to_timestamp($value);
+        if ($timestamp === null) {
+            return '';
+        }
+        return gmdate('c', $timestamp);
+    }
+}
+
 if (!function_exists('events_normalize_ticket')) {
     function events_normalize_ticket(array $ticket): array
     {
         $ticket['id'] = $ticket['id'] ?? uniqid('tkt_', true);
-        $ticket['name'] = trim((string) ($ticket['name'] ?? '')); 
+        $ticket['name'] = trim((string) ($ticket['name'] ?? ''));
         $ticket['price'] = (float) ($ticket['price'] ?? 0);
         $ticket['quantity'] = max(0, (int) ($ticket['quantity'] ?? 0));
         $ticket['enabled'] = filter_var($ticket['enabled'] ?? true, FILTER_VALIDATE_BOOLEAN);
+        $onSale = events_normalize_ticket_datetime($ticket['on_sale'] ?? '');
+        $offSale = events_normalize_ticket_datetime($ticket['off_sale'] ?? '');
+        if ($onSale !== '' && $offSale !== '' && strtotime($onSale) > strtotime($offSale)) {
+            $offSale = $onSale;
+        }
+        $ticket['on_sale'] = $onSale;
+        $ticket['off_sale'] = $offSale;
         return $ticket;
+    }
+}
+
+if (!function_exists('events_ticket_is_available')) {
+    function events_ticket_is_available(array $ticket, ?int $referenceTime = null): bool
+    {
+        if (empty($ticket['enabled'])) {
+            return false;
+        }
+        $referenceTime = $referenceTime ?? time();
+        $onSale = events_ticket_datetime_to_timestamp($ticket['on_sale'] ?? '');
+        if ($onSale !== null && $referenceTime < $onSale) {
+            return false;
+        }
+        $offSale = events_ticket_datetime_to_timestamp($ticket['off_sale'] ?? '');
+        if ($offSale !== null && $referenceTime > $offSale) {
+            return false;
+        }
+        return true;
     }
 }
 
@@ -269,8 +331,12 @@ if (!function_exists('events_ticket_capacity')) {
     {
         $tickets = $event['tickets'] ?? [];
         $capacity = 0;
+        $referenceTime = time();
         foreach ($tickets as $ticket) {
-            if ($onlyEnabled && empty($ticket['enabled'])) {
+            if (!is_array($ticket)) {
+                continue;
+            }
+            if ($onlyEnabled && !events_ticket_is_available($ticket, $referenceTime)) {
                 continue;
             }
             $capacity += max(0, (int) ($ticket['quantity'] ?? 0));
@@ -304,12 +370,16 @@ if (!function_exists('events_event_ticket_options')) {
             return [];
         }
         $options = [];
+        $referenceTime = time();
         foreach ($event['tickets'] ?? [] as $ticket) {
             if (!is_array($ticket)) {
                 continue;
             }
             $ticketId = (string) ($ticket['id'] ?? '');
             if ($ticketId === '') {
+                continue;
+            }
+            if (!events_ticket_is_available($ticket, $referenceTime)) {
                 continue;
             }
             $options[] = [
