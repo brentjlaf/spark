@@ -378,6 +378,8 @@ if (!function_exists('events_normalize_order')) {
         }
         $order['event_id'] = $eventId;
         $order['buyer_name'] = trim((string) ($order['buyer_name'] ?? ($original['buyer_name'] ?? '')));
+        $order['buyer_email'] = trim((string) ($order['buyer_email'] ?? ($original['buyer_email'] ?? '')));
+        $order['buyer_phone'] = trim((string) ($order['buyer_phone'] ?? ($original['buyer_phone'] ?? '')));
         $status = strtolower((string) ($order['status'] ?? ($original['status'] ?? 'paid')));
         $allowed = ['paid', 'pending', 'refunded'];
         if (!in_array($status, $allowed, true)) {
@@ -470,6 +472,8 @@ if (!function_exists('events_order_summary')) {
             'event_id' => (string) ($order['event_id'] ?? ''),
             'event' => $event['title'] ?? 'Event',
             'buyer_name' => (string) ($order['buyer_name'] ?? ''),
+            'buyer_email' => (string) ($order['buyer_email'] ?? ''),
+            'buyer_phone' => (string) ($order['buyer_phone'] ?? ''),
             'tickets' => $tickets,
             'amount' => round($amount, 2),
             'status' => $status,
@@ -495,6 +499,8 @@ if (!function_exists('events_order_detail')) {
                 'title' => $event['title'] ?? ($summary['event'] ?? 'Event'),
             ],
             'buyer_name' => $summary['buyer_name'],
+            'buyer_email' => $summary['buyer_email'],
+            'buyer_phone' => $summary['buyer_phone'],
             'status' => $summary['status'],
             'ordered_at' => $summary['ordered_at'],
             'line_items' => $summary['line_items'],

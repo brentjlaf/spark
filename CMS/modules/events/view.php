@@ -468,6 +468,14 @@ $initialPayload = [
                                 <input type="text" name="buyer_name" required>
                             </label>
                             <label class="events-form-field">
+                                <span>Buyer email</span>
+                                <input type="email" name="buyer_email">
+                            </label>
+                            <label class="events-form-field">
+                                <span>Buyer phone</span>
+                                <input type="tel" name="buyer_phone">
+                            </label>
+                            <label class="events-form-field">
                                 <span>Order date</span>
                                 <input type="datetime-local" name="ordered_at">
                             </label>

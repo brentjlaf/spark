@@ -394,6 +394,12 @@ function handle_save_order(array $orders, array $events): void
     if (array_key_exists('buyer_name', $payload)) {
         $updated['buyer_name'] = $payload['buyer_name'];
     }
+    if (array_key_exists('buyer_email', $payload)) {
+        $updated['buyer_email'] = $payload['buyer_email'];
+    }
+    if (array_key_exists('buyer_phone', $payload)) {
+        $updated['buyer_phone'] = $payload['buyer_phone'];
+    }
     if (array_key_exists('status', $payload)) {
         $updated['status'] = $payload['status'];
     }
