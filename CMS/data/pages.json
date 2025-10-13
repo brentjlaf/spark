@@ -4,7 +4,7 @@
     "title": "Home",
     "slug": "home",
     "content": "",
-    "views": 0,
+    "views": 4280,
     "last_modified": 1751716800,
     "published": true,
     "template": "page.php",
@@ -21,7 +21,7 @@
     "title": "About Us",
     "slug": "about-us",
     "content": "",
-    "views": 0,
+    "views": 3125,
     "last_modified": 1751803200,
     "published": true,
     "template": "page.php",
@@ -38,7 +38,7 @@
     "title": "Services",
     "slug": "services",
     "content": "",
-    "views": 0,
+    "views": 2890,
     "last_modified": 1751889600,
     "published": true,
     "template": "page.php",
@@ -55,7 +55,7 @@
     "title": "Blogs",
     "slug": "blogs",
     "content": "",
-    "views": 0,
+    "views": 2540,
     "last_modified": 1751976000,
     "published": true,
     "template": "page.php",
@@ -72,7 +72,7 @@
     "title": "Contact Us",
     "slug": "contact-us",
     "content": "",
-    "views": 0,
+    "views": 1985,
     "last_modified": 1752062400,
     "published": true,
     "template": "page.php",
@@ -98,7 +98,7 @@
     "published": true,
     "access": "public",
     "template": "page.php",
-    "views": 0,
+    "views": 1630,
     "canonical_url": ""
   },
   {
@@ -115,7 +115,7 @@
     "published": true,
     "access": "public",
     "template": "page.php",
-    "views": 0,
+    "views": 1425,
     "canonical_url": ""
   },
   {
@@ -132,7 +132,7 @@
     "published": true,
     "access": "public",
     "template": "page.php",
-    "views": 0,
+    "views": 640,
     "canonical_url": ""
   },
   {
@@ -149,7 +149,7 @@
     "published": true,
     "access": "public",
     "template": "page.php",
-    "views": 0,
+    "views": 520,
     "canonical_url": ""
   }
 ]
