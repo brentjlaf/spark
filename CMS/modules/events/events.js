@@ -992,11 +992,20 @@
             fetchOptions.body = JSON.stringify(options.body);
             fetchOptions.headers['Content-Type'] = 'application/json';
         }
-        return fetch(url, fetchOptions).then((response) => {
-            if (!response.ok) {
-                throw new Error('Request failed');
+        return fetch(url, fetchOptions).then(async (response) => {
+            let data = null;
+            try {
+                data = await response.json();
+            } catch (error) {
+                data = null;
             }
-            return response.json();
+            if (!response.ok) {
+                const requestError = new Error((data && data.error) || 'Request failed');
+                requestError.response = data;
+                requestError.status = response.status;
+                throw requestError;
+            }
+            return data;
         });
     }
 
@@ -1406,6 +1415,37 @@
         if (!container) {
             return [];
         }
+        const limitMap = new Map();
+        const detail = state.orderEditor.detail;
+        if (detail && Array.isArray(detail.available_tickets)) {
+            detail.available_tickets.forEach((ticket) => {
+                if (!ticket || typeof ticket !== 'object') {
+                    return;
+                }
+                const ticketId = String(ticket.ticket_id || '').trim();
+                if (ticketId === '') {
+                    return;
+                }
+                const minParsed = Number.parseInt(ticket.min_per_order ?? 0, 10);
+                const min = Number.isFinite(minParsed) && minParsed > 0 ? minParsed : 0;
+                const maxRaw = ticket.max_per_order;
+                let max = null;
+                if (maxRaw !== undefined && maxRaw !== null && String(maxRaw).trim() !== '') {
+                    const maxParsed = Number.parseInt(maxRaw, 10);
+                    if (Number.isFinite(maxParsed) && maxParsed >= 0) {
+                        max = maxParsed;
+                    }
+                }
+                if (max !== null && max < min) {
+                    max = min;
+                }
+                limitMap.set(ticketId, {
+                    min,
+                    max,
+                    name: ticket.name || 'Ticket',
+                });
+            });
+        }
         const rows = Array.from(container.querySelectorAll('[data-order-line]'));
         return rows.map((row) => {
             updateLineTotal(row);
@@ -1414,14 +1454,38 @@
             let price = Number.parseFloat(priceInput?.value ?? '0');
             if (!Number.isFinite(price) || price < 0) {
                 price = 0;
+                if (priceInput) {
+                    priceInput.value = price.toFixed(2);
+                }
             }
             let quantity = Number.parseInt(quantityInput?.value ?? '0', 10);
             if (!Number.isFinite(quantity) || quantity < 0) {
                 quantity = 0;
+                if (quantityInput) {
+                    quantityInput.value = '0';
+                }
+            }
+            const ticketId = row.dataset.ticketId || '';
+            const limit = ticketId ? limitMap.get(ticketId) : null;
+            let message = '';
+            if (limit && quantity > 0) {
+                if (limit.min > 0 && quantity < limit.min) {
+                    quantity = limit.min;
+                    message = `${limit.name} requires at least ${limit.min} ${limit.min === 1 ? 'ticket' : 'tickets'} per order.`;
+                }
+                if (limit.max !== null && quantity > limit.max) {
+                    quantity = limit.max;
+                    message = `${limit.name} allows at most ${limit.max} ${limit.max === 1 ? 'ticket' : 'tickets'} per order.`;
+                }
+                if (message && quantityInput) {
+                    quantityInput.value = String(quantity);
+                    updateLineTotal(row);
+                    showToast(message, 'error');
+                }
             }
             return {
-                ticket_id: row.dataset.ticketId || '',
-                name: row.dataset.ticketName || 'Ticket',
+                ticket_id: ticketId,
+                name: row.dataset.ticketName || (limit?.name || 'Ticket'),
                 price,
                 quantity,
                 subtotal: price * quantity,
@@ -1702,7 +1766,24 @@
         if (existing) {
             const quantityInput = existing.querySelector('[data-order-line-quantity]');
             if (quantityInput) {
-                quantityInput.value = String(Number.parseInt(quantityInput.value || '0', 10) + 1);
+                const currentQuantity = Number.parseInt(quantityInput.value || '0', 10) || 0;
+                const minParsedExisting = Number.parseInt(ticket.min_per_order ?? 0, 10);
+                const minExisting = Number.isFinite(minParsedExisting) && minParsedExisting > 0 ? minParsedExisting : 0;
+                let maxExisting = null;
+                if (ticket.max_per_order !== undefined && ticket.max_per_order !== null && String(ticket.max_per_order).trim() !== '') {
+                    const maxParsed = Number.parseInt(ticket.max_per_order, 10);
+                    if (Number.isFinite(maxParsed) && maxParsed >= 0) {
+                        maxExisting = maxParsed;
+                    }
+                }
+                if (maxExisting !== null && maxExisting < minExisting) {
+                    maxExisting = minExisting;
+                }
+                if (maxExisting !== null && currentQuantity >= maxExisting) {
+                    showToast(`${ticket.name || 'Ticket'} allows at most ${maxExisting} ${maxExisting === 1 ? 'ticket' : 'tickets'} per order.`, 'error');
+                    return;
+                }
+                quantityInput.value = String(currentQuantity + 1);
                 updateLineTotal(existing);
                 updateOrderSummary();
                 updateOrderAddOptions(detail);
@@ -1713,11 +1794,37 @@
         if (container.querySelector('.events-order-empty')) {
             container.innerHTML = '';
         }
+        const minParsed = Number.parseInt(ticket.min_per_order ?? 0, 10);
+        const minPerOrder = Number.isFinite(minParsed) && minParsed > 0 ? minParsed : 0;
+        let maxPerOrder = null;
+        if (ticket.max_per_order !== undefined && ticket.max_per_order !== null && String(ticket.max_per_order).trim() !== '') {
+            const maxParsed = Number.parseInt(ticket.max_per_order, 10);
+            if (Number.isFinite(maxParsed) && maxParsed >= 0) {
+                maxPerOrder = maxParsed;
+            }
+        }
+        if (maxPerOrder !== null && maxPerOrder < minPerOrder) {
+            maxPerOrder = minPerOrder;
+        }
+        if (maxPerOrder === 0) {
+            showToast(`${ticket.name || 'Ticket'} cannot be added because the maximum per order is 0.`, 'error');
+            return;
+        }
+        let initialQuantity = minPerOrder > 0 ? minPerOrder : 1;
+        if (maxPerOrder !== null) {
+            initialQuantity = Math.min(initialQuantity, maxPerOrder);
+            if (initialQuantity <= 0) {
+                initialQuantity = maxPerOrder;
+            }
+        }
+        if (!Number.isFinite(initialQuantity) || initialQuantity <= 0) {
+            initialQuantity = 1;
+        }
         const row = createOrderLine({
             ticket_id: ticket.ticket_id,
             name: ticket.name,
             price: ticket.price,
-            quantity: 1,
+            quantity: initialQuantity,
         });
         container.appendChild(row);
         updateLineTotal(row);
@@ -1975,7 +2082,16 @@
                     closeModal(selectors.orderEditor.modal);
                     refreshAll();
                 })
-                .catch(() => {
+                .catch((error) => {
+                    const messages = error?.response?.messages;
+                    if (Array.isArray(messages) && messages.length > 0) {
+                        showToast(messages[0], 'error');
+                        return;
+                    }
+                    if (error?.response?.error) {
+                        showToast(error.response.error, 'error');
+                        return;
+                    }
                     showToast('Unable to save order.', 'error');
                 });
         });
@@ -2126,6 +2242,39 @@
         }
         const row = document.createElement('div');
         row.className = 'events-ticket-row';
+        const minValue = (() => {
+            const raw = ticket.min_per_order;
+            if (raw === undefined || raw === null) {
+                return '';
+            }
+            const trimmed = String(raw).trim();
+            if (trimmed === '') {
+                return '';
+            }
+            const parsed = Number.parseInt(trimmed, 10);
+            if (!Number.isFinite(parsed) || parsed < 0) {
+                return 0;
+            }
+            return parsed;
+        })();
+        const maxValue = (() => {
+            const raw = ticket.max_per_order;
+            if (raw === undefined || raw === null) {
+                return '';
+            }
+            const trimmed = String(raw).trim();
+            if (trimmed === '') {
+                return '';
+            }
+            const parsed = Number.parseInt(trimmed, 10);
+            if (!Number.isFinite(parsed) || parsed < 0) {
+                return '';
+            }
+            if (minValue !== '' && parsed < Number(minValue)) {
+                return Number(minValue);
+            }
+            return parsed;
+        })();
         row.innerHTML = `
             <input type="hidden" data-ticket-field="id" value="${ticket.id || ''}">
             <label>
@@ -2139,6 +2288,14 @@
             <label>
                 <span>Quantity</span>
                 <input type="number" min="0" step="1" data-ticket-field="quantity" value="${ticket.quantity ?? 0}" required>
+            </label>
+            <label>
+                <span>Min per order</span>
+                <input type="number" min="0" step="1" data-ticket-field="min_per_order" value="${minValue === '' ? '' : minValue}">
+            </label>
+            <label>
+                <span>Max per order</span>
+                <input type="number" min="0" step="1" data-ticket-field="max_per_order" value="${maxValue === '' ? '' : maxValue}" placeholder="Unlimited">
             </label>
             <label class="events-ticket-toggle">
                 <input type="checkbox" data-ticket-field="enabled" ${ticket.enabled === false ? '' : 'checked'}>
@@ -2157,13 +2314,64 @@
 
     function gatherTickets(container) {
         const rows = Array.from(container.querySelectorAll('.events-ticket-row'));
-        return rows.map((row) => ({
-            id: row.querySelector('[data-ticket-field="id"]').value || undefined,
-            name: row.querySelector('[data-ticket-field="name"]').value.trim(),
-            price: parseFloat(row.querySelector('[data-ticket-field="price"]').value || '0'),
-            quantity: parseInt(row.querySelector('[data-ticket-field="quantity"]').value || '0', 10),
-            enabled: row.querySelector('[data-ticket-field="enabled"]').checked,
-        })).filter((ticket) => ticket.name !== '');
+        return rows
+            .map((row) => {
+                const idInput = row.querySelector('[data-ticket-field="id"]');
+                const nameInput = row.querySelector('[data-ticket-field="name"]');
+                const priceInput = row.querySelector('[data-ticket-field="price"]');
+                const quantityInput = row.querySelector('[data-ticket-field="quantity"]');
+                const enabledInput = row.querySelector('[data-ticket-field="enabled"]');
+                const minInput = row.querySelector('[data-ticket-field="min_per_order"]');
+                const maxInput = row.querySelector('[data-ticket-field="max_per_order"]');
+
+                const name = nameInput ? nameInput.value.trim() : '';
+
+                let price = Number.parseFloat(priceInput?.value ?? '0');
+                if (!Number.isFinite(price) || price < 0) {
+                    price = 0;
+                    if (priceInput) {
+                        priceInput.value = price.toFixed(2);
+                    }
+                }
+
+                let quantity = Number.parseInt(quantityInput?.value ?? '0', 10);
+                if (!Number.isFinite(quantity) || quantity < 0) {
+                    quantity = 0;
+                    if (quantityInput) {
+                        quantityInput.value = '0';
+                    }
+                }
+
+                const minRaw = minInput?.value ?? '';
+                let minPerOrder = Number.parseInt(minRaw, 10);
+                if (!Number.isFinite(minPerOrder) || String(minRaw).trim() === '' || minPerOrder < 0) {
+                    minPerOrder = 0;
+                }
+
+                const maxRaw = maxInput?.value ?? '';
+                let maxPerOrder = Number.parseInt(maxRaw, 10);
+                if (!Number.isFinite(maxPerOrder) || String(maxRaw).trim() === '' || maxPerOrder < 0) {
+                    maxPerOrder = null;
+                }
+
+                if (maxPerOrder !== null && maxPerOrder < minPerOrder) {
+                    maxPerOrder = minPerOrder;
+                    if (maxInput) {
+                        maxInput.value = String(maxPerOrder);
+                    }
+                }
+
+                return {
+                    id: idInput?.value || undefined,
+                    name,
+                    price,
+                    quantity,
+                    enabled: !!enabledInput?.checked,
+                    min_per_order: minPerOrder,
+                    max_per_order: maxPerOrder,
+                };
+            })
+            .filter((ticket) => ticket.name !== '');
     }
 
     function serializeForm(form) {

@@ -416,6 +416,7 @@ $initialPayload = [
                         <div>
                             <h3 id="eventsTicketsTitle">Ticket types</h3>
                             <p>Add multiple ticket tiers with pricing and availability.</p>
+                            <p class="events-form-help">Set per-order minimums and maximums for each ticket type. Leave the maximum blank for no limit.</p>
                         </div>
                         <button type="button" class="a11y-btn a11y-btn--secondary" data-events-ticket-add>
                             <i class="fa-solid fa-ticket" aria-hidden="true"></i>

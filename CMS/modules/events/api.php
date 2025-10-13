@@ -405,6 +405,15 @@ function handle_save_order(array $orders, array $events): void
     }
 
     $normalized = events_normalize_order($updated, $events, $current);
+    $event = events_find_event($events, $normalized['event_id'] ?? '');
+    $violations = events_validate_ticket_limits($normalized['tickets'] ?? [], $event);
+    if ($violations) {
+        respond_json([
+            'error' => 'Ticket quantity limits not satisfied.',
+            'messages' => $violations,
+        ], 422);
+    }
+
     $orders[$index] = array_merge($current, $normalized);
 
     if (!events_write_orders($orders)) {

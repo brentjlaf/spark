@@ -199,10 +199,27 @@ if (!function_exists('events_normalize_ticket')) {
     function events_normalize_ticket(array $ticket): array
     {
         $ticket['id'] = $ticket['id'] ?? uniqid('tkt_', true);
-        $ticket['name'] = trim((string) ($ticket['name'] ?? '')); 
+        $ticket['name'] = trim((string) ($ticket['name'] ?? ''));
         $ticket['price'] = (float) ($ticket['price'] ?? 0);
         $ticket['quantity'] = max(0, (int) ($ticket['quantity'] ?? 0));
         $ticket['enabled'] = filter_var($ticket['enabled'] ?? true, FILTER_VALIDATE_BOOLEAN);
+        $minPerOrder = (int) ($ticket['min_per_order'] ?? 0);
+        if ($minPerOrder < 0) {
+            $minPerOrder = 0;
+        }
+        $maxRaw = $ticket['max_per_order'] ?? null;
+        $maxPerOrder = null;
+        if ($maxRaw !== null && $maxRaw !== '') {
+            $maxPerOrder = (int) $maxRaw;
+            if ($maxPerOrder < 0) {
+                $maxPerOrder = 0;
+            }
+        }
+        if ($maxPerOrder !== null && $maxPerOrder < $minPerOrder) {
+            $maxPerOrder = $minPerOrder;
+        }
+        $ticket['min_per_order'] = $minPerOrder;
+        $ticket['max_per_order'] = $maxPerOrder;
         return $ticket;
     }
 }
@@ -312,16 +329,105 @@ if (!function_exists('events_event_ticket_options')) {
             if ($ticketId === '') {
                 continue;
             }
+            $minPerOrder = max(0, (int) ($ticket['min_per_order'] ?? 0));
+            $maxRaw = $ticket['max_per_order'] ?? null;
+            $maxPerOrder = null;
+            if ($maxRaw !== null && $maxRaw !== '') {
+                $maxPerOrder = (int) $maxRaw;
+                if ($maxPerOrder < 0) {
+                    $maxPerOrder = 0;
+                }
+            }
+            if ($maxPerOrder !== null && $maxPerOrder < $minPerOrder) {
+                $maxPerOrder = $minPerOrder;
+            }
             $options[] = [
                 'ticket_id' => $ticketId,
                 'name' => (string) ($ticket['name'] ?? 'Ticket'),
                 'price' => (float) ($ticket['price'] ?? 0),
+                'min_per_order' => $minPerOrder,
+                'max_per_order' => $maxPerOrder,
             ];
         }
         usort($options, static function ($a, $b) {
             return strcasecmp($a['name'], $b['name']);
         });
         return array_values($options);
+    }
+}
+
+if (!function_exists('events_validate_ticket_limits')) {
+    function events_validate_ticket_limits(array $orderTickets, ?array $event): array
+    {
+        if (!is_array($event)) {
+            return [];
+        }
+        $lookup = [];
+        foreach ($event['tickets'] ?? [] as $ticket) {
+            if (!is_array($ticket)) {
+                continue;
+            }
+            $ticketId = (string) ($ticket['id'] ?? '');
+            if ($ticketId === '') {
+                continue;
+            }
+            $name = (string) ($ticket['name'] ?? 'Ticket');
+            $min = max(0, (int) ($ticket['min_per_order'] ?? 0));
+            $maxRaw = $ticket['max_per_order'] ?? null;
+            $max = null;
+            if ($maxRaw !== null && $maxRaw !== '') {
+                $max = (int) $maxRaw;
+                if ($max < 0) {
+                    $max = 0;
+                }
+            }
+            if ($max !== null && $max < $min) {
+                $max = $min;
+            }
+            $lookup[$ticketId] = [
+                'name' => $name,
+                'min' => $min,
+                'max' => $max,
+            ];
+        }
+        if (empty($lookup)) {
+            return [];
+        }
+        $violations = [];
+        foreach ($orderTickets as $ticket) {
+            if (!is_array($ticket)) {
+                continue;
+            }
+            $ticketId = (string) ($ticket['ticket_id'] ?? '');
+            if ($ticketId === '' || !isset($lookup[$ticketId])) {
+                continue;
+            }
+            $quantity = max(0, (int) ($ticket['quantity'] ?? 0));
+            if ($quantity === 0) {
+                continue;
+            }
+            $info = $lookup[$ticketId];
+            if ($info['min'] > 0 && $quantity < $info['min']) {
+                $violations[] = sprintf(
+                    '%s requires at least %d %s per order.',
+                    $info['name'],
+                    $info['min'],
+                    $info['min'] === 1 ? 'ticket' : 'tickets'
+                );
+            }
+            if ($info['max'] !== null && $quantity > $info['max']) {
+                $violations[] = sprintf(
+                    '%s allows at most %d %s per order.',
+                    $info['name'],
+                    $info['max'],
+                    $info['max'] === 1 ? 'ticket' : 'tickets'
+                );
+            }
+        }
+        if (!$violations) {
+            return [];
+        }
+        return array_values(array_unique($violations));
     }
 }
 
