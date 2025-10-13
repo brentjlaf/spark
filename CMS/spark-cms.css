@@ -11758,6 +11758,29 @@ body.calendar-modal-open {
     margin-top: 0.15rem;
 }
 
+.events-table-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+    padding: 0;
+    list-style: none;
+}
+
+.events-table-category {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background: #e0e7ff;
+    color: #312e81;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
 .events-table-actions {
     display: flex;
     gap: 0.35rem;
@@ -11785,6 +11808,19 @@ body.calendar-modal-open {
 .events-action.danger {
     background: #fee2e2;
     color: #b91c1c;
+}
+
+@media (max-width: 640px) {
+    .events-table-categories {
+        gap: 0.3rem;
+    }
+
+    .events-table-category {
+        font-size: 0.8rem;
+        padding: 0.28rem 0.65rem;
+        white-space: normal;
+        text-align: center;
+    }
 }
 
 .events-status {

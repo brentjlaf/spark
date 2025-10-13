@@ -1224,14 +1224,33 @@
         return span;
     }
 
+    function getCategoryNames(categoryIds) {
+        if (!Array.isArray(categoryIds) || categoryIds.length === 0) {
+            return [];
+        }
+        return categoryIds
+            .map((categoryId) => {
+                const category = state.categories.find((item) => String(item.id) === String(categoryId));
+                return category && category.name ? category.name : null;
+            })
+            .filter((name) => Boolean(name));
+    }
+
     function createEventRow(row) {
         const tr = document.createElement('tr');
         tr.dataset.eventId = row.id;
         const startLabel = formatDate(row.start);
         const endLabel = row.end ? formatDate(row.end) : '';
+        const categoryNames = getCategoryNames(row.categories);
+        const categoriesMarkup = categoryNames.length
+            ? `<div class="events-table-categories">${categoryNames
+                  .map((name) => `<span class="events-table-category">${escapeHtml(name)}</span>`)
+                  .join('')}</div>`
+            : '';
         tr.innerHTML = `
             <td>
                 <div class="events-table-title">${row.title}</div>
+                ${categoriesMarkup}
                 <div class="events-table-sub">${row.location || ''}</div>
             </td>
             <td>
@@ -2371,6 +2390,7 @@
                     state.categories = sortCategories(response.categories);
                     renderCategoryList();
                     renderCategoryOptions(getSelectedCategoryIds());
+                    renderEventsTable();
                 }
             })
             .catch(() => {
@@ -2528,6 +2548,7 @@
                         }
                         renderCategoryList();
                         renderCategoryOptions(getSelectedCategoryIds());
+                        renderEventsTable();
                         showToast(isUpdate ? 'Category updated.' : 'Category created.');
                         resetCategoryForm();
                     })
@@ -2571,6 +2592,7 @@
                                 });
                                 renderCategoryList();
                                 renderCategoryOptions(getSelectedCategoryIds());
+                                renderEventsTable();
                                 showToast('Category deleted.');
                                 resetCategoryForm();
                             })
