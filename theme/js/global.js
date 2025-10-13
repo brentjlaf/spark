@@ -693,13 +693,30 @@
     }
   }
 
+  function ticketIsCurrentlyAvailable(ticket, referenceDate) {
+    if (!ticket || ticket.enabled === false) {
+      return false;
+    }
+    var now = referenceDate instanceof Date && !Number.isNaN(referenceDate.getTime()) ? referenceDate : new Date();
+    var onSale = parseIsoDate(ticket.on_sale || ticket.onSale || '');
+    if (onSale && onSale.getTime() > now.getTime()) {
+      return false;
+    }
+    var offSale = parseIsoDate(ticket.off_sale || ticket.offSale || '');
+    if (offSale && offSale.getTime() < now.getTime()) {
+      return false;
+    }
+    return true;
+  }
+
   function findLowestPrice(tickets) {
     if (!Array.isArray(tickets) || !tickets.length) {
       return null;
     }
+    var now = new Date();
     var values = tickets
       .filter(function (ticket) {
-        return ticket && ticket.enabled !== false && Number.isFinite(Number(ticket.price));
+        return ticket && Number.isFinite(Number(ticket.price)) && ticketIsCurrentlyAvailable(ticket, now);
       })
       .map(function (ticket) {
         return Number(ticket.price);

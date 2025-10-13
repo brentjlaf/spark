@@ -12158,7 +12158,8 @@ body.calendar-modal-open {
 }
 
 .events-ticket-row input[type='text'],
-.events-ticket-row input[type='number'] {
+.events-ticket-row input[type='number'],
+.events-ticket-row input[type='datetime-local'] {
     padding: 0.6rem 0.75rem;
     border-radius: 0.65rem;
     border: 1px solid #cbd5f5;
