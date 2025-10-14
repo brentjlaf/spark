@@ -76,10 +76,6 @@ if (is_string($faviconSetting) && $faviconSetting !== '' && preg_match('#^https?
                         <div class="nav-icon"><i class="fas fa-ticket"></i></div>
                         <div class="nav-text">Events</div>
                     </div>
-                    <div class="nav-item" data-section="calendar">
-                        <div class="nav-icon"><i class="fas fa-calendar-alt"></i></div>
-                        <div class="nav-text">Calendar</div>
-                    </div>
                 </div>
 
                 <div class="nav-section">
@@ -246,7 +242,6 @@ $(function(){
     search: 'Manage search index',
     sitemap: 'Review sitemap',
     import_export: 'Import & Export',
-    calendar: 'Manage calendar data',
     events: 'Event management overview'
   };
 
