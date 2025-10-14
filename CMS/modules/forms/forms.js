@@ -168,6 +168,38 @@ $(function(){
         });
     }
 
+    function fetchPerFormStats(){
+        const deferred = $.Deferred();
+        $.getJSON('modules/forms/list_submissions.php', { summary: 'per_form' })
+            .done(function(data){
+                if(Array.isArray(data)){
+                    deferred.resolve(data);
+                    return;
+                }
+                if(data && typeof data === 'object'){
+                    const entries = Object.keys(data).map(function(key){
+                        const value = data[key];
+                        if(value && typeof value === 'object'){
+                            const formId = Number(key);
+                            const payload = Object.assign({}, value);
+                            if(!Number.isNaN(formId)){
+                                payload.form_id = formId;
+                            }
+                            return payload;
+                        }
+                        return null;
+                    }).filter(Boolean);
+                    deferred.resolve(entries);
+                    return;
+                }
+                deferred.resolve([]);
+            })
+            .fail(function(){
+                deferred.resolve([]);
+            });
+        return deferred.promise();
+    }
+
     function setExportAvailability(formId){
         if(!$exportForm.length || !$exportFormId.length || !$exportButton.length){
             return;
@@ -263,6 +295,78 @@ $(function(){
             .html('<div class="forms-submissions-empty">'+escapeHtml(placeholder)+'</div>');
     }
 
+    function parseSubmissionDate(value){
+        if(!value){
+            return null;
+        }
+        if(value instanceof Date){
+            return Number.isNaN(value.getTime()) ? null : value;
+        }
+        const numeric = Number(value);
+        if(!Number.isNaN(numeric) && numeric > 0){
+            const timestamp = numeric < 1e12 ? numeric * 1000 : numeric;
+            const date = new Date(timestamp);
+            return Number.isNaN(date.getTime()) ? null : date;
+        }
+        if(typeof value === 'string'){
+            const parsed = Date.parse(value);
+            if(!Number.isNaN(parsed)){
+                const date = new Date(parsed);
+                return Number.isNaN(date.getTime()) ? null : date;
+            }
+        }
+        return null;
+    }
+
+    function formatRelativeSubmissionTime(value){
+        const date = parseSubmissionDate(value);
+        if(!date){
+            return null;
+        }
+        const now = Date.now();
+        const diff = now - date.getTime();
+        const absDiff = Math.abs(diff);
+
+        if(absDiff < 45 * 1000){
+            return diff >= 0 ? 'just now' : 'in moments';
+        }
+
+        const makeLabel = function(amount, unit){
+            const safeAmount = Math.max(1, amount);
+            if(diff >= 0){
+                return safeAmount + unit + ' ago';
+            }
+            return 'in ' + safeAmount + unit;
+        };
+
+        if(absDiff < 90 * 1000){
+            return makeLabel(1, 'm');
+        }
+
+        const minutes = Math.round(absDiff / 60000);
+        if(minutes < 60){
+            return makeLabel(minutes, 'm');
+        }
+
+        const hours = Math.round(minutes / 60);
+        if(hours < 48){
+            return makeLabel(hours, 'h');
+        }
+
+        const days = Math.round(hours / 24);
+        if(days < 30){
+            return makeLabel(days, 'd');
+        }
+
+        const months = Math.round(days / 30);
+        if(months < 18){
+            return makeLabel(months, 'mo');
+        }
+
+        const years = Math.max(1, Math.round(days / 365));
+        return makeLabel(years, 'y');
+    }
+
     function formatSubmissionDate(value){
         if(!value) return 'Unknown';
 
@@ -283,19 +387,14 @@ $(function(){
             }
         }
 
-        const numeric = Number(value);
-        if(!Number.isNaN(numeric) && numeric > 0){
-            const date = new Date(numeric * (numeric < 1e12 ? 1000 : 1));
+        const date = parseSubmissionDate(value);
+        if(date){
             const formatted = formatDate(date);
             if(formatted){
                 return formatted;
             }
         }
-        const date = new Date(value);
-        const formatted = formatDate(date);
-        if(formatted){
-            return formatted;
-        }
+
         return String(value);
     }
 
@@ -637,77 +736,134 @@ $(function(){
                 return;
             }
 
-            forms.forEach(function(f){
-                const fieldCount = Array.isArray(f.fields) ? f.fields.length : 0;
-                const fieldLabel = fieldCount === 1 ? '1 field' : fieldCount + ' fields';
-                const formName = typeof f.name === 'string' && f.name.trim() !== '' ? f.name : 'Untitled form';
-                const $card = $('<article class="a11y-page-card forms-card forms-library-item" role="listitem" tabindex="0"></article>');
-                $card.attr('data-id', f.id);
-                $card.data('formName', formName);
+            fetchPerFormStats().done(function(perFormStats){
+                const statsIndex = {};
+                perFormStats.forEach(function(entry){
+                    if(!entry || typeof entry !== 'object'){
+                        return;
+                    }
+                    const id = Number(entry.form_id);
+                    if(Number.isNaN(id) || id <= 0){
+                        return;
+                    }
+                    const count = Number(entry.submission_count);
+                    const submissionCount = Number.isNaN(count) || count < 0 ? 0 : count;
+                    statsIndex[id] = {
+                        submissionCount: submissionCount,
+                        lastSubmission: entry.last_submission || null
+                    };
+                });
 
-                const $header = $('<div class="forms-card__header"></div>');
-                const $heading = $('<div class="forms-card__heading"></div>');
-                const $title = $('<h4 class="forms-card__title"></h4>').text(formName);
-                const $badge = $('<span class="forms-card__badge" aria-label="'+escapeHtml(fieldLabel)+'"></span>');
-                $badge.append('<i class="fas fa-layer-group" aria-hidden="true"></i>');
-                $badge.append('<span>'+escapeHtml(fieldLabel)+'</span>');
-                $heading.append($title).append($badge);
+                forms.forEach(function(f){
+                    const fieldCount = Array.isArray(f.fields) ? f.fields.length : 0;
+                    const fieldLabel = fieldCount === 1 ? '1 field' : fieldCount + ' fields';
+                    const formName = typeof f.name === 'string' && f.name.trim() !== '' ? f.name : 'Untitled form';
+                    const $card = $('<article class="a11y-page-card forms-card forms-library-item" role="listitem" tabindex="0"></article>');
+                    $card.attr('data-id', f.id);
+                    $card.data('formName', formName);
 
-                const $actions = $('<div class="forms-card__actions" role="group" aria-label="Form actions"></div>');
-                const $viewBtn = $('<button type="button" class="a11y-btn a11y-btn--ghost forms-card__action" data-action="view-submissions"></button>');
-                $viewBtn.append('<i class="fa-solid fa-eye" aria-hidden="true"></i>');
-                $viewBtn.append('<span>View submissions</span>');
-                const $editBtn = $('<button type="button" class="a11y-btn a11y-btn--secondary forms-card__action" data-action="edit-form"></button>');
-                $editBtn.append('<i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>');
-                $editBtn.append('<span>Edit</span>');
-                const $deleteBtn = $('<button type="button" class="a11y-btn a11y-btn--ghost forms-card__action forms-card__action--danger" data-action="delete-form"></button>');
-                $deleteBtn.append('<i class="fa-solid fa-trash" aria-hidden="true"></i>');
-                $deleteBtn.append('<span>Delete</span>');
-                $actions.append($viewBtn, $editBtn, $deleteBtn);
+                    const $header = $('<div class="forms-card__header"></div>');
+                    const $heading = $('<div class="forms-card__heading"></div>');
+                    const $title = $('<h4 class="forms-card__title"></h4>').text(formName);
+                    const $badges = $('<div class="forms-card__badges"></div>');
 
-                $header.append($heading).append($actions);
-                $card.append($header);
+                    const $fieldBadge = $('<span class="forms-card__badge forms-card__badge--fields" aria-label="'+escapeHtml(fieldLabel)+'"></span>');
+                    $fieldBadge.append('<i class="fas fa-layer-group" aria-hidden="true"></i>');
+                    $fieldBadge.append('<span>'+escapeHtml(fieldLabel)+'</span>');
+                    $badges.append($fieldBadge);
 
-                if(f.id){
-                    const $meta = $('<div class="forms-card__meta"></div>');
-                    const $metaItem = $('<span class="forms-card__meta-item"></span>');
-                    $metaItem.append('<i class="fas fa-hashtag" aria-hidden="true"></i>');
-                    $metaItem.append('<span>Form ID '+escapeHtml(String(f.id))+'</span>');
-                    $meta.append($metaItem);
-                    $card.append($meta);
-                }
+                    const stats = statsIndex[Number(f.id)] || { submissionCount: 0, lastSubmission: null };
+                    const submissionCount = stats.submissionCount;
+                    const submissionLabel = submissionCount === 1 ? '1 submission' : submissionCount + ' submissions';
+                    const $submissionsBadge = $('<span class="forms-card__badge forms-card__badge--submissions" aria-label="'+escapeHtml(submissionLabel)+'"></span>');
+                    $submissionsBadge.append('<i class="fa-solid fa-inbox" aria-hidden="true"></i>');
+                    $submissionsBadge.append('<span>'+escapeHtml(submissionLabel)+'</span>');
+                    if(submissionCount === 0){
+                        $submissionsBadge.addClass('forms-card__badge--muted');
+                    }
+                    $badges.append($submissionsBadge);
+
+                    const lastRaw = stats.lastSubmission;
+                    let lastBadgeText = 'No submissions yet';
+                    let lastBadgeTitle = 'No submissions yet';
+                    if(lastRaw){
+                        const relative = formatRelativeSubmissionTime(lastRaw);
+                        const absolute = formatSubmissionDate(lastRaw);
+                        if(relative){
+                            lastBadgeText = 'Last submission ' + relative;
+                            lastBadgeTitle = 'Last submission ' + (absolute || relative);
+                        } else {
+                            lastBadgeText = 'Last submission ' + String(lastRaw);
+                            lastBadgeTitle = lastBadgeText;
+                        }
+                    }
+                    const $lastBadge = $('<span class="forms-card__badge forms-card__badge--last-submission" aria-label="'+escapeHtml(lastBadgeTitle)+'"></span>');
+                    $lastBadge.append('<i class="fa-solid fa-clock" aria-hidden="true"></i>');
+                    $lastBadge.append('<span>'+escapeHtml(lastBadgeText)+'</span>');
+                    $lastBadge.attr('title', lastBadgeTitle);
+                    if(!lastRaw){
+                        $lastBadge.addClass('forms-card__badge--muted');
+                    }
+                    $badges.append($lastBadge);
+
+                    $heading.append($title).append($badges);
+
+                    const $actions = $('<div class="forms-card__actions" role="group" aria-label="Form actions"></div>');
+                    const $viewBtn = $('<button type="button" class="a11y-btn a11y-btn--ghost forms-card__action" data-action="view-submissions"></button>');
+                    $viewBtn.append('<i class="fa-solid fa-eye" aria-hidden="true"></i>');
+                    $viewBtn.append('<span>View submissions</span>');
+                    const $editBtn = $('<button type="button" class="a11y-btn a11y-btn--secondary forms-card__action" data-action="edit-form"></button>');
+                    $editBtn.append('<i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>');
+                    $editBtn.append('<span>Edit</span>');
+                    const $deleteBtn = $('<button type="button" class="a11y-btn a11y-btn--ghost forms-card__action forms-card__action--danger" data-action="delete-form"></button>');
+                    $deleteBtn.append('<i class="fa-solid fa-trash" aria-hidden="true"></i>');
+                    $deleteBtn.append('<span>Delete</span>');
+                    $actions.append($viewBtn, $editBtn, $deleteBtn);
+
+                    $header.append($heading).append($actions);
+                    $card.append($header);
+
+                    if(f.id){
+                        const $meta = $('<div class="forms-card__meta"></div>');
+                        const $metaItem = $('<span class="forms-card__meta-item"></span>');
+                        $metaItem.append('<i class="fas fa-hashtag" aria-hidden="true"></i>');
+                        $metaItem.append('<span>Form ID '+escapeHtml(String(f.id))+'</span>');
+                        $meta.append($metaItem);
+                        $card.append($meta);
+                    }
+
+                    if($formsGrid.length){
+                        $formsGrid.append($card);
+                    }
+                });
+
+                refreshSubmissionStats();
 
                 if($formsGrid.length){
-                    $formsGrid.append($card);
+                    $formsGrid.attr('aria-busy', 'false');
                 }
-            });
 
-            refreshSubmissionStats();
-
-            if($formsGrid.length){
-                $formsGrid.attr('aria-busy', 'false');
-            }
-
-            const $cards = $formsGrid.length ? $formsGrid.find('.forms-library-item') : $();
-            if(currentFormId){
-                const $activeCard = $cards.filter(function(){
-                    return $(this).data('id') == currentFormId;
-                }).first();
-                if($activeCard.length){
-                    loadFormSubmissions($activeCard.data('id'), getFormCardName($activeCard));
+                const $cards = $formsGrid.length ? $formsGrid.find('.forms-library-item') : $();
+                if(currentFormId){
+                    const $activeCard = $cards.filter(function(){
+                        return $(this).data('id') == currentFormId;
+                    }).first();
+                    if($activeCard.length){
+                        loadFormSubmissions($activeCard.data('id'), getFormCardName($activeCard));
+                    } else {
+                        resetSubmissionsCard();
+                        const $fallback = $cards.first();
+                        if($fallback.length){
+                            loadFormSubmissions($fallback.data('id'), getFormCardName($fallback));
+                        }
+                    }
                 } else {
-                    resetSubmissionsCard();
-                    const $fallback = $cards.first();
-                    if($fallback.length){
-                        loadFormSubmissions($fallback.data('id'), getFormCardName($fallback));
+                    const $firstCard = $cards.first();
+                    if($firstCard.length){
+                        loadFormSubmissions($firstCard.data('id'), getFormCardName($firstCard));
                     }
                 }
-            } else {
-                const $firstCard = $cards.first();
-                if($firstCard.length){
-                    loadFormSubmissions($firstCard.data('id'), getFormCardName($firstCard));
-                }
-            }
+            });
         });
     }
 
