@@ -10093,6 +10093,37 @@ body.calendar-modal-open {
     white-space: nowrap;
 }
 
+.forms-card__badges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.forms-card__badge--fields {
+    background: rgba(99, 102, 241, 0.12);
+    color: #4338ca;
+}
+
+.forms-card__badge--submissions {
+    background: rgba(59, 130, 246, 0.12);
+    color: #1d4ed8;
+}
+
+.forms-card__badge--last-submission {
+    background: rgba(16, 185, 129, 0.16);
+    color: #047857;
+}
+
+.forms-card__badge--muted {
+    background: rgba(148, 163, 184, 0.22);
+    color: #475569;
+}
+
+.forms-card__badge--muted i {
+    color: inherit;
+}
+
 .forms-card__badge i {
     font-size: 12px;
 }
