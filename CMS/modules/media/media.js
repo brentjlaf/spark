@@ -316,6 +316,9 @@ $(function(){
                         doc: '<i class="fa-solid fa-file-lines" aria-hidden="true"></i>',
                         docx: '<i class="fa-solid fa-file-lines" aria-hidden="true"></i>',
                         txt: '<i class="fa-solid fa-file-lines" aria-hidden="true"></i>',
+                        csv: '<i class="fa-solid fa-file-csv" aria-hidden="true"></i>',
+                        xlsx: '<i class="fa-solid fa-file-excel" aria-hidden="true"></i>',
+                        mp3: '<i class="fa-solid fa-file-audio" aria-hidden="true"></i>',
                         mp4: '<i class="fa-solid fa-file-video" aria-hidden="true"></i>',
                         webm: '<i class="fa-solid fa-file-video" aria-hidden="true"></i>',
                         mov: '<i class="fa-solid fa-file-video" aria-hidden="true"></i>'
