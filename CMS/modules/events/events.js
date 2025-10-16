@@ -215,6 +215,8 @@
             }
         }
 
+        selectors.tabs.activate = activate;
+
         function focusByIndex(index) {
             const normalizedIndex = (index + tabButtons.length) % tabButtons.length;
             const target = tabButtons[normalizedIndex];
@@ -2826,6 +2828,7 @@
                     openEventModal(id);
                     break;
                 case 'sales':
+                    selectors.tabs.activate?.('orders');
                     document.getElementById('eventsOrdersTitle')?.scrollIntoView({ behavior: 'smooth' });
                     if (selectors.orders.filterEvent) {
                         selectors.orders.filterEvent.value = id;
