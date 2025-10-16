@@ -119,46 +119,50 @@ $lastSubmissionLabel = $latestSubmission > 0
         </header>
 
         <div class="forms-main-grid">
-            <section class="a11y-detail-card forms-table-card">
-                <header class="forms-card-header">
-                    <div>
-                        <h3>Forms library</h3>
-                        <p>Click any form to review submissions, edit the layout, or remove outdated capture points.</p>
+            <div class="forms-main-grid__column forms-main-grid__column--library">
+                <section class="a11y-detail-card forms-table-card">
+                    <header class="forms-card-header">
+                        <div>
+                            <h3>Forms library</h3>
+                            <p>Click any form to review submissions, edit the layout, or remove outdated capture points.</p>
+                        </div>
+                    </header>
+                    <div class="forms-library" aria-live="polite">
+                        <div class="a11y-pages-grid forms-library-grid" id="formsLibrary" role="list" aria-busy="false"></div>
+                        <div class="a11y-empty-state forms-library-empty" id="formsLibraryEmptyState" hidden>
+                            <i class="fa-solid fa-clipboard-list" aria-hidden="true"></i>
+                            <h4>Build your first form</h4>
+                            <p>Create a form to start collecting submissions.</p>
+                        </div>
                     </div>
-                </header>
-                <div class="forms-library" aria-live="polite">
-                    <div class="a11y-pages-grid forms-library-grid" id="formsLibrary" role="list" aria-busy="false"></div>
-                    <div class="a11y-empty-state forms-library-empty" id="formsLibraryEmptyState" hidden>
-                        <i class="fa-solid fa-clipboard-list" aria-hidden="true"></i>
-                        <h4>Build your first form</h4>
-                        <p>Create a form to start collecting submissions.</p>
-                    </div>
-                </div>
-            </section>
+                </section>
+            </div>
 
-            <section class="a11y-detail-card forms-submissions-card" id="formSubmissionsCard">
-                <header class="forms-card-header forms-submissions-header">
-                    <div>
-                        <h3>Submission activity</h3>
-                        <p id="selectedFormName" class="form-submissions-label">Select a form to view submissions</p>
+            <aside class="forms-main-grid__column forms-main-grid__column--submissions" aria-label="Form submissions overview">
+                <section class="a11y-detail-card forms-submissions-card" id="formSubmissionsCard">
+                    <header class="forms-card-header forms-submissions-header">
+                        <div>
+                            <h3>Submission activity</h3>
+                            <p id="selectedFormName" class="form-submissions-label">Select a form to view submissions</p>
+                        </div>
+                        <div class="forms-submissions-meta">
+                            <span class="forms-submissions-count" id="formSubmissionsCount">—</span>
+                            <form class="forms-submissions-export" id="exportSubmissionsForm" method="get" action="modules/forms/export_submissions.php">
+                                <input type="hidden" name="form_id" id="exportFormId" value="">
+                                <button type="submit" class="a11y-btn a11y-btn--ghost" id="exportSubmissionsBtn" disabled aria-disabled="true">
+                                    <i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i>
+                                    <span>Export CSV</span>
+                                </button>
+                            </form>
+                        </div>
+                    </header>
+                    <div class="forms-submissions-container">
+                        <div class="forms-submissions-list" id="formSubmissionsList" role="list" aria-live="polite">
+                            <div class="forms-submissions-empty">Select a form to view submissions.</div>
+                        </div>
                     </div>
-                    <div class="forms-submissions-meta">
-                        <span class="forms-submissions-count" id="formSubmissionsCount">—</span>
-                        <form class="forms-submissions-export" id="exportSubmissionsForm" method="get" action="modules/forms/export_submissions.php">
-                            <input type="hidden" name="form_id" id="exportFormId" value="">
-                            <button type="submit" class="a11y-btn a11y-btn--ghost" id="exportSubmissionsBtn" disabled aria-disabled="true">
-                                <i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i>
-                                <span>Export CSV</span>
-                            </button>
-                        </form>
-                    </div>
-                </header>
-                <div class="forms-submissions-container">
-                    <div class="forms-submissions-list" id="formSubmissionsList" role="list" aria-live="polite">
-                        <div class="forms-submissions-empty">Select a form to view submissions.</div>
-                    </div>
-                </div>
-            </section>
+                </section>
+            </aside>
         </div>
 
         <div class="a11y-page-detail forms-drawer" id="formBuilderDrawer" hidden role="dialog" aria-modal="true" aria-labelledby="formBuilderTitle" aria-describedby="formBuilderDescription">
