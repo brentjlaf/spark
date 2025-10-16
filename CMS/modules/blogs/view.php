@@ -76,15 +76,15 @@
                             </select>
                         </div>
                     </div>
-                </div>
-            </div>
-            <div class="blog-controls-secondary">
-                <div class="blog-select-filter blog-select-filter--actions">
-                    <label>&nbsp;</label>
-                    <button type="button" class="blog-btn blog-btn--subtle" id="clearFilters">
-                        <i class="fa-solid fa-arrow-rotate-left" aria-hidden="true"></i>
-                        <span>Reset</span>
-                    </button>
+                    <div class="blog-controls-secondary">
+                        <div class="blog-select-filter blog-select-filter--actions">
+                            <label>&nbsp;</label>
+                            <button type="button" class="blog-btn blog-btn--subtle" id="clearFilters">
+                                <i class="fa-solid fa-arrow-rotate-left" aria-hidden="true"></i>
+                                <span>Reset</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
