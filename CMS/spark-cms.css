@@ -12227,11 +12227,72 @@ body.calendar-modal-open {
     cursor: pointer;
 }
 
+.events-modal-layout {
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr);
+    align-items: start;
+}
+
+.events-form-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+}
+
+.events-form-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.events-form-card {
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 1.25rem;
+    padding: 1.75rem;
+    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.events-form-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.events-form-card-header > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.events-form-card-title {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.events-form-card-subtitle {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.92rem;
+}
+
 .events-form-grid {
     display: grid;
-    gap: 1.25rem;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    margin-bottom: 1rem;
+    gap: 1.35rem;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.events-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
 }
 
 .events-form-field span,
@@ -12241,12 +12302,62 @@ body.calendar-modal-open {
 }
 
 .events-form-field input[type='text'],
-.events-form-field input[type='datetime-local'] {
+.events-form-field input[type='datetime-local'],
+.events-form-field select {
     width: 100%;
     padding: 0.65rem 0.85rem;
     border-radius: 0.75rem;
     border: 1px solid #cbd5f5;
     margin-top: 0.35rem;
+    background: #fff;
+}
+
+.events-form-field select {
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, #475569 50%),
+        linear-gradient(135deg, #475569 50%, transparent 50%),
+        linear-gradient(to right, #cbd5f5, #cbd5f5);
+    background-position: calc(100% - 18px) calc(1.1rem), calc(100% - 13px) calc(1.1rem), calc(100% - 2.1rem) 0.8rem;
+    background-size: 5px 5px, 5px 5px, 1px 60%;
+    background-repeat: no-repeat;
+}
+
+.events-form-field select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.16);
+}
+
+.events-form-grid .span-2 {
+    grid-column: span 2;
+}
+
+.events-form-card .events-form-help {
+    margin: -0.25rem 0 0;
+}
+
+.events-ticketing-card {
+    margin-top: 0;
+    border-top: none;
+    padding-top: 0;
+}
+
+.events-status-group {
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1rem 1.25rem;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.events-status-group .events-radio {
+    margin-top: 0;
+}
+
+.events-form-sidebar .events-category-manage-btn {
+    margin-top: 1rem;
 }
 
 .events-image-picker {
@@ -12314,6 +12425,36 @@ body.calendar-modal-open {
     justify-content: flex-end;
     gap: 0.75rem;
     margin-top: 2rem;
+}
+
+@media (max-width: 1080px) {
+    .events-modal-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .events-form-sidebar {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 1.25rem;
+    }
+
+    .events-form-sidebar .events-form-card {
+        flex: 1 1 280px;
+    }
+}
+
+@media (max-width: 720px) {
+    .events-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .events-form-grid .span-2 {
+        grid-column: span 1;
+    }
+
+    .events-form-sidebar {
+        flex-direction: column;
+    }
 }
 
 .events-modal-backdrop {

@@ -346,114 +346,160 @@ $initialPayload = [
         <div class="events-modal-body">
             <form data-events-form="event">
                 <input type="hidden" name="id" value="">
-                <div class="events-form-grid">
-                    <label class="events-form-field">
-                        <span>Title</span>
-                        <input type="text" name="title" required>
-                    </label>
-                    <label class="events-form-field">
-                        <span>Location / Venue</span>
-                        <input type="text" name="location" placeholder="Venue or meeting link">
-                    </label>
-                    <label class="events-form-field">
-                        <span>Registration form</span>
-                        <select name="form_id" data-events-event-form>
-                            <option value="">No form selected</option>
-                            <?php foreach ($forms as $form): ?>
-                                <option value="<?php echo htmlspecialchars($form['id'], ENT_QUOTES, 'UTF-8'); ?>">
-                                    <?php echo htmlspecialchars($form['name'], ENT_QUOTES, 'UTF-8'); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <p class="events-form-help">Choose which form to use for attendee registrations. Leave empty to manage signups elsewhere.</p>
-                    </label>
-                    <div class="events-form-field">
-                        <span>Featured image</span>
-                        <div class="events-image-picker" data-events-image-picker>
-                            <input type="hidden" name="image" value="">
-                            <div class="events-image-preview" data-events-image-preview aria-live="polite">
-                                <span class="events-image-placeholder">No image selected yet.</span>
+                <div class="events-modal-layout">
+                    <section class="events-form-main">
+                        <section class="events-form-card" aria-labelledby="eventsBasicsTitle">
+                            <header class="events-form-card-header">
+                                <div>
+                                    <h3 class="events-form-card-title" id="eventsBasicsTitle">Event basics</h3>
+                                    <p class="events-form-card-subtitle">Capture the essential information attendees need to know.</p>
+                                </div>
+                            </header>
+                            <div class="events-form-grid">
+                                <label class="events-form-field">
+                                    <span>Title</span>
+                                    <input type="text" name="title" required>
+                                </label>
+                                <label class="events-form-field">
+                                    <span>Location / Venue</span>
+                                    <input type="text" name="location" placeholder="Venue or meeting link">
+                                </label>
+                                <div class="events-form-field span-2">
+                                    <span>Description</span>
+                                    <div class="events-editor-toolbar" role="toolbar" aria-label="Formatting">
+                                        <button type="button" data-editor-command="bold" aria-label="Bold"><i class="fa-solid fa-bold"></i></button>
+                                        <button type="button" data-editor-command="italic" aria-label="Italic"><i class="fa-solid fa-italic"></i></button>
+                                        <button type="button" data-editor-command="insertUnorderedList" aria-label="Bullet list"><i class="fa-solid fa-list-ul"></i></button>
+                                    </div>
+                                    <div class="events-editor" contenteditable="true" data-events-editor></div>
+                                    <textarea name="description" class="sr-only" data-events-editor-target></textarea>
+                                </div>
+                                <label class="events-form-field">
+                                    <span>Start date &amp; time</span>
+                                    <input type="datetime-local" name="start" required>
+                                </label>
+                                <label class="events-form-field">
+                                    <span>End date &amp; time</span>
+                                    <input type="datetime-local" name="end">
+                                </label>
                             </div>
-                            <div class="events-image-actions">
-                                <button type="button" class="a11y-btn a11y-btn--secondary" data-events-image-open>
-                                    <i class="fa-solid fa-image" aria-hidden="true"></i>
-                                    <span>Choose image</span>
-                                </button>
-                                <button type="button" class="a11y-btn a11y-btn--ghost" data-events-image-clear hidden>
-                                    <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
-                                    <span>Remove image</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="events-form-field span-2">
-                        <span>Description</span>
-                        <div class="events-editor-toolbar" role="toolbar" aria-label="Formatting">
-                            <button type="button" data-editor-command="bold" aria-label="Bold"><i class="fa-solid fa-bold"></i></button>
-                            <button type="button" data-editor-command="italic" aria-label="Italic"><i class="fa-solid fa-italic"></i></button>
-                            <button type="button" data-editor-command="insertUnorderedList" aria-label="Bullet list"><i class="fa-solid fa-list-ul"></i></button>
-                        </div>
-                        <div class="events-editor" contenteditable="true" data-events-editor></div>
-                        <textarea name="description" class="sr-only" data-events-editor-target></textarea>
-                    </div>
-                    <label class="events-form-field">
-                        <span>Start date &amp; time</span>
-                        <input type="datetime-local" name="start" required>
-                    </label>
-                    <label class="events-form-field">
-                        <span>End date &amp; time</span>
-                        <input type="datetime-local" name="end">
-                    </label>
-                    <fieldset class="events-form-field span-2">
-                        <legend>Categories</legend>
-                        <p class="events-form-help">Tag this event to improve filtering and reporting.</p>
-                        <div class="events-category-options" data-events-category-options>
-                            <p class="events-category-empty">No categories yet. Manage categories to create one.</p>
-                        </div>
-                        <button type="button" class="a11y-btn a11y-btn--ghost events-category-manage-btn" data-events-open="categories">
-                            <i class="fa-solid fa-tags" aria-hidden="true"></i>
-                            <span>Manage categories</span>
-                        </button>
-                    </fieldset>
-                    <fieldset class="events-form-field">
-                        <legend>Status &amp; scheduling</legend>
-                        <p class="events-form-help">Choose the visibility state and optionally automate when it changes.</p>
-                        <label class="events-radio">
-                            <input type="radio" name="status" value="draft" checked>
-                            <span>Save as draft</span>
-                        </label>
-                        <label class="events-radio">
-                            <input type="radio" name="status" value="published">
-                            <span>Publish now</span>
-                        </label>
-                        <div class="events-schedule-fields">
-                            <label class="events-schedule-field">
-                                <span>Publish at (optional)</span>
-                                <input type="datetime-local" name="publish_at">
-                            </label>
-                            <label class="events-schedule-field">
-                                <span>Unpublish at (optional)</span>
-                                <input type="datetime-local" name="unpublish_at">
-                            </label>
-                        </div>
-                    </fieldset>
-                </div>
+                        </section>
 
-                <section class="events-ticketing" aria-labelledby="eventsTicketsTitle">
-                    <header class="events-ticketing-header">
-                        <div>
-                            <h3 id="eventsTicketsTitle">Ticket types</h3>
-                            <p>Add multiple ticket tiers with pricing, availability, and optional sale windows.</p>
-                        </div>
-                        <button type="button" class="a11y-btn a11y-btn--secondary" data-events-ticket-add>
-                            <i class="fa-solid fa-ticket" aria-hidden="true"></i>
-                            <span>Add ticket type</span>
-                        </button>
-                    </header>
-                    <div class="events-ticket-list" data-events-tickets>
-                        <div class="events-ticket-empty">No ticket types yet. Add one to begin selling.</div>
-                    </div>
-                </section>
+                        <section class="events-form-card events-ticketing-card events-ticketing" aria-labelledby="eventsTicketsTitle">
+                            <header class="events-form-card-header events-ticketing-header">
+                                <div>
+                                    <h3 class="events-form-card-title" id="eventsTicketsTitle">Ticket types</h3>
+                                    <p class="events-form-card-subtitle">Add multiple ticket tiers with pricing, availability, and optional sale windows.</p>
+                                </div>
+                                <button type="button" class="a11y-btn a11y-btn--secondary" data-events-ticket-add>
+                                    <i class="fa-solid fa-ticket" aria-hidden="true"></i>
+                                    <span>Add ticket type</span>
+                                </button>
+                            </header>
+                            <div class="events-ticket-list" data-events-tickets>
+                                <div class="events-ticket-empty">No ticket types yet. Add one to begin selling.</div>
+                            </div>
+                        </section>
+                    </section>
+
+                    <aside class="events-form-sidebar" aria-label="Event configuration">
+                        <section class="events-form-card" aria-labelledby="eventsRegistrationTitle">
+                            <header class="events-form-card-header">
+                                <div>
+                                    <h3 class="events-form-card-title" id="eventsRegistrationTitle">Registration</h3>
+                                    <p class="events-form-card-subtitle">Connect an existing form to collect attendee details.</p>
+                                </div>
+                            </header>
+                            <label class="events-form-field">
+                                <span>Registration form</span>
+                                <select name="form_id" data-events-event-form>
+                                    <option value="">No form selected</option>
+                                    <?php foreach ($forms as $form): ?>
+                                        <option value="<?php echo htmlspecialchars($form['id'], ENT_QUOTES, 'UTF-8'); ?>">
+                                            <?php echo htmlspecialchars($form['name'], ENT_QUOTES, 'UTF-8'); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                            <p class="events-form-help">Choose which form to use for attendee registrations. Leave empty to manage signups elsewhere.</p>
+                        </section>
+
+                        <section class="events-form-card" aria-labelledby="eventsImageTitle">
+                            <header class="events-form-card-header">
+                                <div>
+                                    <h3 class="events-form-card-title" id="eventsImageTitle">Featured image</h3>
+                                    <p class="events-form-card-subtitle">Showcase the experience with a hero graphic or photo.</p>
+                                </div>
+                            </header>
+                            <div class="events-form-field">
+                                <div class="events-image-picker" data-events-image-picker>
+                                    <input type="hidden" name="image" value="">
+                                    <div class="events-image-preview" data-events-image-preview aria-live="polite">
+                                        <span class="events-image-placeholder">No image selected yet.</span>
+                                    </div>
+                                    <div class="events-image-actions">
+                                        <button type="button" class="a11y-btn a11y-btn--secondary" data-events-image-open>
+                                            <i class="fa-solid fa-image" aria-hidden="true"></i>
+                                            <span>Choose image</span>
+                                        </button>
+                                        <button type="button" class="a11y-btn a11y-btn--ghost" data-events-image-clear hidden>
+                                            <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+                                            <span>Remove image</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="events-form-card" aria-labelledby="eventsFormCategoriesTitle">
+                            <header class="events-form-card-header">
+                                <div>
+                                    <h3 class="events-form-card-title" id="eventsFormCategoriesTitle">Categories</h3>
+                                    <p class="events-form-card-subtitle">Tag this event to improve filtering and reporting.</p>
+                                </div>
+                            </header>
+                            <div class="events-form-field">
+                                <div class="events-category-options" data-events-category-options>
+                                    <p class="events-category-empty">No categories yet. Manage categories to create one.</p>
+                                </div>
+                                <button type="button" class="a11y-btn a11y-btn--ghost events-category-manage-btn" data-events-open="categories">
+                                    <i class="fa-solid fa-tags" aria-hidden="true"></i>
+                                    <span>Manage categories</span>
+                                </button>
+                            </div>
+                        </section>
+
+                        <section class="events-form-card" aria-labelledby="eventsStatusTitle">
+                            <header class="events-form-card-header">
+                                <div>
+                                    <h3 class="events-form-card-title" id="eventsStatusTitle">Status &amp; scheduling</h3>
+                                    <p class="events-form-card-subtitle">Choose visibility and optional automation for going live.</p>
+                                </div>
+                            </header>
+                            <fieldset class="events-status-group">
+                                <legend class="sr-only">Event status</legend>
+                                <label class="events-radio">
+                                    <input type="radio" name="status" value="draft" checked>
+                                    <span>Save as draft</span>
+                                </label>
+                                <label class="events-radio">
+                                    <input type="radio" name="status" value="published">
+                                    <span>Publish now</span>
+                                </label>
+                            </fieldset>
+                            <div class="events-schedule-fields">
+                                <label class="events-schedule-field">
+                                    <span>Publish at (optional)</span>
+                                    <input type="datetime-local" name="publish_at">
+                                </label>
+                                <label class="events-schedule-field">
+                                    <span>Unpublish at (optional)</span>
+                                    <input type="datetime-local" name="unpublish_at">
+                                </label>
+                            </div>
+                        </section>
+                    </aside>
+                </div>
 
                 <footer class="events-form-actions">
                     <button type="button" class="a11y-btn a11y-btn--ghost" data-events-close>Cancel</button>
