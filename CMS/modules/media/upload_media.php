@@ -6,9 +6,10 @@ require_once __DIR__ . '/../../includes/sanitize.php';
 require_login();
 
 $allowed = [
-    'images' => ['jpg','jpeg','png','gif','webp'],
+    'images' => ['jpg','jpeg','png','gif','webp','svg'],
     'videos' => ['mp4','webm','mov'],
-    'documents' => ['pdf','doc','docx','txt']
+    'audio' => ['mp3'],
+    'documents' => ['pdf','doc','docx','txt','xlsx','csv']
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

@@ -252,7 +252,7 @@
                     </div>
                     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
                     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
-                    <input type="file" id="fileInput" class="upload-input" multiple accept="image/*">
+                    <input type="file" id="fileInput" class="upload-input" multiple accept="image/*,video/*,.mp3,.pdf,.doc,.docx,.txt,.xlsx,.csv,.svg">
                     <div id="uploadLoader" class="upload-loader" style="display:none;">
                         <div class="upload-loader-content" role="status" aria-live="polite">
                             <div class="loading" aria-hidden="true"></div>
