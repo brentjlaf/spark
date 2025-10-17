@@ -3897,6 +3897,13 @@
         }
 
         .analytics-insight-chart__controls {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .analytics-insight-chart__tabs {
             display: inline-flex;
             flex-wrap: wrap;
             gap: 8px;
@@ -3912,6 +3919,61 @@
             font-weight: 600;
             cursor: pointer;
             transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .analytics-insight-chart__select {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+            font-size: 13px;
+            color: #0f172a;
+        }
+
+        .analytics-insight-chart__select-label {
+            font-weight: 600;
+        }
+
+        .analytics-insight-chart__select select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-color: #ffffff;
+            border: 1px solid rgba(15, 23, 42, 0.15);
+            border-radius: 999px;
+            padding: 6px 32px 6px 12px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #0f172a;
+            cursor: pointer;
+            background-image: url('data:image/svg+xml;utf8,<svg fill="%230f172a" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 14px;
+        }
+
+        .analytics-insight-chart__select select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.25);
+            border-color: #0ea5e9;
+        }
+
+        @media (max-width: 720px) {
+            .analytics-insight-chart__controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .analytics-insight-chart__select {
+                margin-left: 0;
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .analytics-insight-chart__select select {
+                width: 100%;
+            }
         }
 
         .analytics-insight-chart__tab:hover,
