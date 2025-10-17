@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/data.php';
 require_once __DIR__ . '/../../includes/sanitize.php';
+require_once __DIR__ . '/../../includes/page_schedule.php';
 $pagesFile = __DIR__ . '/../../data/pages.json';
 $pages = [];
 if (file_exists($pagesFile)) {
@@ -39,6 +40,17 @@ $og_title = sanitize_text($_POST['og_title'] ?? '');
 $og_description = sanitize_text($_POST['og_description'] ?? '');
 $og_image = sanitize_url($_POST['og_image'] ?? '');
 $access = sanitize_text($_POST['access'] ?? 'public');
+$publishAt = sparkcms_parse_datetime_local($_POST['publish_at'] ?? null);
+$unpublishAt = sparkcms_parse_datetime_local($_POST['unpublish_at'] ?? null);
+
+if ($publishAt !== null && $unpublishAt !== null && $unpublishAt <= $publishAt) {
+    http_response_code(400);
+    echo 'Unpublish time must be after publish time.';
+    exit;
+}
+
+$publishAt = sparkcms_normalize_timestamp($publishAt);
+$unpublishAt = sparkcms_normalize_timestamp($unpublishAt);
 
 if ($title === '') {
     http_response_code(400);
@@ -64,6 +76,8 @@ if ($id) {
             $p['og_description'] = $og_description;
             $p['og_image'] = $og_image;
             $p['access'] = $access;
+            $p['publish_at'] = $publishAt;
+            $p['unpublish_at'] = $unpublishAt;
             $p['last_modified'] = time();
             $timestamp = $p['last_modified'];
             break;
@@ -107,6 +121,24 @@ if ($id) {
         if ($old['access'] !== $access) {
             $details[] = 'Access: ' . $old['access'] . ' → ' . $access;
         }
+        $oldPublishAt = sparkcms_normalize_timestamp($old['publish_at'] ?? null);
+        $oldUnpublishAt = sparkcms_normalize_timestamp($old['unpublish_at'] ?? null);
+        $scheduleChanged = false;
+        $oldPublishDisplay = $oldPublishAt ? date('M j, Y g:i A', $oldPublishAt) : 'Immediate';
+        $newPublishDisplay = $publishAt ? date('M j, Y g:i A', $publishAt) : 'Immediate';
+        if ($oldPublishAt !== $publishAt) {
+            $details[] = 'Publish at: ' . $oldPublishDisplay . ' → ' . $newPublishDisplay;
+            $scheduleChanged = true;
+        }
+        $oldUnpublishDisplay = $oldUnpublishAt ? date('M j, Y g:i A', $oldUnpublishAt) : 'Not scheduled';
+        $newUnpublishDisplay = $unpublishAt ? date('M j, Y g:i A', $unpublishAt) : 'Not scheduled';
+        if ($oldUnpublishAt !== $unpublishAt) {
+            $details[] = 'Unpublish at: ' . $oldUnpublishDisplay . ' → ' . $newUnpublishDisplay;
+            $scheduleChanged = true;
+        }
+        if ($scheduleChanged) {
+            $changes[] = 'Updated publish schedule';
+        }
     }
     if (!$changes) {
         $changes[] = 'Updated page settings';
@@ -135,6 +167,8 @@ if ($id) {
         'og_description' => $og_description,
         'og_image' => $og_image,
         'access' => $access,
+        'publish_at' => $publishAt,
+        'unpublish_at' => $unpublishAt,
         'views' => 0,
         'last_modified' => time()
     ];
@@ -143,6 +177,8 @@ if ($id) {
         'Initial template: ' . $template,
         'Visibility: ' . ($published ? 'Published' : 'Unpublished'),
         'Access: ' . $access,
+        'Publish at: ' . ($publishAt ? date('M j, Y g:i A', $publishAt) : 'Immediate'),
+        'Unpublish at: ' . ($unpublishAt ? date('M j, Y g:i A', $unpublishAt) : 'Not scheduled'),
     ];
     $action = 'created page with template ' . $template;
 }
@@ -180,6 +216,14 @@ $historyData['__system__'][] = [
 ];
 $historyData['__system__'] = array_slice($historyData['__system__'], -50);
 file_put_contents($historyFile, json_encode($historyData, JSON_PRETTY_PRINT));
+
+foreach ($pages as &$pageItem) {
+    $normalizedPublish = sparkcms_normalize_timestamp($pageItem['publish_at'] ?? null);
+    $normalizedUnpublish = sparkcms_normalize_timestamp($pageItem['unpublish_at'] ?? null);
+    $pageItem['publish_at'] = $normalizedPublish ?? null;
+    $pageItem['unpublish_at'] = $normalizedUnpublish ?? null;
+}
+unset($pageItem);
 
 file_put_contents($pagesFile, json_encode($pages, JSON_PRETTY_PRINT));
 // Regenerate sitemap whenever pages are modified

@@ -14,6 +14,124 @@ $(function(){
         const homepageBadgeHtml = '<span class="pages-card__badge pages-card__badge--home"><i class="fa-solid fa-house" aria-hidden="true"></i>Homepage</span>';
         $('#cancelEdit').hide();
 
+        const statusClassMap = {
+            published: 'status-published',
+            scheduled: 'status-scheduled',
+            expired: 'status-expired',
+            draft: 'status-draft'
+        };
+        const statusLabelMap = {
+            published: 'Published',
+            scheduled: 'Scheduled',
+            expired: 'Expired',
+            draft: 'Draft'
+        };
+        const statusSortRank = {
+            published: 3,
+            scheduled: 2,
+            draft: 1,
+            expired: 0
+        };
+
+        function parseTimestampValue(value){
+            if (value === null || value === undefined) {
+                return null;
+            }
+            if (value instanceof Date) {
+                return Math.floor(value.getTime() / 1000);
+            }
+            const num = Number(value);
+            if (!Number.isFinite(num) || num <= 0) {
+                return null;
+            }
+            return Math.floor(num);
+        }
+
+        function parseDatetimeLocalToTimestamp(value){
+            if (!value) {
+                return null;
+            }
+            const trimmed = value.toString().trim();
+            if (trimmed === '') {
+                return null;
+            }
+            const parts = trimmed.split(/[-T:]/).map(Number);
+            if (parts.length < 5) {
+                return null;
+            }
+            const [year, month, day, hour, minute, second = 0] = parts;
+            if ([year, month, day, hour, minute, second].some((part) => Number.isNaN(part))) {
+                return null;
+            }
+            const date = new Date(year, month - 1, day, hour, minute, second);
+            if (Number.isNaN(date.getTime())) {
+                return null;
+            }
+            return Math.floor(date.getTime() / 1000);
+        }
+
+        function padNumber(value){
+            return value.toString().padStart(2, '0');
+        }
+
+        function timestampToDatetimeLocal(timestamp){
+            const seconds = parseTimestampValue(timestamp);
+            if (seconds === null) {
+                return '';
+            }
+            const date = new Date(seconds * 1000);
+            if (Number.isNaN(date.getTime())) {
+                return '';
+            }
+            const year = date.getFullYear();
+            const month = padNumber(date.getMonth() + 1);
+            const day = padNumber(date.getDate());
+            const hours = padNumber(date.getHours());
+            const minutes = padNumber(date.getMinutes());
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        function buildScheduleNote(statusKey, publishAt, unpublishAt){
+            if (statusKey === 'scheduled' && publishAt) {
+                const date = new Date(publishAt * 1000);
+                if (!Number.isNaN(date.getTime())) {
+                    return `Publishes ${formatTimestamp(date)}`;
+                }
+            }
+            if (statusKey === 'expired' && unpublishAt) {
+                const date = new Date(unpublishAt * 1000);
+                if (!Number.isNaN(date.getTime())) {
+                    return `Unpublished ${formatTimestamp(date)}`;
+                }
+            }
+            return '';
+        }
+
+        function evaluateSchedule(data){
+            const publishAt = parseTimestampValue(data.publish_at);
+            const unpublishAt = parseTimestampValue(data.unpublish_at);
+            const rawPublished = data.published ? 1 : 0;
+            const nowSeconds = Math.floor(Date.now() / 1000);
+            let status = 'draft';
+            if (rawPublished) {
+                if (publishAt !== null && nowSeconds < publishAt) {
+                    status = 'scheduled';
+                } else if (unpublishAt !== null && nowSeconds >= unpublishAt) {
+                    status = 'expired';
+                } else {
+                    status = 'published';
+                }
+            }
+
+            return {
+                status,
+                publishAt,
+                unpublishAt,
+                isCurrentlyPublished: status === 'published',
+                note: buildScheduleNote(status, publishAt, unpublishAt)
+            };
+        }
+
         function toastSuccess(message){
             if(window.AdminNotifications && typeof window.AdminNotifications.showSuccessToast === 'function'){
                 window.AdminNotifications.showSuccessToast(message);
@@ -111,7 +229,7 @@ $(function(){
             getPageRows().each(function(){
                 const $row = $(this);
                 counts.all++;
-                if ($row.data('published') == 1) {
+                if (parseNumber($row.data('currently_published')) === 1) {
                     counts.published++;
                 } else {
                     counts.drafts++;
@@ -130,9 +248,9 @@ $(function(){
         function rowMatchesFilter($row) {
             switch (activeFilter) {
                 case 'published':
-                    return $row.data('published') == 1;
+                    return parseNumber($row.data('currently_published')) === 1;
                 case 'drafts':
-                    return $row.data('published') != 1;
+                    return parseNumber($row.data('currently_published')) !== 1;
                 case 'restricted':
                     return (($row.data('access') || 'public') + '').toLowerCase() !== 'public';
                 case 'all':
@@ -213,10 +331,12 @@ $(function(){
         const comparators = {
             title: compareTitles,
             status: function($a, $b){
-                const statusA = parseNumber($a.data('published')) === 1 ? 1 : 0;
-                const statusB = parseNumber($b.data('published')) === 1 ? 1 : 0;
-                if (statusA !== statusB) {
-                    return statusA - statusB;
+                const scheduleA = ($a.data('schedule_status') || '').toString();
+                const scheduleB = ($b.data('schedule_status') || '').toString();
+                const rankA = statusSortRank[scheduleA] ?? 0;
+                const rankB = statusSortRank[scheduleB] ?? 0;
+                if (rankA !== rankB) {
+                    return rankA - rankB;
                 }
                 return compareTitles($a, $b);
             },
@@ -338,6 +458,17 @@ $(function(){
             const formattedTimestamp = lastModifiedDate ? formatTimestamp(lastModifiedDate) : '';
             const viewsCount = typeof data.views === 'number' ? data.views : (parseFloat($row.data('views')) || 0);
             const isHomepageRow = homepageSlug !== '' && data.slug === homepageSlug;
+            const publishAtSeconds = parseTimestampValue(data.publish_at);
+            const unpublishAtSeconds = parseTimestampValue(data.unpublish_at);
+            data.publish_at = publishAtSeconds;
+            data.unpublish_at = unpublishAtSeconds;
+            const scheduleState = evaluateSchedule({
+                published: publishedFlag,
+                publish_at: publishAtSeconds,
+                unpublish_at: unpublishAtSeconds
+            });
+            const statusClass = statusClassMap[scheduleState.status] || statusClassMap.draft;
+            const statusLabel = statusLabelMap[scheduleState.status] || statusLabelMap.draft;
             const sharedAttributes = {
                 'data-title': data.title,
                 'data-slug': data.slug,
@@ -351,6 +482,10 @@ $(function(){
                 'data-og_image': data.og_image,
                 'data-access': data.access,
                 'data-published': publishedFlag,
+                'data-currently_published': scheduleState.isCurrentlyPublished ? 1 : 0,
+                'data-schedule_status': scheduleState.status,
+                'data-publish_at': publishAtSeconds !== null ? publishAtSeconds : '',
+                'data-unpublish_at': unpublishAtSeconds !== null ? unpublishAtSeconds : '',
                 'data-views': viewsCount,
                 'data-last_modified': lastModifiedSeconds,
                 'data-homepage': isHomepageRow ? 1 : 0
@@ -370,6 +505,10 @@ $(function(){
             $row.data('og_image', data.og_image);
             $row.data('access', data.access);
             $row.data('published', publishedFlag);
+            $row.data('currently_published', scheduleState.isCurrentlyPublished ? 1 : 0);
+            $row.data('schedule_status', scheduleState.status);
+            $row.data('publish_at', publishAtSeconds !== null ? publishAtSeconds : '');
+            $row.data('unpublish_at', unpublishAtSeconds !== null ? unpublishAtSeconds : '');
             $row.data('views', viewsCount);
             $row.data('last_modified', lastModifiedSeconds);
             $row.data('homepage', isHomepageRow ? 1 : 0);
@@ -378,9 +517,20 @@ $(function(){
             $row.find('.pages-list-slug').text(`/${data.slug}`);
 
             const $rowStatusBadge = $row.find('.status-badge');
-            $rowStatusBadge.removeClass('status-published status-draft');
-            $rowStatusBadge.addClass(publishedFlag ? 'status-published' : 'status-draft');
-            $rowStatusBadge.text(publishedFlag ? 'Published' : 'Draft');
+            $rowStatusBadge.removeClass('status-published status-draft status-scheduled status-expired');
+            $rowStatusBadge.addClass(statusClass);
+            $rowStatusBadge.text(statusLabel);
+
+            const $statusNote = $row.find('[data-status-note]');
+            if ($statusNote.length) {
+                if (scheduleState.note) {
+                    $statusNote.text(scheduleState.note);
+                    $statusNote.removeAttr('hidden');
+                } else {
+                    $statusNote.text('');
+                    $statusNote.attr('hidden', 'hidden');
+                }
+            }
 
             const $rowViewLink = $row.find('[data-action="view"]').first();
             if ($rowViewLink.length) {
@@ -449,7 +599,9 @@ $(function(){
                 og_title: data.og_title,
                 og_description: data.og_description,
                 og_image: data.og_image,
-                access: data.access
+                access: data.access,
+                publish_at: data.publish_at,
+                unpublish_at: data.unpublish_at
             };
 
             if (overrides && typeof overrides === 'object') {
@@ -491,6 +643,9 @@ $(function(){
                 access: $('#access').val(),
                 published: $('#published').is(':checked') ? 1 : 0
             };
+
+            pageData.publish_at = parseDatetimeLocalToTimestamp($('#publish_at').val());
+            pageData.unpublish_at = parseDatetimeLocalToTimestamp($('#unpublish_at').val());
 
             const nowTimestamp = Math.floor(Date.now() / 1000);
             if (isEditing) {
@@ -604,6 +759,8 @@ $(function(){
             $('#og_description').val(row.data('og_description'));
             $('#og_image').val(row.data('og_image'));
             $('#access').val(row.data('access'));
+            $('#publish_at').val(timestampToDatetimeLocal(row.attr('data-publish_at')));
+            $('#unpublish_at').val(timestampToDatetimeLocal(row.attr('data-unpublish_at')));
             $('#homepage').prop('checked', row.data('homepage') == 1);
             $('#cancelEdit').show();
             $('#pageTabs').tabs('option', 'active', 0);
@@ -616,6 +773,8 @@ $(function(){
             $('#pageForm')[0].reset();
             $('#published').prop('checked', false);
             $('#canonical_url').val('');
+            $('#publish_at').val('');
+            $('#unpublish_at').val('');
             $('#homepage').prop('checked', false);
             closePageModal();
             slugEdited = false;
@@ -629,6 +788,8 @@ $(function(){
             $('#canonical_url').val('');
             $('#pageTabs').tabs('option', 'active', 0);
             $('#cancelEdit').hide();
+            $('#publish_at').val('');
+            $('#unpublish_at').val('');
             $('#homepage').prop('checked', false);
             openPageModal();
             slugEdited = false;

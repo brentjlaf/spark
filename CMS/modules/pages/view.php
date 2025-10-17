@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/data.php';
 require_once __DIR__ . '/../../includes/settings.php';
+require_once __DIR__ . '/../../includes/page_schedule.php';
 require_login();
 
 $pagesFile = __DIR__ . '/../../data/pages.json';
@@ -25,8 +26,10 @@ $draftPages = 0;
 $totalViews = 0;
 $restrictedPages = 0;
 $lastUpdatedTimestamp = 0;
+$now = time();
 foreach ($pages as $p) {
-    if (!empty($p['published'])) {
+    $publicationState = sparkcms_evaluate_page_publication($p, $now);
+    if ($publicationState['is_currently_published']) {
         $publishedPages++;
     } else {
         $draftPages++;
@@ -175,7 +178,32 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
     $ogImage = $p['og_image'] ?? '';
     $accessRaw = $p['access'] ?? 'public';
 
-    $isPublished = !empty($p['published']);
+    $publicationState = sparkcms_evaluate_page_publication($p, $now);
+    $isPublished = !empty($publicationState['raw_published']);
+    $currentlyPublished = $publicationState['is_currently_published'];
+    $scheduleStatus = $publicationState['status'];
+    $publishAt = $publicationState['publish_at'];
+    $unpublishAt = $publicationState['unpublish_at'];
+    $statusLabelMap = [
+        'published' => 'Published',
+        'scheduled' => 'Scheduled',
+        'expired' => 'Expired',
+        'draft' => 'Draft'
+    ];
+    $statusClassMap = [
+        'published' => 'status-published',
+        'scheduled' => 'status-scheduled',
+        'expired' => 'status-expired',
+        'draft' => 'status-draft'
+    ];
+    $statusLabel = $statusLabelMap[$scheduleStatus] ?? $statusLabelMap['draft'];
+    $statusClass = $statusClassMap[$scheduleStatus] ?? $statusClassMap['draft'];
+    $statusNote = '';
+    if ($scheduleStatus === 'scheduled' && $publishAt) {
+        $statusNote = 'Publishes ' . date('M j, Y g:i A', $publishAt);
+    } elseif ($scheduleStatus === 'expired' && $unpublishAt) {
+        $statusNote = 'Unpublished ' . date('M j, Y g:i A', $unpublishAt);
+    }
     $accessValue = strtolower((string) $accessRaw);
     $isRestricted = $accessValue !== 'public';
     $views = (int) ($p['views'] ?? 0);
@@ -191,6 +219,10 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
                         data-slug="<?php echo htmlspecialchars($slug, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>"
                         data-content="<?php echo htmlspecialchars($content, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>"
                         data-published="<?php echo $isPublished ? 1 : 0; ?>"
+                        data-currently_published="<?php echo $currentlyPublished ? 1 : 0; ?>"
+                        data-schedule_status="<?php echo htmlspecialchars($scheduleStatus, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>"
+                        data-publish_at="<?php echo $publishAt ? (int) $publishAt : ''; ?>"
+                        data-unpublish_at="<?php echo $unpublishAt ? (int) $unpublishAt : ''; ?>"
                         data-template="<?php echo htmlspecialchars($templateName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>"
                         data-meta_title="<?php echo htmlspecialchars($metaTitle, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>"
                         data-meta_description="<?php echo htmlspecialchars($metaDescription, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>"
@@ -225,9 +257,14 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
                             </div>
                         </td>
                         <td class="pages-list-cell pages-list-cell--status" data-label="Status">
-                            <span class="status-badge <?php echo $isPublished ? 'status-published' : 'status-draft'; ?>">
-                                <?php echo $isPublished ? 'Published' : 'Draft'; ?>
-                            </span>
+                            <div class="pages-list-status">
+                                <span class="status-badge <?php echo $statusClass; ?>" data-status-badge>
+                                    <?php echo htmlspecialchars($statusLabel, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>
+                                </span>
+                                <span class="pages-status-note" data-status-note<?php echo $statusNote === '' ? ' hidden' : ''; ?>>
+                                    <?php echo $statusNote === '' ? '' : htmlspecialchars($statusNote, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>
+                                </span>
+                            </div>
                         </td>
                         <td class="pages-list-cell pages-list-cell--template" data-label="Template">
                             <span class="pages-list-template"><?php echo htmlspecialchars($templateName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></span>
@@ -322,12 +359,24 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
                                             <option value="private">Private</option>
                                         </select>
                                     </div>
-                                    <div class="form-group page-modal-checkbox">
+                                    <div class="form-group page-modal-checkbox page-modal-publish-group">
                                         <label class="form-label" for="published">Publishing</label>
-                                        <label class="page-modal-toggle">
-                                            <input type="checkbox" name="published" id="published">
-                                            <span>Published</span>
-                                        </label>
+                                        <div class="page-publish-controls">
+                                            <label class="page-modal-toggle">
+                                                <input type="checkbox" name="published" id="published">
+                                                <span>Published</span>
+                                            </label>
+                                            <div class="page-schedule-fields">
+                                                <div class="page-schedule-field">
+                                                    <label class="form-label" for="publish_at">Publish at</label>
+                                                    <input type="datetime-local" class="form-input" name="publish_at" id="publish_at" step="60">
+                                                </div>
+                                                <div class="page-schedule-field">
+                                                    <label class="form-label" for="unpublish_at">Unpublish at</label>
+                                                    <input type="datetime-local" class="form-input" name="unpublish_at" id="unpublish_at" step="60">
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div class="form-group page-modal-checkbox">
                                         <label class="form-label" for="homepage">Homepage</label>

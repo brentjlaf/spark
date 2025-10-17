@@ -91,6 +91,14 @@ Modules are self contained directories inside `CMS/modules`. A module typically 
 
 Refer to existing modules such as `pages` or `blogs` for minimal examples of loading and saving JSON data.
 
+## QA Checklist
+
+Use the following smoke tests to verify scheduled publishing behaves as expected:
+
+1. **Future publish window** – Create or edit a page, enable publishing, set a future “Publish at” time, and save. Confirm the list view shows a “Scheduled” badge with the planned timestamp, then open the page in a logged-out browser to verify it returns a not found response.
+2. **Active publish window** – Edit the same page to move the “Publish at” time into the past and set “Unpublish at” to a future time. Save and ensure the badge switches to “Published”, the note reflects the unpublish time, and the page renders normally when logged out.
+3. **Expired window** – Adjust “Unpublish at” to a past timestamp while keeping the publish toggle enabled. After saving, confirm the badge reads “Expired”, the page is hidden for logged-out visitors, and reopening the modal shows the stored schedule values.
+
 ## License
 
 Spark CMS is distributed under the MIT License. See `LICENSE` for details.
