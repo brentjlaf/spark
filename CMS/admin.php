@@ -84,6 +84,10 @@ if (is_string($faviconSetting) && $faviconSetting !== '' && preg_match('#^https?
                         <div class="nav-icon"><i class="fas fa-images"></i></div>
                         <div class="nav-text">Media Library</div>
                     </div>
+                    <div class="nav-item" data-section="maps">
+                        <div class="nav-icon"><i class="fas fa-map-location-dot"></i></div>
+                        <div class="nav-text">Maps</div>
+                    </div>
                     <div class="nav-item" data-section="menus">
                         <div class="nav-icon"><i class="fas fa-bars"></i></div>
                         <div class="nav-text">Menus</div>
@@ -237,7 +241,8 @@ $(function(){
   var moduleTitles = {
     search: 'Manage search index',
     sitemap: 'Review sitemap',
-    events: 'Event management overview'
+    events: 'Event management overview',
+    maps: 'Location directory'
   };
 
   $(document).on('sparkcms:navigate', function(event, data){
