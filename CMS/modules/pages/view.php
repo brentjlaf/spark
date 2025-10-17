@@ -280,7 +280,6 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
                     <i class="fa-solid fa-xmark" aria-hidden="true"></i>
                 </button>
                 <header class="page-modal-header">
-                    <span class="page-modal-subtitle">Page settings</span>
                     <h2 class="page-modal-title" id="formTitle">Add New Page</h2>
                     <p class="page-modal-description" id="pageModalDescription">Configure publishing, templates, and metadata before publishing your page.</p>
                 </header>
