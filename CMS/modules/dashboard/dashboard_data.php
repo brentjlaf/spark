@@ -499,8 +499,6 @@ foreach ($pages as $page) {
     }
 }
 
-$dataFiles = glob($dataDirectory . '/*.json');
-$dataFileCount = is_array($dataFiles) ? count($dataFiles) : 0;
 
 $analyticsSummary = [
     'totalViews' => $views,
@@ -687,12 +685,6 @@ if ($speedSummary['slow'] > 0) {
 }
 $speedTrend = 'Slow pages: ' . dashboard_format_number((int)$speedSummary['slow']);
 $speedCta = $speedSummary['slow'] > 0 ? 'Optimise slow pages' : 'Review performance';
-
-$importExportStatus = 'ok';
-$importExportTrend = $dataFileCount > 0
-    ? dashboard_format_number((int)$dataFileCount) . ' data files available'
-    : 'No data files detected';
-$importExportCta = 'Open import/export';
 
 $seoStatus = 'ok';
 if ($seoSummary['missing_title'] > 0 || $seoSummary['missing_description'] > 0 || $seoSummary['duplicate_slugs'] > 0) {
@@ -905,16 +897,6 @@ $moduleSummaries = [
         'trend' => $speedTrend,
         'cta' => $speedCta,
     ],
-    [
-        'id' => 'import_export',
-        'module' => 'Import/Export',
-        'primary' => dashboard_format_number($dataFileCount) . ' data files detected',
-        'secondary' => 'Use tools to migrate or backup your site',
-        'status' => $importExportStatus,
-        'statusLabel' => dashboard_status_label($importExportStatus),
-        'trend' => $importExportTrend,
-        'cta' => $importExportCta,
-    ],
 ];
 
 $statusPriority = [
@@ -991,7 +973,6 @@ $data = [
     'speedSlow' => $speedSummary['slow'],
     'speedHeaviestPage' => $largestPage['title'],
     'speedHeaviestPageLength' => $largestPage['length'],
-    'dataFileCount' => $dataFileCount,
     'eventsCurrency' => $eventsCurrency,
     'seoOptimised' => $seoSummary['optimised'],
     'seoMissingTitle' => $seoSummary['missing_title'],
