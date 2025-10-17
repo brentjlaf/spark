@@ -192,11 +192,11 @@ $initialAttr = htmlspecialchars(json_encode($initialPayload, JSON_UNESCAPED_UNIC
                         <span class="maps-form__label">Name</span>
                         <input type="text" name="name" id="mapLocationName" required>
                     </label>
-                    <label class="maps-form__field">
+                    <label class="maps-form__field" data-map-meta-field="slug" hidden>
                         <span class="maps-form__label">Slug</span>
                         <input type="text" name="slug" id="mapLocationSlug" placeholder="auto-generated if blank">
                     </label>
-                    <label class="maps-form__field">
+                    <label class="maps-form__field" data-map-meta-field="status" hidden>
                         <span class="maps-form__label">Status</span>
                         <select name="status" id="mapLocationStatus">
                             <option value="published">Published</option>
@@ -241,6 +241,9 @@ $initialAttr = htmlspecialchars(json_encode($initialPayload, JSON_UNESCAPED_UNIC
                             <input type="text" name="coordinates[lng]" id="mapLocationLng" placeholder="e.g. -74.0060">
                         </label>
                     </fieldset>
+                    <p class="maps-form__hint" id="mapLocationGeocodeStatus" data-map-geocode-default="Latitude and longitude update automatically from the address." aria-live="polite">
+                        Latitude and longitude update automatically from the address.
+                    </p>
                     <fieldset class="maps-form__fieldset">
                         <legend>Contact</legend>
                         <label class="maps-form__field">

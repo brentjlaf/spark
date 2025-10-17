@@ -18,6 +18,22 @@
         }
     };
 
+    var geocodeTimer = null;
+    var geocodeRequest = null;
+    var geocodePendingQuery = '';
+    var geocodeLastSuccessfulQuery = '';
+    var coordinatesAutoFilled = false;
+    var coordinatesEditedManually = false;
+    var geocodeStatusEl = root.find('#mapLocationGeocodeStatus');
+    var geocodeDefaultStatus = '';
+    if (geocodeStatusEl.length) {
+        geocodeDefaultStatus = geocodeStatusEl.attr('data-map-geocode-default') || geocodeStatusEl.text().trim();
+        if (geocodeDefaultStatus === '') {
+            geocodeDefaultStatus = 'Latitude and longitude update automatically from the address.';
+        }
+        setGeocodeStatus(geocodeDefaultStatus);
+    }
+
     var initialData = root.attr('data-initial');
     if (initialData) {
         try {
@@ -64,6 +80,21 @@
         root.on('change', '#mapStatusFilter', function () {
             state.filters.status = $(this).val();
             renderLocations();
+        });
+
+        root.on('input', '#mapLocationStreet, #mapLocationCity, #mapLocationRegion, #mapLocationPostal, #mapLocationCountry', function () {
+            scheduleGeocodeLookup();
+        });
+
+        root.on('input', '#mapLocationLat, #mapLocationLng', function () {
+            if (coordinatesAreEmpty()) {
+                coordinatesEditedManually = false;
+                coordinatesAutoFilled = false;
+                setGeocodeStatus(geocodeDefaultStatus);
+                return;
+            }
+            coordinatesEditedManually = true;
+            coordinatesAutoFilled = false;
         });
 
         root.on('click', '#mapAddLocationBtn, #mapEmptyAddBtn', function () {
@@ -423,6 +454,7 @@
     function openLocationModal(location) {
         var modal = $('#mapLocationModal');
         resetLocationForm();
+        toggleLocationMetaFields(!!location);
         if (location) {
             $('#mapLocationId').val(location.id || '');
             $('#mapLocationName').val(location.name || '');
@@ -464,10 +496,16 @@
             $('#mapLocationAccessibility').val(location.accessibility_notes || '');
             $('#mapLocationModalTitle').text('Edit location');
             $('#mapLocationDeleteBtn').removeAttr('hidden');
+            geocodeLastSuccessfulQuery = buildAddressQuery();
         } else {
             $('#mapLocationModalTitle').text('Add location');
             $('#mapLocationDeleteBtn').attr('hidden', 'hidden');
+            geocodeLastSuccessfulQuery = '';
         }
+        coordinatesAutoFilled = false;
+        coordinatesEditedManually = false;
+        geocodePendingQuery = '';
+        setGeocodeStatus(geocodeDefaultStatus);
         openModal(modal);
     }
 
@@ -477,6 +515,164 @@
             form.reset();
         }
         $('#mapLocationCategories').find('input[type="checkbox"]').prop('checked', false);
+        toggleLocationMetaFields(false);
+        clearGeocodeState();
+        coordinatesAutoFilled = false;
+        coordinatesEditedManually = false;
+        geocodeLastSuccessfulQuery = '';
+        setGeocodeStatus(geocodeDefaultStatus);
+    }
+
+    function toggleLocationMetaFields(show) {
+        root.find('[data-map-meta-field]').each(function () {
+            if (show) {
+                $(this).removeAttr('hidden');
+            } else {
+                $(this).attr('hidden', 'hidden');
+            }
+        });
+    }
+
+    function scheduleGeocodeLookup() {
+        clearGeocodeTimer();
+        if (geocodeRequest && typeof geocodeRequest.abort === 'function') {
+            geocodeRequest.abort();
+        }
+        geocodeRequest = null;
+        geocodePendingQuery = buildAddressQuery();
+        if (geocodePendingQuery === '') {
+            geocodePendingQuery = '';
+            if (!coordinatesEditedManually || coordinatesAreEmpty()) {
+                setGeocodeStatus(geocodeDefaultStatus);
+            }
+            return;
+        }
+        geocodeTimer = setTimeout(function () {
+            requestGeocode(geocodePendingQuery);
+        }, 600);
+    }
+
+    function requestGeocode(query) {
+        if (!query || query !== buildAddressQuery()) {
+            return;
+        }
+        if (geocodeRequest && typeof geocodeRequest.abort === 'function') {
+            geocodeRequest.abort();
+        }
+        if (query === geocodeLastSuccessfulQuery && coordinatesAutoFilled && !coordinatesAreEmpty()) {
+            return;
+        }
+        setGeocodeStatus('Searching for coordinates…', 'loading');
+        geocodeRequest = apiRequest('geocode_address', { query: query });
+        geocodeRequest.done(function (response) {
+            geocodeRequest = null;
+            geocodePendingQuery = '';
+            if (!response || !response.coordinates) {
+                setGeocodeStatus('Unable to determine coordinates for this address.', 'error');
+                return;
+            }
+            var lat = parseFloat(response.coordinates.lat);
+            var lng = parseFloat(response.coordinates.lng);
+            if (!isFinite(lat) || !isFinite(lng)) {
+                setGeocodeStatus('Unable to determine coordinates for this address.', 'error');
+                return;
+            }
+            geocodeLastSuccessfulQuery = query;
+            if (canAutoFillCoordinates()) {
+                $('#mapLocationLat').val(lat.toFixed(6));
+                $('#mapLocationLng').val(lng.toFixed(6));
+                coordinatesAutoFilled = true;
+                coordinatesEditedManually = false;
+                setGeocodeStatus('Coordinates auto-filled from the address.', 'success');
+            } else {
+                setGeocodeStatus('Address located. Update the coordinates if needed.', 'success');
+            }
+        }).fail(function (jqXHR, textStatus) {
+            geocodeRequest = null;
+            geocodePendingQuery = '';
+            if (textStatus === 'abort') {
+                return;
+            }
+            var message = 'Unable to determine coordinates for this address.';
+            if (jqXHR && jqXHR.responseJSON && jqXHR.responseJSON.error) {
+                message = jqXHR.responseJSON.error;
+            }
+            setGeocodeStatus(message, 'error');
+        });
+    }
+
+    function clearGeocodeState() {
+        clearGeocodeTimer();
+        if (geocodeRequest && typeof geocodeRequest.abort === 'function') {
+            geocodeRequest.abort();
+        }
+        geocodeRequest = null;
+        geocodePendingQuery = '';
+    }
+
+    function clearGeocodeTimer() {
+        if (geocodeTimer) {
+            clearTimeout(geocodeTimer);
+            geocodeTimer = null;
+        }
+    }
+
+    function canAutoFillCoordinates() {
+        if (coordinatesEditedManually && !coordinatesAutoFilled && !coordinatesAreEmpty()) {
+            return false;
+        }
+        return true;
+    }
+
+    function coordinatesAreEmpty() {
+        var lat = ($('#mapLocationLat').val() || '').toString().trim();
+        var lng = ($('#mapLocationLng').val() || '').toString().trim();
+        return lat === '' && lng === '';
+    }
+
+    function buildAddressQuery() {
+        var parts = [
+            $('#mapLocationStreet').val(),
+            $('#mapLocationCity').val(),
+            $('#mapLocationRegion').val(),
+            $('#mapLocationPostal').val(),
+            $('#mapLocationCountry').val()
+        ];
+        var filtered = [];
+        parts.forEach(function (value) {
+            var trimmed = (value || '').toString().trim();
+            if (trimmed !== '') {
+                filtered.push(trimmed);
+            }
+        });
+        if (!filtered.length) {
+            return '';
+        }
+        var query = filtered.join(', ');
+        return query.length < 3 ? '' : query;
+    }
+
+    function setGeocodeStatus(message, state) {
+        if (!geocodeStatusEl.length) {
+            if (typeof message === 'string' && message.trim() !== '') {
+                geocodeDefaultStatus = message;
+            }
+            return;
+        }
+        var text = typeof message === 'string' && message.trim() !== '' ? message : geocodeDefaultStatus;
+        if (text === '') {
+            text = 'Latitude and longitude update automatically from the address.';
+        }
+        geocodeStatusEl
+            .removeClass('maps-form__hint--loading maps-form__hint--success maps-form__hint--error')
+            .text(text);
+        if (state === 'loading') {
+            geocodeStatusEl.addClass('maps-form__hint--loading');
+        } else if (state === 'success') {
+            geocodeStatusEl.addClass('maps-form__hint--success');
+        } else if (state === 'error') {
+            geocodeStatusEl.addClass('maps-form__hint--error');
+        }
     }
 
     function openCategoryModal(category) {

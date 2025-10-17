@@ -222,6 +222,60 @@ if (!function_exists('maps_sort_categories')) {
     }
 }
 
+if (!function_exists('maps_geocode_address')) {
+    function maps_geocode_address(string $query): ?array
+    {
+        $query = trim($query);
+        if ($query === '') {
+            return null;
+        }
+
+        $url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' . rawurlencode($query);
+        $headers = [
+            'User-Agent: SparkCMSMaps/1.0 (support@sparkcms.local)',
+            'Accept: application/json',
+        ];
+
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'GET',
+                'header' => implode("\r\n", $headers),
+                'timeout' => 5,
+            ],
+        ]);
+
+        $response = @file_get_contents($url, false, $context);
+        if ($response === false && function_exists('curl_init')) {
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'SparkCMSMaps/1.0 (support@sparkcms.local)');
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+            $response = curl_exec($ch);
+            curl_close($ch);
+        }
+
+        if (!is_string($response) || trim($response) === '') {
+            return null;
+        }
+
+        $decoded = json_decode($response, true);
+        if (!is_array($decoded) || empty($decoded)) {
+            return null;
+        }
+
+        $result = $decoded[0];
+        if (!isset($result['lat'], $result['lon'])) {
+            return null;
+        }
+
+        return [
+            'lat' => (float) $result['lat'],
+            'lng' => (float) $result['lon'],
+        ];
+    }
+}
+
 if (!function_exists('maps_write_locations')) {
     function maps_write_locations(array $locations): bool
     {
