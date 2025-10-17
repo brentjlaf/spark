@@ -11711,6 +11711,26 @@
     color: #0f172a;
 }
 
+.events-schedule-field input[type='datetime-local'],
+.events-schedule-field input[type='date'],
+.events-schedule-field input[type='time'],
+.events-schedule-field input[type='text'] {
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+    border-radius: 0.75rem;
+    border: 1px solid #cbd5f5;
+    background: #fff;
+}
+
+.events-schedule-field input[type='datetime-local']:focus,
+.events-schedule-field input[type='date']:focus,
+.events-schedule-field input[type='time']:focus,
+.events-schedule-field input[type='text']:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.16);
+}
+
 .events-status-note {
     font-style: italic;
 }
