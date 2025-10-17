@@ -188,8 +188,8 @@ $summaryComparisons = [
                         <i class="fa-solid fa-lightbulb" aria-hidden="true"></i>
                     </div>
                     <div>
-                        <h3 class="analytics-insight-title">Opportunity insights</h3>
-                        <p class="analytics-insight-subtitle">Pages that could use extra attention</p>
+                        <h3 class="analytics-insight-title">Optimization opportunities</h3>
+                        <p class="analytics-insight-subtitle">Pages where targeted improvements can increase engagement</p>
                     </div>
                 </header>
                 <div class="analytics-insight-chart">
