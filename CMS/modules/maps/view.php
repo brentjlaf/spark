@@ -48,144 +48,149 @@ $initialPayload = [
 ];
 $initialAttr = htmlspecialchars(json_encode($initialPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8');
 ?>
-<div class="content-section maps-module" id="mapsModule" data-initial="<?php echo $initialAttr; ?>">
-    <header class="maps-hero">
-        <div class="maps-hero__content">
-            <div>
-                <span class="maps-hero__eyebrow">Location intelligence</span>
-                <h2 class="maps-hero__title">Maps &amp; Locations</h2>
-                <p class="maps-hero__subtitle">Curate a trusted directory of places your visitors can explore on your site and embedded maps.</p>
-            </div>
-            <div class="maps-hero__actions">
-                <button type="button" class="maps-btn maps-btn--primary" id="mapAddLocationBtn">
-                    <i class="fas fa-plus" aria-hidden="true"></i>
-                    <span>Add location</span>
-                </button>
-                <button type="button" class="maps-btn maps-btn--ghost" id="mapRefreshBtn" aria-label="Refresh locations">
-                    <i class="fas fa-rotate" aria-hidden="true"></i>
-                </button>
-            </div>
-        </div>
-        <div class="maps-hero__stats">
-            <div class="maps-stat-card">
-                <div class="maps-stat-card__label">Total locations</div>
-                <div class="maps-stat-card__value" data-map-stat="total"><?php echo $totalLocations; ?></div>
-            </div>
-            <div class="maps-stat-card">
-                <div class="maps-stat-card__label">Published</div>
-                <div class="maps-stat-card__value" data-map-stat="published"><?php echo $publishedLocations; ?></div>
-            </div>
-            <div class="maps-stat-card">
-                <div class="maps-stat-card__label">Drafts</div>
-                <div class="maps-stat-card__value" data-map-stat="draft"><?php echo $draftLocations; ?></div>
-            </div>
-            <div class="maps-stat-card">
-                <div class="maps-stat-card__label">Categories</div>
-                <div class="maps-stat-card__value" data-map-stat="categories"><?php echo count($categories); ?></div>
-            </div>
-        </div>
-    </header>
-
-    <section class="maps-workspace">
-        <div class="maps-locations">
-            <div class="maps-panel-header">
+<div class="content-section" id="maps">
+    <div class="maps-dashboard a11y-dashboard" id="mapsModule" data-initial="<?php echo $initialAttr; ?>">
+        <header class="a11y-hero maps-hero">
+            <div class="a11y-hero-content maps-hero-content">
                 <div>
-                    <h3 class="maps-panel-title">Location manager</h3>
-                    <p class="maps-panel-subtitle">Search, filter, and publish map-ready locations.</p>
+                    <span class="hero-eyebrow maps-hero-eyebrow">Location intelligence</span>
+                    <h2 class="a11y-hero-title">Maps &amp; Locations</h2>
+                    <p class="a11y-hero-subtitle maps-hero-subtitle">Curate a trusted directory of places your visitors can explore on your site and embedded maps.</p>
                 </div>
-                <div class="maps-panel-actions">
-                    <label class="maps-search" for="mapLocationSearch">
-                        <i class="fas fa-search" aria-hidden="true"></i>
-                        <input type="search" id="mapLocationSearch" placeholder="Search locations" aria-label="Search locations">
-                    </label>
-                    <select id="mapCategoryFilter" class="maps-select" aria-label="Filter by category">
-                        <option value="">All categories</option>
-                        <?php foreach ($categorySummary as $item): ?>
-                        <option value="<?php echo htmlspecialchars($item['id'], ENT_QUOTES, 'UTF-8'); ?>">
-                            <?php echo htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8'); ?>
-                        </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <select id="mapStatusFilter" class="maps-select" aria-label="Filter by status">
-                        <option value="">All statuses</option>
-                        <option value="published">Published</option>
-                        <option value="draft">Draft</option>
-                    </select>
+                <div class="a11y-hero-actions maps-hero-actions">
+                    <button type="button" class="a11y-btn a11y-btn--primary" id="mapAddLocationBtn">
+                        <i class="fas fa-plus" aria-hidden="true"></i>
+                        <span>Add location</span>
+                    </button>
+                    <button type="button" class="a11y-btn a11y-btn--ghost" id="mapRefreshBtn">
+                        <i class="fas fa-rotate" aria-hidden="true"></i>
+                        <span>Refresh</span>
+                    </button>
                 </div>
             </div>
+            <div class="a11y-overview-grid maps-overview-grid">
+                <div class="a11y-overview-card">
+                    <div class="a11y-overview-value" data-map-stat="total"><?php echo $totalLocations; ?></div>
+                    <div class="a11y-overview-label">Total locations</div>
+                </div>
+                <div class="a11y-overview-card">
+                    <div class="a11y-overview-value" data-map-stat="published"><?php echo $publishedLocations; ?></div>
+                    <div class="a11y-overview-label">Published</div>
+                </div>
+                <div class="a11y-overview-card">
+                    <div class="a11y-overview-value" data-map-stat="draft"><?php echo $draftLocations; ?></div>
+                    <div class="a11y-overview-label">Drafts</div>
+                </div>
+                <div class="a11y-overview-card">
+                    <div class="a11y-overview-value" data-map-stat="categories"><?php echo count($categories); ?></div>
+                    <div class="a11y-overview-label">Categories</div>
+                </div>
+            </div>
+        </header>
 
-            <div class="maps-table" aria-live="polite">
-                <div class="maps-table__header">
-                    <div>Name</div>
-                    <div>Status</div>
-                    <div>Location</div>
-                    <div>Categories</div>
-                    <div>Updated</div>
-                    <div>Actions</div>
-                </div>
-                <div class="maps-table__body" id="mapLocationsTable"></div>
-            </div>
-            <div class="maps-empty" id="mapLocationsEmpty" <?php echo $totalLocations > 0 ? 'hidden' : ''; ?>>
-                <i class="fas fa-map-location-dot" aria-hidden="true"></i>
-                <h3>No locations yet</h3>
-                <p>Start by adding your first place to power your interactive maps.</p>
-                <button type="button" class="maps-btn maps-btn--primary" id="mapEmptyAddBtn">
-                    <i class="fas fa-plus" aria-hidden="true"></i>
-                    <span>Create location</span>
-                </button>
-            </div>
-            <div class="maps-empty" id="mapLocationsNoResults" hidden>
-                <i class="fas fa-filter" aria-hidden="true"></i>
-                <h3>No matches found</h3>
-                <p>Try adjusting the search term or filters.</p>
-            </div>
-        </div>
-
-        <aside class="maps-categories">
-            <div class="maps-panel-header">
-                <div>
-                    <h3 class="maps-panel-title">Categories</h3>
-                    <p class="maps-panel-subtitle">Group locations for filtering and themed map layers.</p>
-                </div>
-                <button type="button" class="maps-btn maps-btn--secondary" id="mapAddCategoryBtn">
-                    <i class="fas fa-plus" aria-hidden="true"></i>
-                    <span>Add category</span>
-                </button>
-            </div>
-            <ul class="maps-category-list" id="mapCategoryList" aria-live="polite">
-                <?php foreach ($categorySummary as $item): ?>
-                <li class="maps-category-item" data-category-id="<?php echo htmlspecialchars($item['id'], ENT_QUOTES, 'UTF-8'); ?>">
-                    <span class="maps-category-color" style="background-color: <?php echo htmlspecialchars($item['color'], ENT_QUOTES, 'UTF-8'); ?>"></span>
-                    <span class="maps-category-name"><?php echo htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8'); ?></span>
-                    <span class="maps-category-count" data-count="<?php echo htmlspecialchars($item['id'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo (int) $item['count']; ?></span>
-                    <?php if ($item['id'] !== 'uncategorized'): ?>
-                    <div class="maps-category-actions">
-                        <button type="button" class="maps-icon-btn" data-map-edit-category="<?php echo htmlspecialchars($item['id'], ENT_QUOTES, 'UTF-8'); ?>" aria-label="Edit category">
-                            <i class="fas fa-pen" aria-hidden="true"></i>
-                        </button>
-                        <button type="button" class="maps-icon-btn" data-map-delete-category="<?php echo htmlspecialchars($item['id'], ENT_QUOTES, 'UTF-8'); ?>" aria-label="Delete category">
-                            <i class="fas fa-trash" aria-hidden="true"></i>
-                        </button>
+        <section class="maps-main-grid">
+            <div class="a11y-detail-card maps-locations-card">
+                <header class="maps-card-header">
+                    <div>
+                        <h3 class="maps-card-title">Location manager</h3>
+                        <p class="maps-card-subtitle">Search, filter, and publish map-ready locations.</p>
                     </div>
-                    <?php endif; ?>
-                </li>
-                <?php endforeach; ?>
-            </ul>
-        </aside>
-    </section>
+                    <div class="maps-card-actions">
+                        <label class="a11y-search maps-search" for="mapLocationSearch">
+                            <i class="fas fa-search" aria-hidden="true"></i>
+                            <input type="search" id="mapLocationSearch" placeholder="Search locations" aria-label="Search locations">
+                        </label>
+                        <select id="mapCategoryFilter" class="maps-select" aria-label="Filter by category">
+                            <option value="">All categories</option>
+                            <?php foreach ($categorySummary as $item): ?>
+                            <option value="<?php echo htmlspecialchars($item['id'], ENT_QUOTES, 'UTF-8'); ?>">
+                                <?php echo htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8'); ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <select id="mapStatusFilter" class="maps-select" aria-label="Filter by status">
+                            <option value="">All statuses</option>
+                            <option value="published">Published</option>
+                            <option value="draft">Draft</option>
+                        </select>
+                    </div>
+                </header>
 
-    <div class="maps-modal" id="mapLocationModal" role="dialog" aria-modal="true" aria-labelledby="mapLocationModalTitle" hidden>
-        <div class="maps-modal__dialog">
-            <header class="maps-modal__header">
-                <div>
-                    <h3 id="mapLocationModalTitle">Add location</h3>
-                    <p class="maps-modal__subtitle">Provide details visitors will see in directory listings and map pins.</p>
+                <div class="maps-table" aria-live="polite">
+                    <div class="maps-table__header">
+                        <div>Name</div>
+                        <div>Status</div>
+                        <div>Location</div>
+                        <div>Categories</div>
+                        <div>Updated</div>
+                        <div>Actions</div>
+                    </div>
+                    <div class="maps-table__body" id="mapLocationsTable"></div>
                 </div>
-                <button type="button" class="maps-icon-btn" data-map-dismiss="mapLocationModal" aria-label="Close">
-                    <i class="fas fa-times" aria-hidden="true"></i>
-                </button>
-            </header>
-            <form id="mapLocationForm" class="maps-form">
+                <div class="a11y-empty-state maps-empty" id="mapLocationsEmpty" <?php echo $totalLocations > 0 ? 'hidden' : ''; ?>>
+                    <i class="fas fa-map-location-dot" aria-hidden="true"></i>
+                    <h3>No locations yet</h3>
+                    <p>Start by adding your first place to power your interactive maps.</p>
+                    <button type="button" class="a11y-btn a11y-btn--primary" id="mapEmptyAddBtn">
+                        <i class="fas fa-plus" aria-hidden="true"></i>
+                        <span>Create location</span>
+                    </button>
+                </div>
+                <div class="a11y-empty-state maps-empty" id="mapLocationsNoResults" hidden>
+                    <i class="fas fa-filter" aria-hidden="true"></i>
+                    <h3>No matches found</h3>
+                    <p>Try adjusting the search term or filters.</p>
+                </div>
+            </div>
+
+            <aside class="a11y-detail-card maps-categories-card" aria-label="Location categories">
+                <header class="maps-card-header">
+                    <div>
+                        <h3 class="maps-card-title">Categories</h3>
+                        <p class="maps-card-subtitle">Group locations for filtering and themed map layers.</p>
+                    </div>
+                    <button type="button" class="a11y-btn a11y-btn--secondary" id="mapAddCategoryBtn">
+                        <i class="fas fa-plus" aria-hidden="true"></i>
+                        <span>Add category</span>
+                    </button>
+                </header>
+                <ul class="maps-category-list" id="mapCategoryList" aria-live="polite">
+                    <?php foreach ($categorySummary as $item): ?>
+                    <li class="maps-category-item" data-category-id="<?php echo htmlspecialchars($item['id'], ENT_QUOTES, 'UTF-8'); ?>">
+                        <span class="maps-category-color" style="background-color: <?php echo htmlspecialchars($item['color'], ENT_QUOTES, 'UTF-8'); ?>"></span>
+                        <span class="maps-category-name"><?php echo htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8'); ?></span>
+                        <span class="maps-category-count" data-count="<?php echo htmlspecialchars($item['id'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo (int) $item['count']; ?></span>
+                        <?php if ($item['id'] !== 'uncategorized'): ?>
+                        <div class="maps-category-actions">
+                            <button type="button" class="a11y-btn a11y-btn--icon maps-action-btn" data-map-edit-category="<?php echo htmlspecialchars($item['id'], ENT_QUOTES, 'UTF-8'); ?>">
+                                <i class="fas fa-pen" aria-hidden="true"></i>
+                                <span class="sr-only">Edit category</span>
+                            </button>
+                            <button type="button" class="a11y-btn a11y-btn--icon maps-action-btn maps-action-btn--danger" data-map-delete-category="<?php echo htmlspecialchars($item['id'], ENT_QUOTES, 'UTF-8'); ?>">
+                                <i class="fas fa-trash" aria-hidden="true"></i>
+                                <span class="sr-only">Delete category</span>
+                            </button>
+                        </div>
+                        <?php endif; ?>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+            </aside>
+        </section>
+
+        <div class="maps-modal" id="mapLocationModal" role="dialog" aria-modal="true" aria-labelledby="mapLocationModalTitle" hidden>
+            <div class="maps-modal__dialog">
+                <header class="maps-modal__header">
+                    <div>
+                        <h3 id="mapLocationModalTitle">Add location</h3>
+                        <p class="maps-modal__subtitle">Provide details visitors will see in directory listings and map pins.</p>
+                    </div>
+                    <button type="button" class="a11y-btn a11y-btn--icon maps-modal__close" data-map-dismiss="mapLocationModal">
+                        <i class="fas fa-times" aria-hidden="true"></i>
+                        <span class="sr-only">Close</span>
+                    </button>
+                </header>
+                <form id="mapLocationForm" class="maps-form">
                 <input type="hidden" name="id" id="mapLocationId">
                 <div class="maps-form__grid">
                     <label class="maps-form__field">
@@ -281,9 +286,9 @@ $initialAttr = htmlspecialchars(json_encode($initialPayload, JSON_UNESCAPED_UNIC
                     </label>
                 </div>
                 <div class="maps-form__actions">
-                    <button type="submit" class="maps-btn maps-btn--primary" id="mapLocationSaveBtn">Save location</button>
-                    <button type="button" class="maps-btn maps-btn--ghost" data-map-dismiss="mapLocationModal">Cancel</button>
-                    <button type="button" class="maps-btn maps-btn--danger" id="mapLocationDeleteBtn" hidden>Delete</button>
+                    <button type="submit" class="a11y-btn a11y-btn--primary" id="mapLocationSaveBtn">Save location</button>
+                    <button type="button" class="a11y-btn a11y-btn--ghost" data-map-dismiss="mapLocationModal">Cancel</button>
+                    <button type="button" class="a11y-btn a11y-btn--danger" id="mapLocationDeleteBtn" hidden>Delete</button>
                 </div>
             </form>
         </div>
@@ -296,8 +301,9 @@ $initialAttr = htmlspecialchars(json_encode($initialPayload, JSON_UNESCAPED_UNIC
                     <h3 id="mapCategoryModalTitle">Add category</h3>
                     <p class="maps-modal__subtitle">Organize locations into meaningful groups and map layers.</p>
                 </div>
-                <button type="button" class="maps-icon-btn" data-map-dismiss="mapCategoryModal" aria-label="Close">
+                <button type="button" class="a11y-btn a11y-btn--icon maps-modal__close" data-map-dismiss="mapCategoryModal">
                     <i class="fas fa-times" aria-hidden="true"></i>
+                    <span class="sr-only">Close</span>
                 </button>
             </header>
             <form id="mapCategoryForm" class="maps-form">
@@ -323,10 +329,11 @@ $initialAttr = htmlspecialchars(json_encode($initialPayload, JSON_UNESCAPED_UNIC
                     <input type="number" name="sort_order" id="mapCategorySort" min="0" step="1">
                 </label>
                 <div class="maps-form__actions">
-                    <button type="submit" class="maps-btn maps-btn--primary">Save category</button>
-                    <button type="button" class="maps-btn maps-btn--ghost" data-map-dismiss="mapCategoryModal">Cancel</button>
+                    <button type="submit" class="a11y-btn a11y-btn--primary">Save category</button>
+                    <button type="button" class="a11y-btn a11y-btn--ghost" data-map-dismiss="mapCategoryModal">Cancel</button>
                 </div>
             </form>
         </div>
     </div>
+</div>
 </div>
