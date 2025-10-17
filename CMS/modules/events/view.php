@@ -374,6 +374,17 @@ $initialPayload = [
                                     <div class="events-editor" contenteditable="true" data-events-editor></div>
                                     <textarea name="description" class="sr-only" data-events-editor-target></textarea>
                                 </div>
+                            </div>
+                        </section>
+
+                        <section class="events-form-card" aria-labelledby="eventsScheduleTitle">
+                            <header class="events-form-card-header">
+                                <div>
+                                    <h3 class="events-form-card-title" id="eventsScheduleTitle">Event schedule</h3>
+                                    <p class="events-form-card-subtitle">Plan when your event is active and control visibility.</p>
+                                </div>
+                            </header>
+                            <div class="events-schedule-main">
                                 <label class="events-form-field">
                                     <span>Start date &amp; time</span>
                                     <input type="datetime-local" name="start" required>
@@ -382,6 +393,29 @@ $initialPayload = [
                                     <span>End date &amp; time</span>
                                     <input type="datetime-local" name="end">
                                 </label>
+                            </div>
+                            <div class="events-schedule-footer">
+                                <fieldset class="events-status-group">
+                                    <legend>Event status</legend>
+                                    <label class="events-radio">
+                                        <input type="radio" name="status" value="draft" checked>
+                                        <span>Save as draft</span>
+                                    </label>
+                                    <label class="events-radio">
+                                        <input type="radio" name="status" value="published">
+                                        <span>Publish now</span>
+                                    </label>
+                                </fieldset>
+                                <div class="events-schedule-fields">
+                                    <label class="events-schedule-field">
+                                        <span>Publish at (optional)</span>
+                                        <input type="datetime-local" name="publish_at">
+                                    </label>
+                                    <label class="events-schedule-field">
+                                        <span>Unpublish at (optional)</span>
+                                        <input type="datetime-local" name="unpublish_at">
+                                    </label>
+                                </div>
                             </div>
                         </section>
 
@@ -469,35 +503,6 @@ $initialPayload = [
                             </div>
                         </section>
 
-                        <section class="events-form-card" aria-labelledby="eventsStatusTitle">
-                            <header class="events-form-card-header">
-                                <div>
-                                    <h3 class="events-form-card-title" id="eventsStatusTitle">Status &amp; scheduling</h3>
-                                    <p class="events-form-card-subtitle">Choose visibility and optional automation for going live.</p>
-                                </div>
-                            </header>
-                            <fieldset class="events-status-group">
-                                <legend class="sr-only">Event status</legend>
-                                <label class="events-radio">
-                                    <input type="radio" name="status" value="draft" checked>
-                                    <span>Save as draft</span>
-                                </label>
-                                <label class="events-radio">
-                                    <input type="radio" name="status" value="published">
-                                    <span>Publish now</span>
-                                </label>
-                            </fieldset>
-                            <div class="events-schedule-fields">
-                                <label class="events-schedule-field">
-                                    <span>Publish at (optional)</span>
-                                    <input type="datetime-local" name="publish_at">
-                                </label>
-                                <label class="events-schedule-field">
-                                    <span>Unpublish at (optional)</span>
-                                    <input type="datetime-local" name="unpublish_at">
-                                </label>
-                            </div>
-                        </section>
                     </aside>
                 </div>
 
