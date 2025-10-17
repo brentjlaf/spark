@@ -356,6 +356,20 @@ body {
     flex-direction: column;
 }
 
+.maps-table__cell {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    color: #111827;
+}
+
+.maps-table__cell--primary {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+}
+
 .maps-table__row {
     border-top: 1px solid #f0f2f5;
 }
@@ -693,5 +707,55 @@ body {
 
     .maps-categories {
         order: -1;
+    }
+}
+
+@media (max-width: 768px) {
+    .maps-hero {
+        padding: 1.5rem;
+    }
+
+    .maps-hero__actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .maps-panel-actions {
+        justify-content: flex-start;
+    }
+
+    .maps-table__header {
+        display: none;
+    }
+
+    .maps-table__row {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .maps-table__cell {
+        width: 100%;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.35rem;
+        padding: 0.5rem 1.25rem;
+    }
+
+    .maps-table__cell::before {
+        content: attr(data-label);
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #9ca3af;
+    }
+
+    .maps-table__cell--primary::before {
+        margin-bottom: 0.35rem;
+    }
+
+    .maps-table__actions {
+        justify-content: flex-start;
     }
 }

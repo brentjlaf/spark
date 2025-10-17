@@ -339,15 +339,15 @@
             categories.append('<span class="maps-category-chip maps-category-chip--muted">Uncategorized</span>');
         }
 
-        row.append($('<div class="maps-table__cell maps-table__cell--primary"></div>').append(
+        row.append($('<div class="maps-table__cell maps-table__cell--primary" data-label="Name"></div>').append(
             $('<div class="maps-location-name"></div>').text(location.name),
             $('<div class="maps-location-slug"></div>').text(location.slug ? '/' + location.slug : '—')
         ));
-        row.append($('<div class="maps-table__cell"></div>').append(statusBadge));
-        row.append($('<div class="maps-table__cell"></div>').text(cityRegion || '—'));
-        row.append($('<div class="maps-table__cell"></div>').append(categories));
-        row.append($('<div class="maps-table__cell"></div>').text(updated));
-        var actions = $('<div class="maps-table__cell maps-table__actions"></div>');
+        row.append($('<div class="maps-table__cell" data-label="Status"></div>').append(statusBadge));
+        row.append($('<div class="maps-table__cell" data-label="Location"></div>').text(cityRegion || '—'));
+        row.append($('<div class="maps-table__cell" data-label="Categories"></div>').append(categories));
+        row.append($('<div class="maps-table__cell" data-label="Updated"></div>').text(updated));
+        var actions = $('<div class="maps-table__cell maps-table__actions" data-label="Actions"></div>');
         actions.append('<button type="button" class="maps-icon-btn" data-map-edit-location="' + location.id + '" aria-label="Edit"><i class="fas fa-pen"></i></button>');
         row.append(actions);
         return row;
