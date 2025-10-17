@@ -3,6 +3,7 @@
 // Generate sitemap.xml listing all published pages
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/data.php';
+require_once __DIR__ . '/../../includes/page_schedule.php';
 require_login();
 
 header('Content-Type: application/json');
@@ -15,7 +16,8 @@ try {
     }
 
     $published = array_values(array_filter($pages, function ($page) {
-        return !empty($page['published']);
+        $info = sparkcms_page_schedule_info($page);
+        return $info['is_live'];
     }));
 
     $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';

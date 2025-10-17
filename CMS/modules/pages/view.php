@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/data.php';
 require_once __DIR__ . '/../../includes/settings.php';
 require_once __DIR__ . '/../../includes/sanitize.php';
+require_once __DIR__ . '/../../includes/page_schedule.php';
 require_login();
 
 $pagesFile = __DIR__ . '/../../data/pages.json';
@@ -27,7 +28,8 @@ $totalViews = 0;
 $restrictedPages = 0;
 $lastUpdatedTimestamp = 0;
 foreach ($pages as $p) {
-    if (!empty($p['published'])) {
+    $scheduleInfo = sparkcms_page_schedule_info($p);
+    if ($scheduleInfo['is_live']) {
         $publishedPages++;
     } else {
         $draftPages++;
@@ -177,7 +179,25 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
     $robotsDirective = sanitize_robots_directive($p['robots'] ?? sparkcms_default_robots_directive());
     $accessRaw = $p['access'] ?? 'public';
 
+    $scheduleInfo = sparkcms_page_schedule_info($p);
     $isPublished = !empty($p['published']);
+    $isLive = $scheduleInfo['is_live'];
+    $scheduleState = $scheduleInfo['state'];
+    $publishAtValue = $scheduleInfo['publish_at'];
+    $unpublishAtValue = $scheduleInfo['unpublish_at'];
+    $statusBadgeClass = 'status-draft';
+    $statusText = 'Draft';
+    if ($scheduleState === 'published' && $isPublished) {
+        $statusBadgeClass = 'status-published';
+        $statusText = 'Published';
+    } elseif ($scheduleState === 'scheduled') {
+        $statusBadgeClass = 'status-warning';
+        $statusText = 'Scheduled';
+    } elseif ($scheduleState === 'expired') {
+        $statusBadgeClass = 'status-critical';
+        $statusText = 'Expired';
+    }
+    $statusNote = $scheduleInfo['detail'];
     $accessValue = strtolower((string) $accessRaw);
     $isRestricted = $accessValue !== 'public';
     $views = (int) ($p['views'] ?? 0);
@@ -193,6 +213,10 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
                         data-slug="<?php echo htmlspecialchars($slug, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>"
                         data-content="<?php echo htmlspecialchars($content, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>"
                         data-published="<?php echo $isPublished ? 1 : 0; ?>"
+                        data-live="<?php echo $isLive ? 1 : 0; ?>"
+                        data-schedule_state="<?php echo htmlspecialchars($scheduleState, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>"
+                        data-publish_at="<?php echo htmlspecialchars($publishAtValue, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>"
+                        data-unpublish_at="<?php echo htmlspecialchars($unpublishAtValue, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>"
                         data-template="<?php echo htmlspecialchars($templateName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>"
                         data-meta_title="<?php echo htmlspecialchars($metaTitle, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>"
                         data-meta_description="<?php echo htmlspecialchars($metaDescription, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>"
@@ -228,8 +252,13 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
                             </div>
                         </td>
                         <td class="pages-list-cell pages-list-cell--status" data-label="Status">
-                            <span class="status-badge <?php echo $isPublished ? 'status-published' : 'status-draft'; ?>">
-                                <?php echo $isPublished ? 'Published' : 'Draft'; ?>
+                            <span class="status-badge <?php echo htmlspecialchars($statusBadgeClass, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>" data-status-badge>
+                                <?php echo htmlspecialchars($statusText, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>
+                            </span>
+                            <span class="pages-list-status-note" data-status-note<?php echo $statusNote === '' ? ' hidden' : ''; ?>>
+                                <?php if ($statusNote !== ''): ?>
+                                    <?php echo htmlspecialchars($statusNote, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>
+                                <?php endif; ?>
                             </span>
                         </td>
                         <td class="pages-list-cell pages-list-cell--template" data-label="Template">
@@ -330,6 +359,16 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
                                             <input type="checkbox" name="published" id="published">
                                             <span>Published</span>
                                         </label>
+                                    </div>
+                                    <div class="form-group page-modal-schedule">
+                                        <label class="form-label" for="publish_at">Publish at</label>
+                                        <input type="datetime-local" class="form-input" name="publish_at" id="publish_at">
+                                        <p class="form-hint">Leave blank to publish immediately.</p>
+                                    </div>
+                                    <div class="form-group page-modal-schedule">
+                                        <label class="form-label" for="unpublish_at">Unpublish at</label>
+                                        <input type="datetime-local" class="form-input" name="unpublish_at" id="unpublish_at">
+                                        <p class="form-hint">Leave blank to keep the page live indefinitely.</p>
                                     </div>
                                     <div class="form-group page-modal-checkbox">
                                         <label class="form-label" for="homepage">Homepage</label>

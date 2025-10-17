@@ -3,11 +3,21 @@
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/data.php';
 require_once __DIR__ . '/../../includes/sanitize.php';
+require_once __DIR__ . '/../../includes/page_schedule.php';
 $pagesFile = __DIR__ . '/../../data/pages.json';
 $pages = [];
 if (file_exists($pagesFile)) {
     $pages = read_json_file($pagesFile);
 }
+
+foreach ($pages as &$pageRef) {
+    if (!is_array($pageRef)) {
+        continue;
+    }
+    $pageRef['publish_at'] = sanitize_datetime_local($pageRef['publish_at'] ?? '');
+    $pageRef['unpublish_at'] = sanitize_datetime_local($pageRef['unpublish_at'] ?? '');
+}
+unset($pageRef);
 
 $id = isset($_POST['id']) && $_POST['id'] !== '' ? (int)$_POST['id'] : null;
 $title = sanitize_text($_POST['title'] ?? '');
@@ -20,6 +30,30 @@ function slugify($text){
     return $text ?: 'page';
 }
 
+function format_publish_schedule_value($value) {
+    $value = sanitize_datetime_local($value ?? '');
+    if ($value === '') {
+        return 'Immediate';
+    }
+    $timestamp = sparkcms_datetime_local_to_timestamp($value);
+    if ($timestamp === null) {
+        return 'Immediate';
+    }
+    return date('M j, Y g:i A', $timestamp);
+}
+
+function format_unpublish_schedule_value($value) {
+    $value = sanitize_datetime_local($value ?? '');
+    if ($value === '') {
+        return 'Not scheduled';
+    }
+    $timestamp = sparkcms_datetime_local_to_timestamp($value);
+    if ($timestamp === null) {
+        return 'Not scheduled';
+    }
+    return date('M j, Y g:i A', $timestamp);
+}
+
 if ($slug === '') {
     $slug = $title;
 }
@@ -28,6 +62,8 @@ $content = trim($_POST['content'] ?? '');
 // strip script tags to avoid XSS in stored content
 $content = preg_replace('/<script\b[^>]*>(.*?)<\/script>/is', '', $content);
 $published = isset($_POST['published']) ? (bool)$_POST['published'] : false;
+$publish_at = sanitize_datetime_local($_POST['publish_at'] ?? '');
+$unpublish_at = sanitize_datetime_local($_POST['unpublish_at'] ?? '');
 $template = sanitize_text($_POST['template'] ?? '');
 if ($template === '') {
     $template = 'page.php';
@@ -50,13 +86,19 @@ if ($title === '') {
 if ($id) {
     // Update existing
     $old = null;
+    $oldPublishAt = '';
+    $oldUnpublishAt = '';
     foreach ($pages as &$p) {
         if ($p['id'] == $id) {
             $old = $p;
+            $oldPublishAt = sanitize_datetime_local($p['publish_at'] ?? '');
+            $oldUnpublishAt = sanitize_datetime_local($p['unpublish_at'] ?? '');
             $p['title'] = $title;
             $p['slug'] = $slug;
             $p['content'] = $content;
             $p['published'] = $published;
+            $p['publish_at'] = $publish_at;
+            $p['unpublish_at'] = $unpublish_at;
             $p['template'] = $template;
             $p['meta_title'] = $meta_title;
             $p['meta_description'] = $meta_description;
@@ -71,6 +113,7 @@ if ($id) {
             break;
         }
     }
+    unset($p);
     $changes = [];
     $details = [];
     if ($old) {
@@ -113,6 +156,18 @@ if ($id) {
         if ($oldRobots !== $robots) {
             $details[] = 'Robots: ' . $oldRobots . ' → ' . $robots;
         }
+        if ($oldPublishAt !== $publish_at) {
+            $details[] = 'Publish at: ' . format_publish_schedule_value($oldPublishAt) . ' → ' . format_publish_schedule_value($publish_at);
+            if ($publish_at !== '' || $oldPublishAt !== '') {
+                $changes[] = 'Updated publish schedule';
+            }
+        }
+        if ($oldUnpublishAt !== $unpublish_at) {
+            $details[] = 'Unpublish at: ' . format_unpublish_schedule_value($oldUnpublishAt) . ' → ' . format_unpublish_schedule_value($unpublish_at);
+            if ($unpublish_at !== '' || $oldUnpublishAt !== '') {
+                $changes[] = 'Updated unpublish schedule';
+            }
+        }
     }
     if (!$changes) {
         $changes[] = 'Updated page settings';
@@ -133,6 +188,8 @@ if ($id) {
         'slug' => $slug,
         'content' => $content,
         'published' => $published,
+        'publish_at' => $publish_at,
+        'unpublish_at' => $unpublish_at,
         'template' => $template,
         'meta_title' => $meta_title,
         'meta_description' => $meta_description,
@@ -151,6 +208,8 @@ if ($id) {
         'Visibility: ' . ($published ? 'Published' : 'Unpublished'),
         'Access: ' . $access,
         'Robots: ' . $robots,
+        'Publish at: ' . format_publish_schedule_value($publish_at),
+        'Unpublish at: ' . format_unpublish_schedule_value($unpublish_at),
     ];
     $action = 'created page with template ' . $template;
 }
