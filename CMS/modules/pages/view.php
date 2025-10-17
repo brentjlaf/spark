@@ -117,7 +117,7 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
                 </div>
                 <span class="table-meta pages-table-meta" id="pagesVisibleCount" aria-live="polite">Showing <?php echo $totalPages . ' ' . $pagesWord; ?></span>
             </header>
-            <table class="pages-list-view" id="pagesListView" aria-describedby="pagesInventoryDescription">
+            <table class="pages-list-view" id="pagesListView" aria-describedby="pagesInventoryDescription" data-homepage-slug="<?php echo htmlspecialchars($homepage, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>">
                 <thead>
                     <tr>
                         <th scope="col" aria-sort="none">
@@ -201,6 +201,7 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
                         data-access="<?php echo htmlspecialchars($accessRaw, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>"
                         data-views="<?php echo $views; ?>"
                         data-last_modified="<?php echo $lastModified; ?>"
+                        data-homepage="<?php echo $homepage === $p['slug'] ? 1 : 0; ?>"
                         data-page-item="1"
                         data-view="list">
                         <td class="pages-list-cell pages-list-cell--title" data-label="Page">
@@ -214,10 +215,6 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
                                         <i class="fa-solid fa-house" aria-hidden="true"></i>
                                         Homepage
                                     </span>
-                                <?php else: ?>
-                                    <button type="button" class="a11y-btn a11y-btn--icon pages-card__home set-home" title="Set as homepage" aria-label="Set as homepage">
-                                        <i class="fa-solid fa-house" aria-hidden="true"></i>
-                                    </button>
                                 <?php endif; ?>
                                 <?php if ($isRestricted): ?>
                                     <span class="pages-card__badge pages-card__badge--restricted">
@@ -330,6 +327,13 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
                                         <label class="page-modal-toggle">
                                             <input type="checkbox" name="published" id="published">
                                             <span>Published</span>
+                                        </label>
+                                    </div>
+                                    <div class="form-group page-modal-checkbox">
+                                        <label class="form-label" for="homepage">Homepage</label>
+                                        <label class="page-modal-toggle">
+                                            <input type="checkbox" name="homepage" id="homepage">
+                                            <span><i class="fa-solid fa-house" aria-hidden="true"></i> Set as homepage</span>
                                         </label>
                                     </div>
                                 </div>
