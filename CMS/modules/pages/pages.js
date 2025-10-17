@@ -12,6 +12,10 @@ $(function(){
         const sortState = { key: null, direction: 'asc' };
         let homepageSlug = ($listView.data('homepageSlug') || '').toString();
         const homepageBadgeHtml = '<span class="pages-card__badge pages-card__badge--home"><i class="fa-solid fa-house" aria-hidden="true"></i>Homepage</span>';
+        const ROBOTS_DEFAULT = 'index,follow';
+        if ($('#robots').length) {
+            $('#robots').val(ROBOTS_DEFAULT);
+        }
         $('#cancelEdit').hide();
 
         function toastSuccess(message){
@@ -338,6 +342,8 @@ $(function(){
             const formattedTimestamp = lastModifiedDate ? formatTimestamp(lastModifiedDate) : '';
             const viewsCount = typeof data.views === 'number' ? data.views : (parseFloat($row.data('views')) || 0);
             const isHomepageRow = homepageSlug !== '' && data.slug === homepageSlug;
+            const robotsDirective = normalizeRobotsDirective(data.robots);
+            data.robots = robotsDirective;
             const sharedAttributes = {
                 'data-title': data.title,
                 'data-slug': data.slug,
@@ -350,6 +356,7 @@ $(function(){
                 'data-og_description': data.og_description,
                 'data-og_image': data.og_image,
                 'data-access': data.access,
+                'data-robots': robotsDirective,
                 'data-published': publishedFlag,
                 'data-views': viewsCount,
                 'data-last_modified': lastModifiedSeconds,
@@ -369,6 +376,7 @@ $(function(){
             $row.data('og_description', data.og_description);
             $row.data('og_image', data.og_image);
             $row.data('access', data.access);
+            $row.data('robots', robotsDirective);
             $row.data('published', publishedFlag);
             $row.data('views', viewsCount);
             $row.data('last_modified', lastModifiedSeconds);
@@ -437,6 +445,7 @@ $(function(){
         }
 
         function buildPageRequestPayload(data, overrides){
+            const robotsDirective = normalizeRobotsDirective(data.robots);
             const basePayload = {
                 title: data.title,
                 slug: data.slug,
@@ -449,14 +458,19 @@ $(function(){
                 og_title: data.og_title,
                 og_description: data.og_description,
                 og_image: data.og_image,
-                access: data.access
+                access: data.access,
+                robots: robotsDirective
             };
 
+            let payload;
             if (overrides && typeof overrides === 'object') {
-                return Object.assign({}, basePayload, overrides);
+                payload = Object.assign({}, basePayload, overrides);
+            } else {
+                payload = basePayload;
             }
 
-            return basePayload;
+            payload.robots = normalizeRobotsDirective(payload.robots);
+            return payload;
         }
 
         function getPageItemsById(id){
@@ -489,8 +503,10 @@ $(function(){
                 og_description: $('#og_description').val(),
                 og_image: $('#og_image').val(),
                 access: $('#access').val(),
+                robots: normalizeRobotsDirective($('#robots').val() || ROBOTS_DEFAULT),
                 published: $('#published').is(':checked') ? 1 : 0
             };
+            pageData.robots = normalizeRobotsDirective(pageData.robots);
 
             const nowTimestamp = Math.floor(Date.now() / 1000);
             if (isEditing) {
@@ -604,6 +620,7 @@ $(function(){
             $('#og_description').val(row.data('og_description'));
             $('#og_image').val(row.data('og_image'));
             $('#access').val(row.data('access'));
+            $('#robots').val(normalizeRobotsDirective(row.data('robots')));
             $('#homepage').prop('checked', row.data('homepage') == 1);
             $('#cancelEdit').show();
             $('#pageTabs').tabs('option', 'active', 0);
@@ -616,6 +633,7 @@ $(function(){
             $('#pageForm')[0].reset();
             $('#published').prop('checked', false);
             $('#canonical_url').val('');
+            $('#robots').val(ROBOTS_DEFAULT);
             $('#homepage').prop('checked', false);
             closePageModal();
             slugEdited = false;
@@ -630,6 +648,7 @@ $(function(){
             $('#pageTabs').tabs('option', 'active', 0);
             $('#cancelEdit').hide();
             $('#homepage').prop('checked', false);
+            $('#robots').val(ROBOTS_DEFAULT);
             openPageModal();
             slugEdited = false;
         });
@@ -722,3 +741,26 @@ $(function(){
 
         refreshHomepageIndicators(homepageSlug);
 });
+        function normalizeRobotsDirective(value){
+            const normalized = (value || '').toString().toLowerCase().replace(/[\s;|]+/g, ',');
+            const parts = normalized.split(',').filter(Boolean);
+            let indexDirective = 'index';
+            let followDirective = 'follow';
+            parts.forEach(function(part){
+                if (part === 'index' || part === 'noindex') {
+                    indexDirective = part;
+                }
+                if (part === 'follow' || part === 'nofollow') {
+                    followDirective = part;
+                }
+            });
+            const directive = indexDirective + ',' + followDirective;
+            const allowed = {
+                'index,follow': true,
+                'index,nofollow': true,
+                'noindex,follow': true,
+                'noindex,nofollow': true
+            };
+            return allowed[directive] ? directive : ROBOTS_DEFAULT;
+        }
+

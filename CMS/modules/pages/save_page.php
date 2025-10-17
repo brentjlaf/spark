@@ -39,6 +39,7 @@ $og_title = sanitize_text($_POST['og_title'] ?? '');
 $og_description = sanitize_text($_POST['og_description'] ?? '');
 $og_image = sanitize_url($_POST['og_image'] ?? '');
 $access = sanitize_text($_POST['access'] ?? 'public');
+$robots = sanitize_robots_directive($_POST['robots'] ?? sparkcms_default_robots_directive());
 
 if ($title === '') {
     http_response_code(400);
@@ -64,6 +65,7 @@ if ($id) {
             $p['og_description'] = $og_description;
             $p['og_image'] = $og_image;
             $p['access'] = $access;
+            $p['robots'] = $robots;
             $p['last_modified'] = time();
             $timestamp = $p['last_modified'];
             break;
@@ -107,6 +109,10 @@ if ($id) {
         if ($old['access'] !== $access) {
             $details[] = 'Access: ' . $old['access'] . ' → ' . $access;
         }
+        $oldRobots = sanitize_robots_directive($old['robots'] ?? sparkcms_default_robots_directive());
+        if ($oldRobots !== $robots) {
+            $details[] = 'Robots: ' . $oldRobots . ' → ' . $robots;
+        }
     }
     if (!$changes) {
         $changes[] = 'Updated page settings';
@@ -135,6 +141,7 @@ if ($id) {
         'og_description' => $og_description,
         'og_image' => $og_image,
         'access' => $access,
+        'robots' => $robots,
         'views' => 0,
         'last_modified' => time()
     ];
@@ -143,6 +150,7 @@ if ($id) {
         'Initial template: ' . $template,
         'Visibility: ' . ($published ? 'Published' : 'Unpublished'),
         'Access: ' . $access,
+        'Robots: ' . $robots,
     ];
     $action = 'created page with template ' . $template;
 }

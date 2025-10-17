@@ -170,6 +170,38 @@
         function boolLabel(value, positive, negative) {
             return value ? positive : negative;
         }
+        function formatRobotsDirective(value) {
+            var normalized = normalizeRobotsDirective(value);
+            var labels = {
+                'index,follow': 'Index & follow',
+                'index,nofollow': 'Index, nofollow',
+                'noindex,follow': 'Noindex, follow',
+                'noindex,nofollow': 'Noindex & nofollow'
+            };
+            return labels[normalized] || normalized;
+        }
+        function normalizeRobotsDirective(value) {
+            var normalized = String(value || '').toLowerCase().replace(/[\s;|]+/g, ',');
+            var parts = normalized.split(',').filter(function(part){ return part.length; });
+            var indexDirective = 'index';
+            var followDirective = 'follow';
+            parts.forEach(function(part){
+                if (part === 'index' || part === 'noindex') {
+                    indexDirective = part;
+                }
+                if (part === 'follow' || part === 'nofollow') {
+                    followDirective = part;
+                }
+            });
+            var directive = indexDirective + ',' + followDirective;
+            var allowed = {
+                'index,follow': true,
+                'index,nofollow': true,
+                'noindex,follow': true,
+                'noindex,nofollow': true
+            };
+            return allowed[directive] ? directive : 'index,follow';
+        }
         var links = metrics.links || {};
         var items = [];
         items.push('<li><span class="label">Title length</span><span class="value">' + (metrics.titleLength || 0) + ' characters</span><span class="hint">Keep between 50–60 characters</span></li>');
@@ -182,7 +214,7 @@
         items.push('<li><span class="label">Open Graph</span><span class="value">' + boolLabel(metrics.hasOpenGraph, 'Configured', 'Missing') + '</span><span class="hint">Optimise social sharing</span></li>');
         items.push('<li><span class="label">Internal links</span><span class="value">' + (links.internal || 0) + '</span><span class="hint">Strengthen crawl paths</span></li>');
         items.push('<li><span class="label">External links</span><span class="value">' + (links.external || 0) + '</span><span class="hint">Provide authoritative references</span></li>');
-        items.push('<li><span class="label">Robots directives</span><span class="value">' + boolLabel(metrics.isNoindex, 'Noindex', 'Indexable') + '</span><span class="hint">Ensure important pages are indexable</span></li>');
+        items.push('<li><span class="label">Robots directives</span><span class="value">' + formatRobotsDirective(metrics.robotsDirective) + '</span><span class="hint">Tune crawl and indexing behaviour</span></li>');
         return items.join('');
     }
 

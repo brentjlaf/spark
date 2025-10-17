@@ -366,6 +366,15 @@ if (empty($page['published']) && !$logged_in) {
     exit;
 }
 
+if ($page) {
+    $defaultRobotsDirective = sparkcms_default_robots_directive();
+    $pageRobotsDirective = sanitize_robots_directive($page['robots'] ?? $defaultRobotsDirective);
+    $page['robots'] = $pageRobotsDirective;
+    if ($pageIndex !== null) {
+        $pages[$pageIndex]['robots'] = $pageRobotsDirective;
+    }
+}
+
 if (($page['access'] ?? 'public') !== 'public' && !$logged_in) {
     http_response_code(403);
     $page = [
@@ -429,6 +438,9 @@ if ($templateFile && (!$logged_in || $preview_mode)) {
 <?php endif; ?>
 <?php if (!empty($page['canonical_url'])): ?>
     <link rel="canonical" href="<?php echo htmlspecialchars($page['canonical_url']); ?>">
+<?php endif; ?>
+<?php if (!empty($page['robots']) && $page['robots'] !== sparkcms_default_robots_directive()): ?>
+    <meta name="robots" content="<?php echo htmlspecialchars($page['robots']); ?>">
 <?php endif; ?>
 <?php if (!empty($page['og_title'])): ?>
     <meta property="og:title" content="<?php echo htmlspecialchars($page['og_title']); ?>">

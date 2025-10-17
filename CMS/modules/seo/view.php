@@ -36,6 +36,19 @@ function seo_strlen(string $value): int
     return function_exists('mb_strlen') ? mb_strlen($value) : strlen($value);
 }
 
+function describe_robots_directive(string $value): string
+{
+    $normalized = sanitize_robots_directive($value);
+    $map = [
+        'index,follow' => 'Index & follow',
+        'index,nofollow' => 'Index, nofollow',
+        'noindex,follow' => 'Noindex, follow',
+        'noindex,nofollow' => 'Noindex & nofollow',
+    ];
+
+    return $map[$normalized] ?? ucfirst(str_replace(',', ', ', $normalized));
+}
+
 /**
  * Render a page template while stripping editor-specific markup so we can
  * analyse the final HTML the visitor would receive.
@@ -265,6 +278,7 @@ foreach ($pages as $page) {
     $title = $page['title'] ?? 'Untitled';
     $slug = $page['slug'] ?? '';
     $pageHtml = build_page_html($page, $settings, $menus, $scriptBase, $templateDir);
+    $storedRobotsDirective = sanitize_robots_directive($page['robots'] ?? sparkcms_default_robots_directive());
 
     $doc = new DOMDocument();
     $loaded = trim($pageHtml) !== '' && $doc->loadHTML('<?xml encoding="utf-8" ?>' . $pageHtml);
@@ -283,7 +297,8 @@ foreach ($pages as $page) {
         'hasCanonical' => false,
         'hasStructuredData' => false,
         'hasOpenGraph' => false,
-        'isNoindex' => false,
+        'isNoindex' => strpos($storedRobotsDirective, 'noindex') !== false,
+        'robotsDirective' => $storedRobotsDirective,
     ];
 
     if ($loaded) {
@@ -302,8 +317,10 @@ foreach ($pages as $page) {
                 $metrics['metaDescription'] = trim($meta->getAttribute('content'));
                 $metrics['metaDescriptionLength'] = seo_strlen($metrics['metaDescription']);
             }
-            if ($name === 'robots' && stripos($meta->getAttribute('content'), 'noindex') !== false) {
-                $metrics['isNoindex'] = true;
+            if ($name === 'robots') {
+                $normalizedRobots = sanitize_robots_directive($meta->getAttribute('content'));
+                $metrics['robotsDirective'] = $normalizedRobots;
+                $metrics['isNoindex'] = strpos($normalizedRobots, 'noindex') !== false;
             }
             if (strpos($property, 'og:') === 0) {
                 $metrics['hasOpenGraph'] = true;
@@ -720,7 +737,7 @@ $dashboardStats = [
                         <ul class="seo-metric-list">
                             <li><span>Internal links</span><span><?php echo $selectedPage['metrics']['links']['internal']; ?></span></li>
                             <li><span>External links</span><span><?php echo $selectedPage['metrics']['links']['external']; ?></span></li>
-                            <li><span>Robots directives</span><span><?php echo $selectedPage['metrics']['isNoindex'] ? 'Noindex' : 'Indexable'; ?></span></li>
+                            <li><span>Robots directives</span><span><?php echo htmlspecialchars(describe_robots_directive($selectedPage['metrics']['robotsDirective'])); ?></span></li>
                         </ul>
                     </div>
                 </div>
