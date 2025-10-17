@@ -181,6 +181,13 @@
                                         <p><strong>Date:</strong> <span id="infoDate"></span></p>
                                         <p><strong>Folder:</strong> <span id="infoFolder"></span></p>
                                     </div>
+                                    <div class="form-group media-usage-group">
+                                        <label class="form-label" for="mediaUsageList">Used In</label>
+                                        <div id="mediaUsageLoading" class="form-help" style="display:none;">Checking content references…</div>
+                                        <div id="mediaUsageError" class="form-help media-usage-error" style="display:none;"></div>
+                                        <ul id="mediaUsageList" class="media-usage-list" aria-live="polite" style="display:none;"></ul>
+                                        <p id="mediaUsageEmpty" class="form-help" style="display:none;">This file is not currently used in any content.</p>
+                                    </div>
                                     <div class="form-group">
                                         <label class="form-label" for="edit-name">Name/Title</label>
                                         <input type="text" id="edit-name" class="form-input">
