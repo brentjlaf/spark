@@ -437,27 +437,6 @@ $initialPayload = [
                     </section>
 
                     <aside class="events-form-sidebar" aria-label="Event configuration">
-                        <section class="events-form-card" aria-labelledby="eventsRegistrationTitle">
-                            <header class="events-form-card-header">
-                                <div>
-                                    <h3 class="events-form-card-title" id="eventsRegistrationTitle">Registration</h3>
-                                    <p class="events-form-card-subtitle">Connect an existing form to collect attendee details.</p>
-                                </div>
-                            </header>
-                            <label class="events-form-field">
-                                <span>Registration form</span>
-                                <select name="form_id" data-events-event-form>
-                                    <option value="">No form selected</option>
-                                    <?php foreach ($forms as $form): ?>
-                                        <option value="<?php echo htmlspecialchars($form['id'], ENT_QUOTES, 'UTF-8'); ?>">
-                                            <?php echo htmlspecialchars($form['name'], ENT_QUOTES, 'UTF-8'); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </label>
-                            <p class="events-form-help">Choose which form to use for attendee registrations. Leave empty to manage signups elsewhere.</p>
-                        </section>
-
                         <section class="events-form-card" aria-labelledby="eventsImageTitle">
                             <header class="events-form-card-header">
                                 <div>
@@ -483,6 +462,27 @@ $initialPayload = [
                                     </div>
                                 </div>
                             </div>
+                        </section>
+
+                        <section class="events-form-card" aria-labelledby="eventsRegistrationTitle">
+                            <header class="events-form-card-header">
+                                <div>
+                                    <h3 class="events-form-card-title" id="eventsRegistrationTitle">Registration</h3>
+                                    <p class="events-form-card-subtitle">Connect an existing form to collect attendee details.</p>
+                                </div>
+                            </header>
+                            <label class="events-form-field">
+                                <span>Registration form</span>
+                                <select name="form_id" data-events-event-form>
+                                    <option value="">No form selected</option>
+                                    <?php foreach ($forms as $form): ?>
+                                        <option value="<?php echo htmlspecialchars($form['id'], ENT_QUOTES, 'UTF-8'); ?>">
+                                            <?php echo htmlspecialchars($form['name'], ENT_QUOTES, 'UTF-8'); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                            <p class="events-form-help">Choose which form to use for attendee registrations. Leave empty to manage signups elsewhere.</p>
                         </section>
 
                         <section class="events-form-card" aria-labelledby="eventsFormCategoriesTitle">
