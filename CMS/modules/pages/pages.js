@@ -10,6 +10,8 @@ $(function(){
         const $visibleCount = $('#pagesVisibleCount');
         let activeFilter = 'all';
         const sortState = { key: null, direction: 'asc' };
+        let homepageSlug = ($listView.data('homepageSlug') || '').toString();
+        const homepageBadgeHtml = '<span class="pages-card__badge pages-card__badge--home"><i class="fa-solid fa-house" aria-hidden="true"></i>Homepage</span>';
         $('#cancelEdit').hide();
 
         function toastSuccess(message){
@@ -58,6 +60,36 @@ $(function(){
                 return $();
             }
             return $listView.find('tbody [data-page-item]');
+        }
+
+        function refreshHomepageIndicators(newSlug) {
+            homepageSlug = (newSlug || '').toString();
+            const normalizedSlug = homepageSlug;
+            getPageRows().each(function(){
+                const $row = $(this);
+                const rowSlug = ($row.attr('data-slug') || '').toString();
+                const isHomepageRow = normalizedSlug !== '' && rowSlug === normalizedSlug;
+                $row.attr('data-homepage', isHomepageRow ? 1 : 0);
+                $row.data('homepage', isHomepageRow ? 1 : 0);
+                const $badges = $row.find('.pages-list-badges');
+                if ($badges.length) {
+                    $badges.find('.pages-card__badge--home').remove();
+                    if (isHomepageRow) {
+                        $badges.prepend(homepageBadgeHtml);
+                    }
+                }
+            });
+        }
+
+        function maybeUpdateHomepage(slug, shouldSetHomepage) {
+            if (!shouldSetHomepage) {
+                return null;
+            }
+            const normalizedSlug = (slug || '').toString();
+            if (normalizedSlug === '' || normalizedSlug === homepageSlug) {
+                return null;
+            }
+            return $.post('modules/pages/set_home.php', {slug: normalizedSlug});
         }
 
         function updateVisibleCount(count) {
@@ -305,6 +337,7 @@ $(function(){
             const lastModifiedDate = lastModifiedSeconds > 0 ? new Date(lastModifiedSeconds * 1000) : null;
             const formattedTimestamp = lastModifiedDate ? formatTimestamp(lastModifiedDate) : '';
             const viewsCount = typeof data.views === 'number' ? data.views : (parseFloat($row.data('views')) || 0);
+            const isHomepageRow = homepageSlug !== '' && data.slug === homepageSlug;
             const sharedAttributes = {
                 'data-title': data.title,
                 'data-slug': data.slug,
@@ -319,7 +352,8 @@ $(function(){
                 'data-access': data.access,
                 'data-published': publishedFlag,
                 'data-views': viewsCount,
-                'data-last_modified': lastModifiedSeconds
+                'data-last_modified': lastModifiedSeconds,
+                'data-homepage': isHomepageRow ? 1 : 0
             };
 
             $row.attr(sharedAttributes);
@@ -338,6 +372,7 @@ $(function(){
             $row.data('published', publishedFlag);
             $row.data('views', viewsCount);
             $row.data('last_modified', lastModifiedSeconds);
+            $row.data('homepage', isHomepageRow ? 1 : 0);
 
             $row.find('.pages-list-title-text').text(data.title);
             $row.find('.pages-list-slug').text(`/${data.slug}`);
@@ -383,6 +418,10 @@ $(function(){
 
             const $badges = $row.find('.pages-list-badges');
             if ($badges.length) {
+                $badges.find('.pages-card__badge--home').remove();
+                if (isHomepageRow) {
+                    $badges.prepend(homepageBadgeHtml);
+                }
                 if (isRestricted) {
                     if (!$badges.find('.pages-card__badge--restricted').length) {
                         $badges.append('<span class="pages-card__badge pages-card__badge--restricted"><i class="fa-solid fa-lock" aria-hidden="true"></i>Private</span>');
@@ -470,6 +509,7 @@ $(function(){
 
             $.post('modules/pages/save_page.php', $form.serialize())
                 .done(function(){
+                    const shouldSetHomepage = $('#homepage').is(':checked');
                     slugEdited = false;
                     closePageModal();
 
@@ -477,9 +517,38 @@ $(function(){
                         updatePageRow(pageData);
                         applyPageFilters();
                         toastSuccess('Page updated successfully.');
+                        const homepageRequest = maybeUpdateHomepage(pageData.slug, shouldSetHomepage);
+                        if (homepageRequest) {
+                            homepageRequest
+                                .done(function(){
+                                    refreshHomepageIndicators(pageData.slug);
+                                    toastSuccess('Homepage updated successfully.');
+                                })
+                                .fail(function(xhr){
+                                    const message = extractErrorMessage(xhr, 'Unable to update the homepage setting.');
+                                    toastError(message);
+                                });
+                        }
                     } else {
                         $('#pageForm')[0].reset();
                         $('#published').prop('checked', false);
+                        $('#homepage').prop('checked', false);
+                        const homepageRequest = maybeUpdateHomepage(pageData.slug, shouldSetHomepage);
+                        if (homepageRequest) {
+                            homepageRequest
+                                .done(function(){
+                                    rememberToast('success', 'Homepage updated successfully.');
+                                })
+                                .fail(function(xhr){
+                                    const message = extractErrorMessage(xhr, 'Unable to update the homepage setting.');
+                                    rememberToast('error', message);
+                                })
+                                .always(function(){
+                                    rememberToast('success', 'Page created successfully.');
+                                    location.reload();
+                                });
+                            return;
+                        }
                         rememberToast('success', 'Page created successfully.');
                         location.reload();
                     }
@@ -535,6 +604,7 @@ $(function(){
             $('#og_description').val(row.data('og_description'));
             $('#og_image').val(row.data('og_image'));
             $('#access').val(row.data('access'));
+            $('#homepage').prop('checked', row.data('homepage') == 1);
             $('#cancelEdit').show();
             $('#pageTabs').tabs('option', 'active', 0);
             openPageModal();
@@ -546,6 +616,7 @@ $(function(){
             $('#pageForm')[0].reset();
             $('#published').prop('checked', false);
             $('#canonical_url').val('');
+            $('#homepage').prop('checked', false);
             closePageModal();
             slugEdited = false;
         });
@@ -558,6 +629,7 @@ $(function(){
             $('#canonical_url').val('');
             $('#pageTabs').tabs('option', 'active', 0);
             $('#cancelEdit').hide();
+            $('#homepage').prop('checked', false);
             openPageModal();
             slugEdited = false;
         });
@@ -648,19 +720,5 @@ $(function(){
                 });
         });
 
-        $('.pages-card__home.set-home').on('click', function(){
-            const row = findPageItem($(this));
-            if (!row.length) {
-                return;
-            }
-            $.post('modules/pages/set_home.php', {slug: row.data('slug')})
-                .done(function(){
-                    rememberToast('success', 'Homepage updated successfully.');
-                    location.reload();
-                })
-                .fail(function(xhr){
-                    const message = extractErrorMessage(xhr, 'Unable to update the homepage setting.');
-                    toastError(message);
-                });
-        });
+        refreshHomepageIndicators(homepageSlug);
 });
