@@ -116,30 +116,55 @@ $initialAttr = htmlspecialchars(json_encode($initialPayload, JSON_UNESCAPED_UNIC
                     </div>
                 </header>
 
-                <div class="maps-table" aria-live="polite">
-                    <div class="maps-table__header">
-                        <div>Name</div>
-                        <div>Status</div>
-                        <div>Location</div>
-                        <div>Categories</div>
-                        <div>Updated</div>
-                        <div>Actions</div>
-                    </div>
-                    <div class="maps-table__body" id="mapLocationsTable"></div>
-                </div>
-                <div class="a11y-empty-state maps-empty" id="mapLocationsEmpty" <?php echo $totalLocations > 0 ? 'hidden' : ''; ?>>
-                    <i class="fas fa-map-location-dot" aria-hidden="true"></i>
-                    <h3>No locations yet</h3>
-                    <p>Start by adding your first place to power your interactive maps.</p>
-                    <button type="button" class="a11y-btn a11y-btn--primary" id="mapEmptyAddBtn">
-                        <i class="fas fa-plus" aria-hidden="true"></i>
-                        <span>Create location</span>
+                <div class="maps-view-toggle" role="tablist" aria-label="Location view mode">
+                    <button type="button" class="maps-view-toggle__btn is-active" id="mapViewListTab" data-map-view="list" role="tab" aria-selected="true" aria-controls="mapListPanel">
+                        <i class="fas fa-list" aria-hidden="true"></i>
+                        <span>List view</span>
+                    </button>
+                    <button type="button" class="maps-view-toggle__btn" id="mapViewMapTab" data-map-view="map" role="tab" aria-selected="false" tabindex="-1" aria-controls="mapMapPanel">
+                        <i class="fas fa-map" aria-hidden="true"></i>
+                        <span>Map view</span>
                     </button>
                 </div>
-                <div class="a11y-empty-state maps-empty" id="mapLocationsNoResults" hidden>
-                    <i class="fas fa-filter" aria-hidden="true"></i>
-                    <h3>No matches found</h3>
-                    <p>Try adjusting the search term or filters.</p>
+
+                <div class="maps-view-panel" id="mapListPanel" role="tabpanel" aria-labelledby="mapViewListTab">
+                    <div class="maps-table" aria-live="polite">
+                        <div class="maps-table__header">
+                            <div>Name</div>
+                            <div>Status</div>
+                            <div>Location</div>
+                            <div>Categories</div>
+                            <div>Updated</div>
+                            <div>Actions</div>
+                        </div>
+                        <div class="maps-table__body" id="mapLocationsTable"></div>
+                    </div>
+                    <div class="a11y-empty-state maps-empty" id="mapLocationsEmpty" <?php echo $totalLocations > 0 ? 'hidden' : ''; ?>>
+                        <i class="fas fa-map-location-dot" aria-hidden="true"></i>
+                        <h3>No locations yet</h3>
+                        <p>Start by adding your first place to power your interactive maps.</p>
+                        <button type="button" class="a11y-btn a11y-btn--primary" id="mapEmptyAddBtn">
+                            <i class="fas fa-plus" aria-hidden="true"></i>
+                            <span>Create location</span>
+                        </button>
+                    </div>
+                    <div class="a11y-empty-state maps-empty" id="mapLocationsNoResults" hidden>
+                        <i class="fas fa-filter" aria-hidden="true"></i>
+                        <h3>No matches found</h3>
+                        <p>Try adjusting the search term or filters.</p>
+                    </div>
+                </div>
+
+                <div class="maps-view-panel maps-view-panel--map" id="mapMapPanel" role="tabpanel" aria-labelledby="mapViewMapTab" hidden>
+                    <div class="maps-map-wrapper" id="mapMapWrapper" hidden>
+                        <div class="maps-map" id="mapLocationsMap" role="img" aria-label="Map showing locations"></div>
+                    </div>
+                    <div class="a11y-empty-state maps-empty" id="mapMapNoData" hidden>
+                        <i class="fas fa-map-location-dot" aria-hidden="true"></i>
+                        <h3 id="mapMapNoDataTitle">No locations yet</h3>
+                        <p id="mapMapNoDataMessage">Add a location to visualize it on the map.</p>
+                    </div>
+                    <div class="maps-map-legend" id="mapMapLegend" aria-live="polite"></div>
                 </div>
             </div>
 
