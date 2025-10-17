@@ -16,6 +16,7 @@ $(function(){
     let itemsPerPage = 12;
     let draggedMediaId = null;
     let draggedMediaFolder = null;
+    const usageCache = {};
 
     const reservedFolderNames = ['.', '..', 'con', 'prn', 'aux', 'nul', 'com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7', 'com8', 'com9', 'lpt1', 'lpt2', 'lpt3', 'lpt4', 'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9'];
 
@@ -425,6 +426,77 @@ $(function(){
         return parseFloat((bytes/Math.pow(k,i)).toFixed(2))+' '+sizes[i];
     }
 
+    function escapeHtml(str){
+        return $('<div>').text(str == null ? '' : str).html();
+    }
+
+    function resetUsageUI(){
+        const list = $('#mediaUsageList');
+        list.empty().hide();
+        $('#mediaUsageLoading').show();
+        $('#mediaUsageError').hide().text('');
+        $('#mediaUsageEmpty').hide();
+    }
+
+    function showUsageError(message){
+        $('#mediaUsageLoading').hide();
+        $('#mediaUsageList').hide().empty();
+        $('#mediaUsageEmpty').hide();
+        $('#mediaUsageError').text(message || 'Unable to load usage information.').show();
+    }
+
+    function renderUsageList(usage){
+        const list = $('#mediaUsageList');
+        $('#mediaUsageLoading').hide();
+        $('#mediaUsageError').hide().text('');
+        list.empty();
+        if(!Array.isArray(usage) || !usage.length){
+            list.hide();
+            $('#mediaUsageEmpty').show();
+            return;
+        }
+        $('#mediaUsageEmpty').hide();
+        usage.forEach(item => {
+            const type = escapeHtml(item && item.type ? item.type : 'Content');
+            const name = escapeHtml(item && item.name ? item.name : '');
+            const details = item && item.details ? escapeHtml(item.details) : '';
+            let html = '<strong>' + type + ':</strong> ' + (name || '<em>Unnamed</em>');
+            if(details){
+                html += '<div class="media-usage-detail">' + details + '</div>';
+            }
+            const li = $('<li></li>').html(html);
+            list.append(li);
+        });
+        list.show();
+    }
+
+    function loadMediaUsage(id){
+        if(!id){
+            showUsageError('Missing media reference.');
+            return;
+        }
+        if(usageCache[id]){
+            renderUsageList(usageCache[id]);
+            return;
+        }
+        $.getJSON('modules/media/get_usage.php', {id:id}).done(function(res){
+            if(res && res.status === 'success'){
+                const usage = Array.isArray(res.usage) ? res.usage : [];
+                usageCache[id] = usage;
+                renderUsageList(usage);
+            }else{
+                const message = res && res.message ? res.message : 'Unable to load usage information.';
+                showUsageError(message);
+            }
+        }).fail(function(jqXHR){
+            let message = 'Unable to load usage information.';
+            if(jqXHR.responseJSON && jqXHR.responseJSON.message){
+                message = jqXHR.responseJSON.message;
+            }
+            showUsageError(message);
+        });
+    }
+
     function updateSizeEstimate(){
         if(!cropper){ $('#sizeEstimate').text(''); return; }
         const canvas = cropper.getCroppedCanvas();
@@ -764,6 +836,7 @@ $(function(){
         if(!newName) return;
         $.post('modules/media/rename_media.php',{id:id,name:newName},function(res){
             if(res.status==='success'){
+                delete usageCache[id];
                 loadImages();
                 loadFolders();
             }else{
@@ -793,14 +866,17 @@ $(function(){
         const d = img.modified_at ? new Date(img.modified_at*1000) : new Date(img.uploaded_at*1000);
         $('#infoDate').text(d.toLocaleString());
         $('#infoFolder').text(img.folder||'');
+        resetUsageUI();
         $('#imageInfoModal').data('id', id);
         openModal('imageInfoModal');
+        loadMediaUsage(id);
     }
 
     function deleteImage(id){
         confirmModal('Delete this image?').then(ok => {
             if(!ok) return;
             $.post('modules/media/delete_media.php',{id:id},function(){
+                delete usageCache[id];
                 loadImages();
                 loadFolders();
             });

@@ -8549,6 +8549,40 @@
     color: #4a5568;
 }
 
+#imageInfoModal .media-usage-group {
+    margin-top: 16px;
+}
+
+#imageInfoModal .media-usage-group .form-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+#imageInfoModal .media-usage-list {
+    list-style: disc;
+    margin: 8px 0 0 0;
+    padding-left: 20px;
+}
+
+#imageInfoModal .media-usage-list li {
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: #2d3748;
+}
+
+#imageInfoModal .media-usage-list li .media-usage-detail {
+    display: block;
+    color: #4a5568;
+    font-size: 13px;
+    margin-top: 2px;
+}
+
+#imageInfoModal .media-usage-error {
+    color: #b91c1c;
+    margin-top: 4px;
+}
+
 #imageInfoModal #infoActions {
     display: flex;
     justify-content: space-between;
