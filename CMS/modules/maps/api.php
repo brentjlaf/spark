@@ -43,6 +43,9 @@ switch ($action) {
     case 'delete_category':
         handle_delete_category($categories, $locations);
         break;
+    case 'geocode_address':
+        handle_geocode_address();
+        break;
     default:
         respond_json(['error' => 'Unknown action.'], 400);
 }
@@ -389,6 +392,26 @@ function handle_delete_location(array $locations, array $categories): void
     }
 
     handle_list_locations(maps_read_locations(), $categories);
+}
+
+function handle_geocode_address(): void
+{
+    $payload = parse_json_body();
+    if (empty($payload)) {
+        $payload = $_GET;
+    }
+
+    $query = isset($payload['query']) ? trim((string) $payload['query']) : '';
+    if ($query === '') {
+        respond_json(['error' => 'Provide an address to look up.'], 422);
+    }
+
+    $coordinates = maps_geocode_address($query);
+    if ($coordinates === null) {
+        respond_json(['error' => 'Unable to determine coordinates for the provided address.'], 404);
+    }
+
+    respond_json(['coordinates' => $coordinates]);
 }
 
 function handle_reorder_locations(array $locations, array $categories): void

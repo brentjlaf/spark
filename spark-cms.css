@@ -657,6 +657,25 @@ body {
     grid-column: 1 / -1;
 }
 
+.maps-form__hint {
+    grid-column: 1 / -1;
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin: -0.5rem 0 0;
+}
+
+.maps-form__hint--loading {
+    color: #2563eb;
+}
+
+.maps-form__hint--success {
+    color: #047857;
+}
+
+.maps-form__hint--error {
+    color: #b91c1c;
+}
+
 .maps-chip-list {
     display: flex;
     flex-wrap: wrap;
