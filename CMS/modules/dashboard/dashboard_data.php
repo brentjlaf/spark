@@ -14,8 +14,6 @@ $postsFile = __DIR__ . '/../../data/blog_posts.json';
 $historyFile = __DIR__ . '/../../data/page_history.json';
 $eventsFile = __DIR__ . '/../../data/events.json';
 $eventOrdersFile = __DIR__ . '/../../data/event_orders.json';
-$calendarEventsFile = __DIR__ . '/../../data/calendar_events.json';
-$calendarCategoriesFile = __DIR__ . '/../../data/calendar_categories.json';
 $dataDirectory = __DIR__ . '/../../data';
 
 $pages = read_json_file($pagesFile);
@@ -28,8 +26,6 @@ $posts = read_json_file($postsFile);
 $history = read_json_file($historyFile);
 $events = read_json_file($eventsFile);
 $eventOrders = read_json_file($eventOrdersFile);
-$calendarEvents = read_json_file($calendarEventsFile);
-$calendarCategories = read_json_file($calendarCategoriesFile);
 
 if (!is_array($pages)) {
     $pages = [];
@@ -61,17 +57,9 @@ if (!is_array($events)) {
 if (!is_array($eventOrders)) {
     $eventOrders = [];
 }
-if (!is_array($calendarEvents)) {
-    $calendarEvents = [];
-}
-if (!is_array($calendarCategories)) {
-    $calendarCategories = [];
-}
 
 $events = array_values(array_filter($events, 'is_array'));
 $eventOrders = array_values(array_filter($eventOrders, 'is_array'));
-$calendarEvents = array_values(array_filter($calendarEvents, 'is_array'));
-$calendarCategories = array_values(array_filter($calendarCategories, 'is_array'));
 
 $views = 0;
 foreach ($pages as $p) {
@@ -560,30 +548,6 @@ foreach ($eventOrders as $order) {
     }
 }
 
-$calendarTotal = count($calendarEvents);
-$calendarUpcoming = 0;
-$calendarRecurring = 0;
-$calendarNextEvent = null;
-foreach ($calendarEvents as $calendarEvent) {
-    $startDateRaw = isset($calendarEvent['start_date']) ? (string)$calendarEvent['start_date'] : '';
-    $startDate = $startDateRaw !== '' ? strtotime($startDateRaw) : false;
-    if ($startDate !== false && $startDate >= $now) {
-        $calendarUpcoming++;
-        if ($calendarNextEvent === null || $startDate < $calendarNextEvent['time']) {
-            $calendarNextEvent = [
-                'title' => (string)($calendarEvent['title'] ?? ''),
-                'time' => $startDate,
-            ];
-        }
-    }
-
-    $interval = strtolower(trim((string)($calendarEvent['recurring_interval'] ?? 'none')));
-    if ($interval !== '' && $interval !== 'none') {
-        $calendarRecurring++;
-    }
-}
-$calendarCategoryCount = count($calendarCategories);
-
 $pagesStatus = 'ok';
 if ($totalPages === 0) {
     $pagesStatus = 'urgent';
@@ -726,24 +690,6 @@ $eventsCta = $eventsTotal === 0
     ? 'Create an event'
     : ($eventsPendingOrders > 0 ? 'Review event orders' : 'Open events');
 
-$calendarStatus = 'ok';
-if ($calendarTotal === 0) {
-    $calendarStatus = 'urgent';
-} elseif ($calendarUpcoming === 0) {
-    $calendarStatus = 'warning';
-}
-$calendarSecondary = 'Upcoming: ' . dashboard_format_number($calendarUpcoming) . ' • Categories: ' . dashboard_format_number($calendarCategoryCount);
-if ($calendarNextEvent) {
-    $calendarNextTitle = trim((string)($calendarNextEvent['title'] ?? ''));
-    if ($calendarNextTitle === '') {
-        $calendarNextTitle = 'Untitled event';
-    }
-    $calendarTrend = 'Next: ' . $calendarNextTitle . ' (' . date('M j', $calendarNextEvent['time']) . ')';
-} else {
-    $calendarTrend = 'No upcoming entries scheduled';
-}
-$calendarCta = $calendarTotal === 0 ? 'Add calendar event' : 'Open calendar';
-
 $moduleSummaries = [
     [
         'id' => 'pages',
@@ -794,16 +740,6 @@ $moduleSummaries = [
         'statusLabel' => dashboard_status_label($formsStatus),
         'trend' => $formsTrend,
         'cta' => $formsCta,
-    ],
-    [
-        'id' => 'calendar',
-        'module' => 'Calendar',
-        'primary' => dashboard_format_number($calendarTotal) . ' calendar entries',
-        'secondary' => $calendarSecondary,
-        'status' => $calendarStatus,
-        'statusLabel' => dashboard_status_label($calendarStatus),
-        'trend' => $calendarTrend,
-        'cta' => $calendarCta,
     ],
     [
         'id' => 'menus',
@@ -963,16 +899,6 @@ $data = [
     'formsFields' => $formsFields,
     'menusCount' => count($menus),
     'menuItems' => $menuItems,
-    'calendarTotal' => $calendarTotal,
-    'calendarUpcoming' => $calendarUpcoming,
-    'calendarRecurring' => $calendarRecurring,
-    'calendarCategories' => $calendarCategoryCount,
-    'calendarNextEvent' => $calendarNextEvent
-        ? [
-            'title' => trim((string)($calendarNextEvent['title'] ?? '')),
-            'time' => date('c', $calendarNextEvent['time']),
-        ]
-        : null,
     'accessibilityScore' => $accessibilityScore,
     'accessibilityCompliant' => $accessibilitySummary['accessible'],
     'accessibilityNeedsReview' => $accessibilitySummary['needs_review'],

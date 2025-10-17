@@ -97,7 +97,7 @@
             <header class="dashboard-panel-header">
                 <div>
                     <h3 class="dashboard-panel-title" id="dashboardSectionModules">Module insights</h3>
-                    <p class="dashboard-panel-description">Understand where attention is needed across features like Pages, Events, Calendar, and more.</p>
+                    <p class="dashboard-panel-description">Understand where attention is needed across features like Pages, Events, and more.</p>
                 </div>
             </header>
             <div class="dashboard-module-card-grid" aria-live="polite" aria-busy="true" id="dashboardModuleCards" role="list">
