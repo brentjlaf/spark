@@ -15,7 +15,8 @@
             search: '',
             category: '',
             status: ''
-        }
+        },
+        viewMode: 'list'
     };
 
     var geocodeTimer = null;
@@ -26,6 +27,10 @@
     var coordinatesEditedManually = false;
     var geocodeStatusEl = root.find('#mapLocationGeocodeStatus');
     var geocodeDefaultStatus = '';
+    var leafletAssetsDeferred = null;
+    var mapInstance = null;
+    var mapMarkers = [];
+    var mapPendingBounds = null;
     if (geocodeStatusEl.length) {
         geocodeDefaultStatus = geocodeStatusEl.attr('data-map-geocode-default') || geocodeStatusEl.text().trim();
         if (geocodeDefaultStatus === '') {
@@ -52,7 +57,6 @@
     function bootstrap(initial) {
         var locations = Array.isArray(initial.locations) ? initial.locations : [];
         var categories = Array.isArray(initial.categories) ? initial.categories : [];
-        state.locations = locations.map(normalizeLocationSummary.bind(null, categories));
         var counts = computeCategoryCounts(locations);
         state.categories = categories.map(function (category) {
             return normalizeCategory(category, counts[category.id] || 0, false);
@@ -64,22 +68,35 @@
             icon: 'fa-circle-exclamation',
             is_default: true
         }, counts.uncategorized || 0, true));
+        setLocations(locations);
     }
 
     function bindEvents() {
         root.on('input', '#mapLocationSearch', function () {
             state.filters.search = $(this).val().toLowerCase();
-            renderLocations();
+            render();
         });
 
         root.on('change', '#mapCategoryFilter', function () {
             state.filters.category = $(this).val();
-            renderLocations();
+            render();
         });
 
         root.on('change', '#mapStatusFilter', function () {
             state.filters.status = $(this).val();
-            renderLocations();
+            render();
+        });
+
+        root.on('click', '[data-map-view]', function () {
+            var view = $(this).attr('data-map-view');
+            if (!view) {
+                return;
+            }
+            if (view === state.viewMode) {
+                return;
+            }
+            state.viewMode = view === 'map' ? 'map' : 'list';
+            render();
         });
 
         root.on('input', '#mapLocationStreet, #mapLocationCity, #mapLocationRegion, #mapLocationPostal, #mapLocationCountry', function () {
@@ -145,7 +162,7 @@
             }
             apiRequest('delete_location', { id: id }).done(function (response) {
                 if (response && Array.isArray(response.locations)) {
-                    state.locations = response.locations;
+                    setLocations(response.locations);
                     refreshCategories();
                     render();
                     notify('Location deleted.', 'success');
@@ -159,7 +176,7 @@
             var payload = gatherLocationForm();
             apiRequest('save_location', payload).done(function (response) {
                 if (response && Array.isArray(response.locations)) {
-                    state.locations = response.locations;
+                    setLocations(response.locations);
                     refreshCategories();
                     render();
                     closeModal($('#mapLocationModal'));
@@ -216,6 +233,7 @@
 
     function normalizeLocationSummary(categories, location) {
         categories = Array.isArray(categories) ? categories : [];
+        location = location || {};
         var lookup = {};
         categories.forEach(function (category) {
             if (!category || !category.id) {
@@ -224,7 +242,19 @@
             lookup[category.id] = category;
         });
         var locationCategories = [];
-        if (location && Array.isArray(location.category_ids)) {
+        if (location && Array.isArray(location.categories) && location.categories.length) {
+            location.categories.forEach(function (category) {
+                if (!category || !category.id) {
+                    return;
+                }
+                locationCategories.push({
+                    id: category.id,
+                    name: category.name || 'Category',
+                    color: category.color || '#666666',
+                    icon: category.icon || 'fa-location-dot'
+                });
+            });
+        } else if (location && Array.isArray(location.category_ids)) {
             location.category_ids.forEach(function (id) {
                 if (lookup[id]) {
                     locationCategories.push({
@@ -236,13 +266,42 @@
                 }
             });
         }
+
+        var address = {
+            street: '',
+            city: '',
+            region: '',
+            postal_code: '',
+            country: ''
+        };
+        if (location.address && typeof location.address === 'object') {
+            address.street = location.address.street || '';
+            address.city = location.address.city || '';
+            address.region = location.address.region || '';
+            address.postal_code = location.address.postal_code || '';
+            address.country = location.address.country || '';
+        }
+
+        var coordinates = { lat: '', lng: '' };
+        if (location.coordinates && typeof location.coordinates === 'object') {
+            if (typeof location.coordinates.lat !== 'undefined' && location.coordinates.lat !== null) {
+                coordinates.lat = location.coordinates.lat;
+            }
+            if (typeof location.coordinates.lng !== 'undefined' && location.coordinates.lng !== null) {
+                coordinates.lng = location.coordinates.lng;
+            }
+        }
+
         return {
             id: location.id,
             name: location.name || 'Untitled location',
             slug: location.slug || '',
             status: location.status || 'draft',
-            city: location.address && location.address.city ? location.address.city : '',
-            region: location.address && location.address.region ? location.address.region : '',
+            city: address.city,
+            region: address.region,
+            address: address,
+            coordinates: coordinates,
+            description: location.description || '',
             updated_at: location.updated_at || location.created_at || '',
             categories: locationCategories
         };
@@ -286,18 +345,31 @@
         };
     }
 
+    function setLocations(locations) {
+        var source = Array.isArray(locations) ? locations : [];
+        state.locations = source.map(function (location) {
+            return normalizeLocationSummary(state.categories, location);
+        });
+    }
+
     function render() {
-        renderLocations();
+        var filtered = filterLocations();
+        updateViewMode();
+        renderLocations(filtered);
         renderStats();
         renderCategorySidebar();
         updateCategoryChips();
+        renderMap(filtered);
     }
 
-    function renderLocations() {
+    function renderLocations(filtered) {
         var container = root.find('#mapLocationsTable');
         var emptyState = root.find('#mapLocationsEmpty');
         var noResults = root.find('#mapLocationsNoResults');
-        var filtered = filterLocations();
+
+        if (!Array.isArray(filtered)) {
+            filtered = filterLocations();
+        }
 
         container.empty();
 
@@ -323,7 +395,11 @@
         return state.locations.filter(function (location) {
             var matchesSearch = true;
             if (state.filters.search) {
-                var haystack = [location.name, location.slug, location.city, location.region].join(' ').toLowerCase();
+                var haystackParts = [location.name, location.slug, location.city, location.region];
+                if (location.address) {
+                    haystackParts.push(location.address.street, location.address.postal_code, location.address.country);
+                }
+                var haystack = haystackParts.join(' ').toLowerCase();
                 matchesSearch = haystack.indexOf(state.filters.search) !== -1;
             }
             if (!matchesSearch) {
@@ -384,6 +460,108 @@
         return row;
     }
 
+    function updateViewMode() {
+        var listPanel = root.find('#mapListPanel');
+        var mapPanel = root.find('#mapMapPanel');
+        var buttons = root.find('[data-map-view]');
+        buttons.each(function () {
+            var button = $(this);
+            var view = button.attr('data-map-view') === 'map' ? 'map' : 'list';
+            var isActive = view === state.viewMode;
+            button.toggleClass('is-active', isActive);
+            button.attr('aria-selected', isActive ? 'true' : 'false');
+            button.attr('tabindex', isActive ? '0' : '-1');
+        });
+        if (state.viewMode === 'map') {
+            mapPanel.removeAttr('hidden');
+            listPanel.attr('hidden', 'hidden');
+            if (mapInstance) {
+                setTimeout(function () {
+                    applyPendingMapView();
+                }, 120);
+            }
+        } else {
+            listPanel.removeAttr('hidden');
+            mapPanel.attr('hidden', 'hidden');
+        }
+    }
+
+    function renderMap(filtered) {
+        var mapWrapper = root.find('#mapMapWrapper');
+        var emptyState = root.find('#mapMapNoData');
+        var emptyTitle = root.find('#mapMapNoDataTitle');
+        var emptyMessage = root.find('#mapMapNoDataMessage');
+        var legend = root.find('#mapMapLegend');
+
+        if (!Array.isArray(filtered)) {
+            filtered = filterLocations();
+        }
+
+        legend.empty();
+        legend.attr('hidden', 'hidden');
+
+        if (!state.locations.length) {
+            mapWrapper.attr('hidden', 'hidden');
+            emptyState.removeAttr('hidden');
+            emptyTitle.text('No locations yet');
+            emptyMessage.text('Add a location to visualize it on the map.');
+            clearMapMarkers();
+            mapPendingBounds = null;
+            return;
+        }
+
+        if (!filtered.length) {
+            mapWrapper.attr('hidden', 'hidden');
+            emptyState.removeAttr('hidden');
+            emptyTitle.text('No matches found');
+            emptyMessage.text('Try adjusting the search term or filters.');
+            clearMapMarkers();
+            mapPendingBounds = null;
+            return;
+        }
+
+        var mappable = filtered.map(function (location) {
+            var coords = getLocationCoordinates(location);
+            if (!coords) {
+                return null;
+            }
+            return {
+                location: location,
+                coords: coords
+            };
+        }).filter(Boolean);
+
+        if (!mappable.length) {
+            mapWrapper.attr('hidden', 'hidden');
+            emptyState.removeAttr('hidden');
+            emptyTitle.text('No coordinates available');
+            emptyMessage.text('Add latitude and longitude to these locations to display them on the map.');
+            clearMapMarkers();
+            mapPendingBounds = null;
+            return;
+        }
+
+        emptyState.attr('hidden', 'hidden');
+        mapWrapper.removeAttr('hidden');
+        renderMapLegend(mappable.map(function (entry) { return entry.location; }));
+
+        var shouldRenderMap = state.viewMode === 'map' || mapInstance;
+        if (!shouldRenderMap) {
+            mapPendingBounds = buildPendingBounds(mappable);
+            return;
+        }
+
+        ensureLeaflet().done(function () {
+            drawMap(mappable);
+        }).fail(function () {
+            mapWrapper.attr('hidden', 'hidden');
+            emptyState.removeAttr('hidden');
+            emptyTitle.text('Map unavailable');
+            emptyMessage.text('Map assets could not be loaded. Please refresh the page and try again.');
+            clearMapMarkers();
+        });
+    }
+
     function renderStats() {
         var total = state.locations.length;
         var published = state.locations.filter(function (location) {
@@ -417,6 +595,68 @@
         });
     }
 
+    function renderMapLegend(locations) {
+        var legend = root.find('#mapMapLegend');
+        if (!legend.length) {
+            return;
+        }
+        legend.empty();
+        if (!Array.isArray(locations) || !locations.length) {
+            legend.attr('hidden', 'hidden');
+            return;
+        }
+        var groups = {};
+        locations.forEach(function (location) {
+            if (location.categories && location.categories.length) {
+                location.categories.forEach(function (category) {
+                    if (!category) {
+                        return;
+                    }
+                    var key = category.id || 'uncategorized';
+                    if (!groups[key]) {
+                        groups[key] = {
+                            id: key,
+                            name: category.name || 'Category',
+                            color: sanitizeColor(category.color),
+                            count: 0
+                        };
+                    }
+                    groups[key].count += 1;
+                });
+            } else {
+                if (!groups.uncategorized) {
+                    groups.uncategorized = {
+                        id: 'uncategorized',
+                        name: 'Uncategorized',
+                        color: '#9CA3AF',
+                        count: 0
+                    };
+                }
+                groups.uncategorized.count += 1;
+            }
+        });
+        var items = Object.keys(groups).map(function (key) {
+            return groups[key];
+        });
+        items.sort(function (a, b) {
+            if (b.count === a.count) {
+                return a.name.localeCompare(b.name);
+            }
+            return b.count - a.count;
+        });
+        legend.removeAttr('hidden');
+        items.forEach(function (item) {
+            var entry = $('<div class="maps-map-legend__item"></div>');
+            var swatch = $('<span class="maps-map-legend__swatch"></span>').css('background-color', item.color);
+            var text = $('<div class="maps-map-legend__text"></div>');
+            text.append($('<span class="maps-map-legend__name"></span>').text(item.name));
+            var countLabel = item.count === 1 ? '1 location' : item.count + ' locations';
+            text.append($('<span class="maps-map-legend__count"></span>').text(countLabel));
+            entry.append(swatch, text);
+            legend.append(entry);
+        });
+    }
+
     function updateCategoryChips() {
         var container = root.find('#mapLocationCategories');
         var selected = container.find('input[type="checkbox"]').filter(function () {
@@ -438,6 +678,211 @@
             wrapper.append(chip);
             container.append(wrapper);
         });
+    }
+
+    function buildPendingBounds(mappable) {
+        if (!Array.isArray(mappable) || !mappable.length) {
+            return null;
+        }
+        var coords = mappable.map(function (entry) {
+            return entry.coords;
+        });
+        return {
+            single: coords.length === 1,
+            coords: coords[0],
+            boundsCoords: coords
+        };
+    }
+
+    function applyPendingMapView() {
+        if (!mapInstance || typeof window.L === 'undefined') {
+            return;
+        }
+        if (mapPendingBounds) {
+            applyMapBounds(mapPendingBounds);
+            mapPendingBounds = null;
+        } else {
+            setTimeout(function () {
+                mapInstance.invalidateSize();
+            }, 50);
+        }
+    }
+
+    function applyMapBounds(pending) {
+        if (!pending || !mapInstance || typeof window.L === 'undefined') {
+            return;
+        }
+        if (pending.single && Array.isArray(pending.coords)) {
+            mapInstance.setView(pending.coords, 13);
+        } else if (pending.boundsCoords && pending.boundsCoords.length) {
+            var bounds = window.L.latLngBounds(pending.boundsCoords);
+            mapInstance.fitBounds(bounds, { padding: [20, 20] });
+        }
+        setTimeout(function () {
+            mapInstance.invalidateSize();
+        }, 50);
+    }
+
+    function ensureLeaflet() {
+        if (window.L && typeof window.L.map === 'function') {
+            return $.Deferred().resolve(window.L).promise();
+        }
+        if (leafletAssetsDeferred) {
+            return leafletAssetsDeferred.promise();
+        }
+        var deferred = $.Deferred();
+        leafletAssetsDeferred = deferred;
+        if (!document.querySelector('link[data-map-leaflet]')) {
+            var link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+            link.setAttribute('data-map-leaflet', 'true');
+            document.head.appendChild(link);
+        }
+        var script = document.createElement('script');
+        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        script.onload = function () {
+            if (window.L && typeof window.L.map === 'function') {
+                deferred.resolve(window.L);
+            } else {
+                deferred.reject(new Error('Leaflet failed to load.'));
+            }
+            leafletAssetsDeferred = null;
+        };
+        script.onerror = function () {
+            deferred.reject(new Error('Leaflet failed to load.'));
+            leafletAssetsDeferred = null;
+        };
+        document.head.appendChild(script);
+        return deferred.promise();
+    }
+
+    function drawMap(mappable) {
+        if (!Array.isArray(mappable) || !mappable.length || typeof window.L === 'undefined') {
+            return;
+        }
+        if (!mapInstance) {
+            mapInstance = window.L.map('mapLocationsMap', {
+                scrollWheelZoom: false,
+                zoomControl: true
+            });
+            window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(mapInstance);
+        }
+        clearMapMarkers();
+        mappable.forEach(function (entry) {
+            var marker = window.L.marker(entry.coords);
+            marker.bindPopup(buildMapPopup(entry.location));
+            marker.addTo(mapInstance);
+            mapMarkers.push(marker);
+        });
+        mapPendingBounds = buildPendingBounds(mappable);
+        if (isMapContainerVisible()) {
+            applyPendingMapView();
+        }
+    }
+
+    function isMapContainerVisible() {
+        var container = root.find('#mapLocationsMap');
+        if (!container.length) {
+            return false;
+        }
+        return container.is(':visible') && container.width() > 0 && container.height() > 0;
+    }
+
+    function clearMapMarkers() {
+        if (!mapMarkers.length) {
+            return;
+        }
+        mapMarkers.forEach(function (marker) {
+            if (marker && typeof marker.remove === 'function') {
+                marker.remove();
+            } else if (mapInstance && typeof mapInstance.removeLayer === 'function') {
+                mapInstance.removeLayer(marker);
+            }
+        });
+        mapMarkers = [];
+    }
+
+    function buildMapPopup(location) {
+        var name = escapeHtml(location.name || 'Untitled location');
+        var address = formatAddress(location.address);
+        var status = location.status === 'published' ? 'published' : 'draft';
+        var html = '<div class="maps-popup">';
+        html += '<div class="maps-popup__title">' + name + '</div>';
+        if (address) {
+            html += '<div class="maps-popup__address">' + escapeHtml(address) + '</div>';
+        }
+        html += '<div class="maps-popup__status maps-popup__status--' + status + '">' + capitalize(status) + '</div>';
+        if (location.categories && location.categories.length) {
+            html += '<div class="maps-popup__categories">';
+            location.categories.forEach(function (category) {
+                var color = sanitizeColor(category.color);
+                html += '<span class="maps-popup__category" style="border-color:' + color + ';color:' + color + ';">' + escapeHtml(category.name || 'Category') + '</span>';
+            });
+            html += '</div>';
+        }
+        html += '</div>';
+        return html;
+    }
+
+    function formatAddress(address) {
+        if (!address || typeof address !== 'object') {
+            return '';
+        }
+        var parts = [];
+        if (address.street) {
+            parts.push(address.street);
+        }
+        var cityRegion = [address.city, address.region].filter(Boolean).join(', ');
+        if (cityRegion) {
+            parts.push(cityRegion);
+        }
+        var countryLine = [address.postal_code, address.country].filter(Boolean).join(' ').trim();
+        if (countryLine) {
+            parts.push(countryLine);
+        }
+        return parts.join(', ');
+    }
+
+    function getLocationCoordinates(location) {
+        if (!location || !location.coordinates) {
+            return null;
+        }
+        var lat = parseFloat(location.coordinates.lat);
+        var lng = parseFloat(location.coordinates.lng);
+        if (!isFinite(lat) || !isFinite(lng)) {
+            return null;
+        }
+        if (Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+            return null;
+        }
+        return [lat, lng];
+    }
+
+    function sanitizeColor(value) {
+        if (typeof value !== 'string') {
+            return '#4B5563';
+        }
+        var color = value.trim();
+        if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(color)) {
+            return color;
+        }
+        return '#4B5563';
+    }
+
+    function escapeHtml(value) {
+        if (value === null || value === undefined) {
+            return '';
+        }
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
     function updateCategoryFilter() {
@@ -780,7 +1225,7 @@
             dataType: 'json'
         }).done(function (response) {
             if (response && Array.isArray(response.locations)) {
-                state.locations = response.locations;
+                setLocations(response.locations);
                 render();
                 notify('Locations refreshed.', 'info');
             }

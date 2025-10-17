@@ -154,14 +154,36 @@ function handle_list_locations(array $locations, array $categories): void
             }
             $categoriesForLocation[] = $categoryLookup[$categoryId];
         }
+        $address = [
+            'street' => $location['address']['street'] ?? '',
+            'city' => $location['address']['city'] ?? '',
+            'region' => $location['address']['region'] ?? '',
+            'postal_code' => $location['address']['postal_code'] ?? '',
+            'country' => $location['address']['country'] ?? '',
+        ];
+
+        $coordinates = [
+            'lat' => null,
+            'lng' => null,
+        ];
+        if (isset($location['coordinates']['lat']) && is_numeric($location['coordinates']['lat'])) {
+            $coordinates['lat'] = (float) $location['coordinates']['lat'];
+        }
+        if (isset($location['coordinates']['lng']) && is_numeric($location['coordinates']['lng'])) {
+            $coordinates['lng'] = (float) $location['coordinates']['lng'];
+        }
+
         $rows[] = [
             'id' => $id,
             'name' => $location['name'] ?? 'Untitled location',
             'slug' => $location['slug'] ?? '',
             'status' => $location['status'] ?? 'draft',
             'updated_at' => $location['updated_at'] ?? '',
-            'city' => $location['address']['city'] ?? '',
-            'region' => $location['address']['region'] ?? '',
+            'city' => $address['city'],
+            'region' => $address['region'],
+            'address' => $address,
+            'coordinates' => $coordinates,
+            'description' => $location['description'] ?? '',
             'categories' => $categoriesForLocation,
         ];
     }
