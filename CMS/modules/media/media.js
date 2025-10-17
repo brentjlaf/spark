@@ -14,6 +14,8 @@ $(function(){
     let sortOrder = 'asc';
     let viewType = 'medium';
     let itemsPerPage = 12;
+    let draggedMediaId = null;
+    let draggedMediaFolder = null;
 
     const reservedFolderNames = ['.', '..', 'con', 'prn', 'aux', 'nul', 'com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7', 'com8', 'com9', 'lpt1', 'lpt2', 'lpt3', 'lpt4', 'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9'];
 
@@ -59,12 +61,46 @@ $(function(){
                 const totalBytes = folderMedia.reduce((s,m)=>s+parseInt(m.size||0),0);
                 const lastMod = folderMedia.reduce((m,i)=>i.modified_at && i.modified_at>m?i.modified_at:m,0);
                 const meta = count+' files • '+formatFileSize(totalBytes)+' • Last edited '+(lastMod?new Date(lastMod*1000).toLocaleDateString():'');
-                const item = $('<div class="folder-item" data-folder="'+name+'"></div>');
+                const item = $('<div class="folder-item" data-folder="'+name+'" aria-dropeffect="move"></div>');
                 if(thumb){
                     item.append('<img class="folder-thumb" src="'+thumb+'" alt="">');
                 }
                 item.append('<div class="folder-info"><h3>'+name+'</h3><p class="folder-meta">'+meta+'</p></div>');
                 item.click(function(){ selectFolder(name); });
+
+                let enterCount = 0;
+                item.on('dragenter', function(e){
+                    if(!draggedMediaId) return;
+                    e.preventDefault();
+                    enterCount++;
+                    item.addClass('drop-target');
+                });
+                item.on('dragover', function(e){
+                    if(!draggedMediaId) return;
+                    e.preventDefault();
+                    if(e.originalEvent && e.originalEvent.dataTransfer){
+                        e.originalEvent.dataTransfer.dropEffect = 'move';
+                    }
+                });
+                item.on('dragleave', function(){
+                    if(!draggedMediaId) return;
+                    enterCount = Math.max(0, enterCount-1);
+                    if(enterCount===0){
+                        item.removeClass('drop-target');
+                    }
+                });
+                item.on('drop', function(e){
+                    if(!draggedMediaId) return;
+                    e.preventDefault();
+                    enterCount = 0;
+                    item.removeClass('drop-target');
+                    const target = item.data('folder');
+                    if(target && target !== draggedMediaFolder){
+                        moveMedia(draggedMediaId, target, draggedMediaFolder);
+                    }
+                    draggedMediaId = null;
+                    draggedMediaFolder = null;
+                });
                 list.append(item);
             });
 
@@ -190,6 +226,28 @@ $(function(){
     function updateOrder(){
         const ids = $('#imageGrid .image-card').map(function(){ return $(this).data('id'); }).get();
         $.post('modules/media/update_order.php', {order: JSON.stringify(ids)});
+    }
+
+    function moveMedia(id, targetFolder, sourceFolder){
+        if(!id || !targetFolder) return;
+        $.ajax({
+            url: 'modules/media/move_media.php',
+            method: 'POST',
+            data: {id: id, folder: targetFolder},
+            dataType: 'json'
+        }).done(function(res){
+            const response = res || {};
+            if(response.status === 'success'){
+                if(!currentFolder || currentFolder === targetFolder || currentFolder === sourceFolder){
+                    loadImages();
+                }
+                loadFolders();
+            }else{
+                alertModal(response.message || 'Unable to move the file. Please try again.');
+            }
+        }).fail(function(){
+            alertModal('Unable to move the file. Please try again.');
+        });
     }
 
     function getSortedImages(){
@@ -341,6 +399,8 @@ $(function(){
                             <p>'+formatFileSize(img.size)+'</p>\
                         </div>\
                     </div>');
+                card.attr('draggable', true);
+                card.data('folder', img.folder || '');
                 grid.append(card);
             });
             if(sortBy === 'custom' && totalPages <= 1){
@@ -787,29 +847,44 @@ $(function(){
     $('#fileInput').change(function(){ uploadFiles(this.files); });
 
     let dragCounter = 0;
+    function isFileDrag(event){
+        const dt = event && event.originalEvent ? event.originalEvent.dataTransfer : null;
+        if(!dt || !dt.types) return false;
+        if(typeof dt.types.contains === 'function'){
+            return dt.types.contains('Files');
+        }
+        try {
+            return Array.from(dt.types).indexOf('Files') !== -1;
+        } catch(e){
+            return false;
+        }
+    }
+
     const dropZone = $('#dropZone');
     $('#galleryContent').on('dragenter', function(e){
-        if(!currentFolder) return;
+        if(!currentFolder || !isFileDrag(e)) return;
         e.preventDefault();
         dragCounter++;
         dropZone.addClass('dragging').css('display','flex');
     }).on('dragover', function(e){
-        if(!currentFolder) return;
+        if(!currentFolder || !isFileDrag(e)) return;
         e.preventDefault();
     }).on('dragleave', function(e){
-        if(!currentFolder) return;
+        if(!currentFolder || !isFileDrag(e)) return;
         dragCounter--;
         if(dragCounter<=0){
             dragCounter = 0;
             dropZone.removeClass('dragging').css('display','none');
         }
     }).on('drop', function(e){
-        if(!currentFolder) return;
+        if(!currentFolder || !isFileDrag(e)) return;
         e.preventDefault();
         dragCounter = 0;
         dropZone.removeClass('dragging').css('display','none');
         const files = e.originalEvent.dataTransfer.files;
-        uploadFiles(files);
+        if(files && files.length){
+            uploadFiles(files);
+        }
     });
     dropZone.click(function(){ $('#fileInput').click(); });
 
@@ -827,6 +902,29 @@ $(function(){
     });
     $('#confirmCreateBtn').click(createFolder);
     $('#newFolderName').keypress(function(e){ if(e.which===13) createFolder(); });
+
+    $('#imageGrid').on('dragstart', '.image-card', function(e){
+        draggedMediaId = $(this).data('id');
+        draggedMediaFolder = $(this).data('folder') || '';
+        if($('#imageGrid').data('ui-sortable')){
+            $('#imageGrid').sortable('disable');
+        }
+        if(e.originalEvent && e.originalEvent.dataTransfer){
+            e.originalEvent.dataTransfer.setData('text/plain', draggedMediaId);
+            e.originalEvent.dataTransfer.effectAllowed = 'move';
+        }
+        $(this).addClass('is-dragging');
+    });
+
+    $('#imageGrid').on('dragend', '.image-card', function(){
+        if($('#imageGrid').data('ui-sortable')){
+            $('#imageGrid').sortable('enable');
+        }
+        draggedMediaId = null;
+        draggedMediaFolder = null;
+        $('.folder-item').removeClass('drop-target');
+        $(this).removeClass('is-dragging');
+    });
 
     $('#imageGrid').on('click','.remove-btn',function(e){ e.stopPropagation(); deleteImage($(this).data('id')); });
     $('#imageGrid').on('click','.info-btn',function(e){ e.stopPropagation(); showImageInfo($(this).data('id')); });
