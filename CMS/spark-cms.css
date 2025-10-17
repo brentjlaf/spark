@@ -2680,6 +2680,8 @@
 
         .pages-list-actions .a11y-btn {
             white-space: nowrap;
+            padding: 6px 14px;
+            font-size: 12px;
         }
 
         .pages-sort-btn,
@@ -2845,10 +2847,15 @@
         }
 
         .pages-card__actions .a11y-btn {
-            padding: 8px 16px;
+            padding: 6px 14px;
             border-radius: 999px;
-            font-size: 13px;
+            font-size: 12px;
             box-shadow: none;
+        }
+
+        .pages-card__action {
+            padding: 6px 14px;
+            font-size: 12px;
         }
 
         .pages-card__actions .a11y-btn:hover {
