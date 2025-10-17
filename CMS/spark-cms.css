@@ -10787,6 +10787,14 @@
     gap: 0.75rem;
 }
 
+.events-reports-filters {
+    align-items: center;
+}
+
+.events-reports-filters .events-filter select {
+    min-width: 160px;
+}
+
 .events-filter select,
 .events-search input {
     min-width: 180px;

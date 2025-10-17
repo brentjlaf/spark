@@ -262,6 +262,26 @@ $initialPayload = [
                     <h3 class="events-section-title" id="eventsReportsTitle">Reports</h3>
                     <p class="events-section-description">Track topline revenue, surface insights, and export data for your team.</p>
                 </div>
+                <div class="events-section-actions events-reports-filters">
+                    <label class="events-filter" for="eventsReportsTimeframe">
+                        <span class="sr-only">Filter report timeframe</span>
+                        <select id="eventsReportsTimeframe" data-events-reports-filter="timeframe">
+                            <option value="all">All time</option>
+                            <option value="30">Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                            <option value="365">Last 12 months</option>
+                        </select>
+                    </label>
+                    <label class="events-filter" for="eventsReportsStatus">
+                        <span class="sr-only">Filter by event status</span>
+                        <select id="eventsReportsStatus" data-events-reports-filter="status">
+                            <option value="">All statuses</option>
+                            <option value="published">Published</option>
+                            <option value="draft">Draft</option>
+                            <option value="ended">Ended</option>
+                        </select>
+                    </label>
+                </div>
             </header>
             <div class="events-report-metrics" data-events-report-metrics>
                 <article class="events-report-metric" data-events-report-metric="revenue">

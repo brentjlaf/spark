@@ -54,6 +54,10 @@
             },
             insights: root.querySelector('[data-events-insights]'),
             downloads: root.querySelector('[data-events-downloads]'),
+            filters: {
+                timeframe: root.querySelector('[data-events-reports-filter="timeframe"]'),
+                status: root.querySelector('[data-events-reports-filter="status"]'),
+            },
         },
         tabs: {
             root: root.querySelector('[data-events-tabs]'),
@@ -95,6 +99,7 @@
         eventRows: [],
         orders: [],
         salesSummary: [],
+        reportRows: [],
         categories: [],
         upcoming: [],
         forms: [],
@@ -108,6 +113,10 @@
         },
         ordersFilter: {
             event: '',
+            status: '',
+        },
+        reportsFilter: {
+            timeframe: 'all',
             status: '',
         },
         confirm: null,
@@ -1664,13 +1673,13 @@
         });
     }
 
-    function renderReportsTable() {
+    function renderReportsTable(rows = state.reportRows) {
         const table = selectors.reports.tableBody;
         if (!table) {
             return;
         }
         table.innerHTML = '';
-        if (!Array.isArray(state.salesSummary) || state.salesSummary.length === 0) {
+        if (!Array.isArray(rows) || rows.length === 0) {
             const row = document.createElement('tr');
             const cell = document.createElement('td');
             cell.colSpan = 7;
@@ -1680,7 +1689,7 @@
             table.appendChild(row);
             return;
         }
-        state.salesSummary.forEach((report) => {
+        rows.forEach((report) => {
             const row = document.createElement('tr');
             const ticketsLabel = report.capacity > 0 ? `${report.tickets_sold ?? 0} / ${report.capacity}` : `${report.tickets_sold ?? 0}`;
             const sellThroughText = formatPercentage(report.sell_through_rate ?? 0);
@@ -1718,6 +1727,222 @@
             }
             table.appendChild(row);
         });
+    }
+
+    const REPORT_TIMEFRAME_LABELS = {
+        all: 'All time',
+        '30': 'Last 30 days',
+        '90': 'Last 90 days',
+        '365': 'Last 12 months',
+    };
+
+    function getReportTimeframeLabel(value = state.reportsFilter.timeframe) {
+        const key = String(value || 'all');
+        return REPORT_TIMEFRAME_LABELS[key] || REPORT_TIMEFRAME_LABELS.all;
+    }
+
+    function getReportTimeframeCutoff(value = state.reportsFilter.timeframe) {
+        const key = String(value || 'all');
+        if (key === 'all') {
+            return null;
+        }
+        const days = Number.parseInt(key, 10);
+        if (!Number.isFinite(days) || days <= 0) {
+            return null;
+        }
+        const now = new Date();
+        return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+    }
+
+    function getEventCapacityValue(event, fallback = 0) {
+        if (event && typeof event === 'object') {
+            const direct = Number(event.capacity);
+            if (Number.isFinite(direct) && direct > 0) {
+                return direct;
+            }
+            if (Array.isArray(event.tickets)) {
+                const total = event.tickets.reduce((sum, ticket) => {
+                    if (!ticket || typeof ticket !== 'object') {
+                        return sum;
+                    }
+                    if (ticket.enabled === false) {
+                        return sum;
+                    }
+                    const quantity = Number(ticket.quantity ?? ticket.capacity ?? 0);
+                    if (!Number.isFinite(quantity) || quantity <= 0) {
+                        return sum;
+                    }
+                    return sum + quantity;
+                }, 0);
+                if (total > 0) {
+                    return total;
+                }
+            }
+        }
+        const fallbackValue = Number(fallback);
+        return Number.isFinite(fallbackValue) && fallbackValue > 0 ? fallbackValue : 0;
+    }
+
+    function buildSummaryMap() {
+        const entries = Array.isArray(state.salesSummary) ? state.salesSummary : [];
+        return new Map(entries.map((item) => [String(item.event_id || ''), item]));
+    }
+
+    function filterOrdersForReports() {
+        const orders = Array.isArray(state.orders) ? state.orders : [];
+        const cutoff = getReportTimeframeCutoff();
+        const statusFilter = String(state.reportsFilter.status || '').toLowerCase();
+        const summaryMap = buildSummaryMap();
+        return orders.filter((order) => {
+            if (!order || typeof order !== 'object') {
+                return false;
+            }
+            const eventId = String(order.event_id || '').trim();
+            if (eventId === '') {
+                return false;
+            }
+            if (cutoff) {
+                const orderedAt = order.ordered_at ? new Date(order.ordered_at) : null;
+                if (orderedAt instanceof Date && !Number.isNaN(orderedAt.getTime()) && orderedAt < cutoff) {
+                    return false;
+                }
+            }
+            if (statusFilter) {
+                const event = state.events.get(eventId);
+                const summary = summaryMap.get(eventId);
+                const eventStatus = String(event?.status || summary?.status || 'draft').toLowerCase();
+                if (eventStatus !== statusFilter) {
+                    return false;
+                }
+            }
+            return true;
+        });
+    }
+
+    function buildReportRows(filteredOrders) {
+        const summaryMap = buildSummaryMap();
+        const statusFilter = String(state.reportsFilter.status || '').toLowerCase();
+        const rows = new Map();
+
+        function ensureRow(eventId, options = {}) {
+            const id = String(eventId || '').trim();
+            if (id === '') {
+                return null;
+            }
+            if (!rows.has(id)) {
+                const event = state.events.get(id);
+                const summary = summaryMap.get(id);
+                const baseStatus = String(options.status || event?.status || summary?.status || 'draft').toLowerCase();
+                rows.set(id, {
+                    event_id: id,
+                    title: options.title || event?.title || summary?.title || 'Event',
+                    tickets_sold: 0,
+                    revenue: 0,
+                    refunded: 0,
+                    net_revenue: 0,
+                    average_order: 0,
+                    orders: 0,
+                    paid_orders: 0,
+                    pending_orders: 0,
+                    capacity: getEventCapacityValue(event, summary?.capacity ?? 0),
+                    sell_through_rate: 0,
+                    status: baseStatus,
+                    _paid_amount: 0,
+                });
+            } else if (options.title) {
+                const existing = rows.get(id);
+                if (!existing.title || existing.title === 'Event') {
+                    existing.title = options.title;
+                }
+            }
+            return rows.get(id) || null;
+        }
+
+        state.events.forEach((event) => {
+            const eventStatus = String(event.status || 'draft').toLowerCase();
+            if (statusFilter && eventStatus !== statusFilter) {
+                return;
+            }
+            ensureRow(event.id, { title: event.title, status: eventStatus });
+        });
+
+        state.salesSummary.forEach((summary) => {
+            if (!summary || typeof summary !== 'object') {
+                return;
+            }
+            const id = String(summary.event_id || '').trim();
+            if (id === '') {
+                return;
+            }
+            const summaryStatus = String(summary.status || 'draft').toLowerCase();
+            if (statusFilter && summaryStatus !== statusFilter) {
+                return;
+            }
+            ensureRow(id, { title: summary.title, status: summaryStatus });
+        });
+
+        filteredOrders.forEach((order) => {
+            if (!order || typeof order !== 'object') {
+                return;
+            }
+            const eventId = String(order.event_id || '').trim();
+            if (eventId === '') {
+                return;
+            }
+            const event = state.events.get(eventId);
+            const summary = summaryMap.get(eventId);
+            const status = String(event?.status || summary?.status || 'draft').toLowerCase();
+            if (statusFilter && status !== statusFilter) {
+                return;
+            }
+            const row = ensureRow(eventId, { title: order.event || event?.title || summary?.title || 'Event', status });
+            if (!row) {
+                return;
+            }
+            const amount = Number(order.amount || 0) || 0;
+            const tickets = Number(order.tickets || 0) || 0;
+            const orderStatus = String(order.status || 'paid').toLowerCase();
+            if (orderStatus === 'refunded') {
+                row.refunded += amount;
+            } else {
+                row.revenue += amount;
+                row.tickets_sold += tickets;
+                row.orders += 1;
+                if (orderStatus === 'pending') {
+                    row.pending_orders += 1;
+                }
+                if (orderStatus === 'paid') {
+                    row.paid_orders += 1;
+                    row._paid_amount += amount;
+                }
+            }
+        });
+
+        const results = Array.from(rows.values()).map((row) => {
+            const event = state.events.get(row.event_id);
+            const summary = summaryMap.get(row.event_id);
+            const capacity = getEventCapacityValue(event, summary?.capacity ?? row.capacity ?? 0);
+            const ticketsSold = Math.max(0, Number(row.tickets_sold || 0));
+            row.capacity = capacity;
+            row.sell_through_rate = capacity > 0 ? Math.min(1, ticketsSold / capacity) : 0;
+            const revenue = Number(row.revenue || 0) || 0;
+            const refunded = Number(row.refunded || 0) || 0;
+            row.net_revenue = revenue > refunded ? revenue - refunded : 0;
+            const paidOrders = Number(row.paid_orders || 0) || 0;
+            row.average_order = paidOrders > 0 ? row._paid_amount / paidOrders : 0;
+            delete row._paid_amount;
+            return row;
+        });
+
+        results.sort((a, b) => {
+            const revenueDiff = (Number(b.revenue) || 0) - (Number(a.revenue) || 0);
+            if (Math.abs(revenueDiff) > 0.01) {
+                return revenueDiff;
+            }
+            return String(a.title || '').localeCompare(String(b.title || ''), undefined, { sensitivity: 'base' });
+        });
+
+        return results;
     }
 
     function collectOrderLines() {
@@ -2115,15 +2340,18 @@
         };
     }
 
-    function computeRevenueMetrics() {
-        const totalRevenue = state.salesSummary.reduce((sum, report) => sum + (Number(report.revenue) || 0), 0);
-        const refunds = state.salesSummary.reduce((sum, report) => sum + (Number(report.refunded) || 0), 0);
-        const totalOrders = state.orders.length;
+    function computeRevenueMetrics(rows = state.reportRows, orders = []) {
+        const totalRevenue = rows.reduce((sum, report) => sum + (Number(report.revenue) || 0), 0);
+        const refunds = rows.reduce((sum, report) => sum + (Number(report.refunded) || 0), 0);
+        const totalOrders = Array.isArray(orders) ? orders.length : 0;
         let paidTotal = 0;
         let paidCount = 0;
         let refundOrders = 0;
-        state.orders.forEach((order) => {
-            const amount = Number(order.amount || 0);
+        (Array.isArray(orders) ? orders : []).forEach((order) => {
+            if (!order || typeof order !== 'object') {
+                return;
+            }
+            const amount = Number(order.amount || 0) || 0;
             if (order.status === 'refunded') {
                 refundOrders += 1;
             } else if (order.status === 'paid') {
@@ -2134,7 +2362,7 @@
         const averageOrder = paidCount > 0 ? paidTotal / paidCount : 0;
         return {
             totalRevenue,
-            netRevenue: totalRevenue - refunds,
+            netRevenue: totalRevenue > refunds ? totalRevenue - refunds : 0,
             totalOrders,
             averageOrder,
             paidOrdersCount: paidCount,
@@ -2148,6 +2376,8 @@
         if (!metricEls) {
             return;
         }
+        const timeframeLabel = getReportTimeframeLabel();
+        const isAllTime = state.reportsFilter.timeframe === 'all';
         const revenueEl = metricEls.revenue;
         if (revenueEl) {
             const value = revenueEl.querySelector('[data-value]');
@@ -2159,6 +2389,9 @@
                 const netText = formatCurrency(metrics.netRevenue);
                 const ordersText = metrics.totalOrders === 1 ? '1 order' : `${metrics.totalOrders} orders`;
                 meta.textContent = `${ordersText} · Net ${netText}`;
+                if (!isAllTime) {
+                    meta.textContent += ` (${timeframeLabel})`;
+                }
             }
         }
         const averageEl = metricEls.averageOrder;
@@ -2169,9 +2402,14 @@
                 value.textContent = formatCurrency(metrics.averageOrder);
             }
             if (meta) {
-                meta.textContent = metrics.paidOrdersCount > 0
+                let text = metrics.paidOrdersCount > 0
                     ? (metrics.paidOrdersCount === 1 ? '1 paid order' : `${metrics.paidOrdersCount} paid orders`)
                     : 'No paid orders yet.';
+                if (!isAllTime) {
+                    text = text.replace(/\.$/, '');
+                    text += ` (${timeframeLabel})`;
+                }
+                meta.textContent = text;
             }
         }
         const refundsEl = metricEls.refunds;
@@ -2182,19 +2420,30 @@
                 value.textContent = formatCurrency(metrics.refundsTotal);
             }
             if (meta) {
-                meta.textContent = metrics.refundOrders
+                let text = metrics.refundOrders
                     ? `${metrics.refundOrders} refunded ${metrics.refundOrders === 1 ? 'order' : 'orders'}.`
                     : 'No refunds issued.';
+                if (!isAllTime) {
+                    text = text.replace(/\.$/, '');
+                    text += ` (${timeframeLabel})`;
+                }
+                meta.textContent = text;
             }
         }
     }
 
-    function computeInsights() {
-        const topEvent = [...state.salesSummary]
+    function computeInsights(rows = state.reportRows, orders = []) {
+        const topEvent = [...rows]
             .filter((item) => (Number(item.revenue) || 0) > 0)
             .sort((a, b) => (Number(b.revenue) || 0) - (Number(a.revenue) || 0))[0] || null;
         const ticketTotals = new Map();
-        state.orders.forEach((order) => {
+        (Array.isArray(orders) ? orders : []).forEach((order) => {
+            if (!order || typeof order !== 'object') {
+                return;
+            }
+            if (order.status === 'refunded') {
+                return;
+            }
             (order.line_items || []).forEach((line) => {
                 if (!line || !line.ticket_id) {
                     return;
@@ -2215,7 +2464,10 @@
             .filter((item) => item.quantity > 0)
             .sort((a, b) => b.quantity - a.quantity)[0] || null;
         const buyerTotals = new Map();
-        state.orders.forEach((order) => {
+        (Array.isArray(orders) ? orders : []).forEach((order) => {
+            if (!order || typeof order !== 'object') {
+                return;
+            }
             if (order.status === 'refunded') {
                 return;
             }
@@ -2235,6 +2487,8 @@
         if (!container) {
             return;
         }
+        const timeframeLabel = getReportTimeframeLabel();
+        const includeTimeframe = state.reportsFilter.timeframe !== 'all';
         container.querySelectorAll('[data-insight]').forEach((card) => {
             const type = card.dataset.insight;
             const valueEl = card.querySelector('[data-insight-value]');
@@ -2279,14 +2533,72 @@
                 valueEl.textContent = valueText;
             }
             if (metaEl) {
+                if (includeTimeframe) {
+                    metaText = metaText.replace(/\.$/, '');
+                    metaText += ` (${timeframeLabel})`;
+                }
                 metaEl.textContent = metaText;
             }
         });
     }
 
-    function updateInsightsAndMetrics() {
-        renderReportMetrics(computeRevenueMetrics());
-        renderInsights(computeInsights());
+    function updateReportsView() {
+        const filteredOrders = filterOrdersForReports();
+        const rows = buildReportRows(filteredOrders);
+        state.reportRows = rows;
+        renderReportsTable(rows);
+        renderReportMetrics(computeRevenueMetrics(rows, filteredOrders));
+        renderInsights(computeInsights(rows, filteredOrders));
+    }
+
+    function downloadReport(type) {
+        const timeframeSuffix = {
+            all: 'all-time',
+            '30': 'last-30-days',
+            '90': 'last-90-days',
+            '365': 'last-12-months',
+        };
+        const timeframeKey = String(state.reportsFilter.timeframe || 'all');
+        const timeframeSegment = timeframeSuffix[timeframeKey] || timeframeSuffix.all;
+        const statusSegment = state.reportsFilter.status ? `status-${state.reportsFilter.status}` : 'all-statuses';
+        const metadata = [
+            ['Timeframe', getReportTimeframeLabel()],
+        ];
+        if (state.reportsFilter.status) {
+            metadata.push(['Event status', state.reportsFilter.status]);
+        }
+        metadata.push([]);
+        const header = ['Event', 'Tickets Sold', 'Capacity', 'Sell Through', 'Revenue', 'Refunded', 'Net Revenue', 'Average Order', 'Status'];
+        const rows = Array.isArray(state.reportRows) ? state.reportRows : [];
+        const data = rows.map((item) => [
+            item.title || 'Event',
+            Number(item.tickets_sold ?? 0),
+            Number(item.capacity ?? 0),
+            `${((Number(item.sell_through_rate) || 0) * 100).toFixed(2)}%`,
+            Number(item.revenue ?? 0).toFixed(2),
+            Number(item.refunded ?? 0).toFixed(2),
+            Number(item.net_revenue ?? 0).toFixed(2),
+            Number(item.average_order ?? 0).toFixed(2),
+            item.status || '',
+        ]);
+        const csvRows = [...metadata, header, ...data];
+        const csv = csvRows
+            .map((row) => {
+                if (!Array.isArray(row) || row.length === 0) {
+                    return '';
+                }
+                return row.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',');
+            })
+            .join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        const filename = `events-${type}-report-${timeframeSegment}-${statusSegment}.csv`;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
     }
 
     function handleOrderForm() {
@@ -2725,7 +3037,7 @@
                     .map((order) => normalizeOrderRow(order))
                     .filter((order) => order !== null);
                 renderOrdersTable();
-                updateInsightsAndMetrics();
+                updateReportsView();
             })
             .catch(() => {
                 showToast('Unable to load orders.', 'error');
@@ -2744,6 +3056,7 @@
                 });
                 renderEventsTable();
                 populateEventSelect(selectors.orders.filterEvent);
+                updateReportsView();
             })
             .catch(() => {
                 showToast('Unable to load events.', 'error');
@@ -2773,8 +3086,7 @@
                 state.salesSummary = reports
                     .map((report) => normalizeReportRow(report))
                     .filter((report) => report !== null);
-                renderReportsTable();
-                updateInsightsAndMetrics();
+                updateReportsView();
             })
             .catch(() => {
                 showToast('Unable to load reports data.', 'error');
@@ -2815,6 +3127,19 @@
             selectors.filters.search.addEventListener('input', (event) => {
                 state.filters.search = event.target.value;
                 renderEventsTable();
+            });
+        }
+        if (selectors.reports.filters?.timeframe) {
+            selectors.reports.filters.timeframe.addEventListener('change', (event) => {
+                const value = event.target.value || 'all';
+                state.reportsFilter.timeframe = value;
+                updateReportsView();
+            });
+        }
+        if (selectors.reports.filters?.status) {
+            selectors.reports.filters.status.addEventListener('change', (event) => {
+                state.reportsFilter.status = event.target.value || '';
+                updateReportsView();
             });
         }
         root.addEventListener('click', (event) => {
@@ -2895,26 +3220,8 @@
         const reportButtons = root.querySelectorAll('[data-events-report-download]');
         reportButtons.forEach((button) => {
             button.addEventListener('click', () => {
-                const type = button.dataset.eventsReportDownload;
-                const rows = [['Event', 'Tickets Sold', 'Revenue', 'Refunded', 'Status']];
-                state.salesSummary.forEach((item) => {
-                    rows.push([
-                        item.title,
-                        item.tickets_sold,
-                        item.revenue,
-                        item.refunded ?? 0,
-                        item.status,
-                    ]);
-                });
-                const csv = rows.map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(',')).join('\n');
-                const blob = new Blob([csv], { type: 'text/csv' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = `events-${type}-report.csv`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(link.href);
+                const type = button.dataset.eventsReportDownload || 'summary';
+                downloadReport(type);
             });
         });
     }
@@ -3015,10 +3322,9 @@
         populateEventSelect(selectors.orders.filterEvent);
         renderEventsTable();
         renderOrdersTable();
-        renderReportsTable();
+        updateReportsView();
         renderCategoryOptions();
         renderCategoryList();
-        updateInsightsAndMetrics();
         refreshAll();
     }
 
