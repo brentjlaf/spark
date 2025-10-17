@@ -22,9 +22,12 @@ $(function(){
         },
         trends: {
             activeRange: 'day',
+            activeSlug: null,
             datasets: {},
         }
     };
+
+    const ALL_PAGES_KEY = '__all__';
 
     const $grid = $('#analyticsGrid');
     const $table = $('#analyticsTableView');
@@ -50,6 +53,7 @@ $(function(){
     const $topEmpty = $('#analyticsTopEmpty');
     const $opportunitySummary = $('#analyticsOpportunitySummary');
     const $opportunityTabs = $('[data-analytics-trend]');
+    const $opportunityPageSelect = $('#analyticsOpportunityPageSelect');
     const opportunityChartCanvas = document.getElementById('analyticsOpportunityChart');
     const $detail = $('#analyticsDetail');
     const $detailClose = $('#analyticsDetailClose');
@@ -472,13 +476,42 @@ $(function(){
         };
     }
 
+    function getTrendMetrics(){
+        if (state.trends.activeSlug) {
+            const entry = findEntryBySlug(state.trends.activeSlug);
+            if (entry) {
+                return {
+                    type: 'page',
+                    identifier: entry.slug || entry.title || 'page',
+                    title: entry.title || 'This page',
+                    currentViews: Number(entry.views || 0),
+                    previousViews: Number(entry.previousViews || 0),
+                    totalPages: 1,
+                };
+            }
+        }
+
+        const totalSummary = state.summary && state.summary.totalViews ? state.summary.totalViews : null;
+        const totalPagesSummary = state.summary && state.summary.totalPages ? state.summary.totalPages : null;
+        return {
+            type: 'site',
+            identifier: 'site',
+            title: 'Your site',
+            currentViews: Number(totalSummary && totalSummary.current ? totalSummary.current : 0),
+            previousViews: Number(totalSummary && totalSummary.previous ? totalSummary.previous : 0),
+            totalPages: Number(totalPagesSummary && totalPagesSummary.current ? totalPagesSummary.current : state.entries.length || 0),
+        };
+    }
+
     function getSeedForRange(rangeKey){
-        const totalViews = Number(state.summary && state.summary.totalViews ? state.summary.totalViews.current : 0);
-        const previousViews = Number(state.summary && state.summary.totalViews ? state.summary.totalViews.previous : 0);
-        const pages = Number(state.counts && state.counts.all ? state.counts.all : 0);
-        let seed = Math.round(totalViews + previousViews) + pages * 97 + rangeKey.length * 131;
-        for (let index = 0; index < rangeKey.length; index++) {
-            seed = (seed * 31 + rangeKey.charCodeAt(index)) >>> 0;
+        const metrics = getTrendMetrics();
+        const current = Math.max(0, Math.round(metrics.currentViews || 0));
+        const previous = Math.max(0, Math.round(metrics.previousViews || 0));
+        const pageCount = Math.max(1, Math.round(metrics.totalPages || 1));
+        let seed = current + previous + pageCount * 97 + rangeKey.length * 131;
+        const identifier = String(metrics.identifier || 'context') + rangeKey;
+        for (let index = 0; index < identifier.length; index++) {
+            seed = (seed * 31 + identifier.charCodeAt(index)) >>> 0;
         }
         if (seed === 0) {
             seed = 0x1234567;
@@ -487,8 +520,9 @@ $(function(){
     }
 
     function getBaseValueForRange(rangeKey){
-        const totalViews = Math.max(0, Number(state.summary && state.summary.totalViews ? state.summary.totalViews.current : 0));
-        const previousViews = Math.max(0, Number(state.summary && state.summary.totalViews ? state.summary.totalViews.previous : 0));
+        const metrics = getTrendMetrics();
+        const totalViews = Math.max(0, Number(metrics.currentViews || 0));
+        const previousViews = Math.max(0, Number(metrics.previousViews || 0));
         const blendedMonthly = totalViews > 0 && previousViews > 0
             ? (totalViews + previousViews) / 2
             : (totalViews || previousViews);
@@ -604,11 +638,15 @@ $(function(){
         const rangeLabel = trendRanges[rangeKey] ? trendRanges[rangeKey].label : 'Selected range';
         const data = Array.isArray(dataset && dataset.data) ? dataset.data : [];
         const labels = Array.isArray(dataset && dataset.labels) ? dataset.labels : [];
+        const metrics = getTrendMetrics();
+        const subject = metrics.type === 'page'
+            ? '“' + metrics.title + '”'
+            : 'Your site';
         const hasValues = data.some(function(value){
             return Number(value) > 0;
         });
         if (!hasValues) {
-            $opportunitySummary.text('Traffic insights will appear once your site begins collecting page view data.');
+            $opportunitySummary.text('Traffic insights for ' + subject + ' will appear once page view data is available.');
             return;
         }
         const total = data.reduce(function(sum, value){
@@ -633,8 +671,8 @@ $(function(){
         } else {
             trendPhrase = 'Traffic held steady across the period';
         }
-        const summaryText = rangeLabel + ' captured ' + formatNumber(total) + ' total views. '
-            + trendPhrase + ' and peaked at ' + formatNumber(peak) + ' views around ' + peakLabel + '.';
+        const summaryText = subject + ' captured ' + formatNumber(total) + ' total views over the ' + rangeLabel.toLowerCase()
+            + '. ' + trendPhrase + ' and peaked at ' + formatNumber(peak) + ' views around ' + peakLabel + '.';
         $opportunitySummary.text(summaryText);
     }
 
@@ -1294,11 +1332,60 @@ $(function(){
         };
     }
 
+    function buildOpportunityPageOptions(){
+        if (!$opportunityPageSelect.length) {
+            return;
+        }
+        const options = ['<option value="' + ALL_PAGES_KEY + '">Entire site</option>'];
+        state.entries.forEach(function(entry){
+            const value = entry.slug || '';
+            const label = entry.title || 'Untitled';
+            options.push('<option value="' + escapeHtml(value) + '">' + escapeHtml(label) + '</option>');
+        });
+        const previousValue = state.trends.activeSlug;
+        $opportunityPageSelect.html(options.join(''));
+        const hasActive = previousValue == null || Boolean(findEntryBySlug(previousValue));
+        const selectValue = hasActive && previousValue != null ? previousValue : ALL_PAGES_KEY;
+        if (!hasActive) {
+            state.trends.activeSlug = null;
+        }
+        $opportunityPageSelect.val(selectValue);
+    }
+
+    function setActivePage(slug, options){
+        let normalized = slug === ALL_PAGES_KEY || slug == null ? null : String(slug);
+        if (normalized != null && !findEntryBySlug(normalized)) {
+            normalized = null;
+        }
+        if (normalized === state.trends.activeSlug) {
+            if (!(options && options.skipRender)) {
+                regenerateTrendData();
+                updateOpportunityChart();
+                ensureChartLibrary().done(function(){
+                    updateOpportunityChart();
+                });
+            }
+            return;
+        }
+        state.trends.activeSlug = normalized;
+        if (!options || !options.skipSelect) {
+            if ($opportunityPageSelect.length) {
+                $opportunityPageSelect.val(normalized == null ? ALL_PAGES_KEY : normalized);
+            }
+        }
+        regenerateTrendData();
+        updateOpportunityChart();
+        ensureChartLibrary().done(function(){
+            updateOpportunityChart();
+        });
+    }
+
     function setData(rawEntries){
         const derived = deriveState(rawEntries);
         state.entries = derived.entries;
         state.summary = derived.summary;
         state.counts = derived.counts;
+        buildOpportunityPageOptions();
         regenerateTrendData();
         updateSummary();
         updateFilterCounts();
@@ -1361,6 +1448,11 @@ $(function(){
         if (range) {
             setActiveTrend(range);
         }
+    });
+
+    $opportunityPageSelect.on('change', function(){
+        const value = $(this).val();
+        setActivePage(value);
     });
 
     $search.on('input', debounce(function(){

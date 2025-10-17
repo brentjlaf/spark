@@ -188,21 +188,32 @@ $summaryComparisons = [
                         <i class="fa-solid fa-lightbulb" aria-hidden="true"></i>
                     </div>
                     <div>
-                        <h3 class="analytics-insight-title">Opportunities</h3>
+                        <h3 class="analytics-insight-title">Opportunity insights</h3>
                         <p class="analytics-insight-subtitle">Pages that could use extra attention</p>
                     </div>
                 </header>
                 <div class="analytics-insight-chart">
-                    <div class="analytics-insight-chart__controls" role="group" aria-label="Select a time range for the page views chart">
-                        <button type="button" class="analytics-insight-chart__tab is-active" data-analytics-trend="day" aria-pressed="true">Last 24 hours</button>
-                        <button type="button" class="analytics-insight-chart__tab" data-analytics-trend="week" aria-pressed="false">Last 7 days</button>
-                        <button type="button" class="analytics-insight-chart__tab" data-analytics-trend="month" aria-pressed="false">Last 30 days</button>
-                        <button type="button" class="analytics-insight-chart__tab" data-analytics-trend="year" aria-pressed="false">Last 12 months</button>
+                    <div class="analytics-insight-chart__controls">
+                        <div class="analytics-insight-chart__tabs" role="group" aria-label="Select a time range for the page views chart">
+                            <button type="button" class="analytics-insight-chart__tab is-active" data-analytics-trend="day" aria-pressed="true">Last 24 hours</button>
+                            <button type="button" class="analytics-insight-chart__tab" data-analytics-trend="week" aria-pressed="false">Last 7 days</button>
+                            <button type="button" class="analytics-insight-chart__tab" data-analytics-trend="month" aria-pressed="false">Last 30 days</button>
+                            <button type="button" class="analytics-insight-chart__tab" data-analytics-trend="year" aria-pressed="false">Last 12 months</button>
+                        </div>
+                        <label class="analytics-insight-chart__select" for="analyticsOpportunityPageSelect">
+                            <span class="analytics-insight-chart__select-label">Page</span>
+                            <select id="analyticsOpportunityPageSelect" aria-label="Select a page to explore opportunity trends">
+                                <option value="__all__">Entire site</option>
+                                <?php foreach ($initialEntries as $entry): ?>
+                                    <option value="<?php echo htmlspecialchars($entry['slug'] ?? '', ENT_QUOTES); ?>"><?php echo htmlspecialchars($entry['title'] ?? 'Untitled', ENT_QUOTES); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
                     </div>
                     <div class="analytics-insight-chart__canvas">
                         <canvas id="analyticsOpportunityChart" aria-label="Page views trend chart" role="img"></canvas>
                     </div>
-                    <p class="analytics-insight-summary" id="analyticsOpportunitySummary">Visualize how page views shift across different time ranges.</p>
+                    <p class="analytics-insight-summary" id="analyticsOpportunitySummary">Use the controls to explore how page views change over time.</p>
                 </div>
             </article>
         </section>
