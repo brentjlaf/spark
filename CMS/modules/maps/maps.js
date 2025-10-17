@@ -27,9 +27,10 @@
     var coordinatesEditedManually = false;
     var geocodeStatusEl = root.find('#mapLocationGeocodeStatus');
     var geocodeDefaultStatus = '';
-    var leafletAssetsDeferred = null;
+    var googleMapsDeferred = null;
     var mapInstance = null;
     var mapMarkers = [];
+    var mapActiveInfoWindow = null;
     var mapPendingBounds = null;
     if (geocodeStatusEl.length) {
         geocodeDefaultStatus = geocodeStatusEl.attr('data-map-geocode-default') || geocodeStatusEl.text().trim();
@@ -551,7 +552,7 @@
             return;
         }
 
-        ensureLeaflet().done(function () {
+        ensureGoogleMaps().done(function () {
             drawMap(mappable);
         }).fail(function () {
             mapWrapper.attr('hidden', 'hidden');
@@ -686,7 +687,17 @@
         }
         var coords = mappable.map(function (entry) {
             return entry.coords;
+        }).filter(function (pair) {
+            if (!Array.isArray(pair) || pair.length < 2) {
+                return false;
+            }
+            var lat = Number(pair[0]);
+            var lng = Number(pair[1]);
+            return Number.isFinite(lat) && Number.isFinite(lng);
         });
+        if (!coords.length) {
+            return null;
+        }
         return {
             single: coords.length === 1,
             coords: coords[0],
@@ -695,88 +706,178 @@
     }
 
     function applyPendingMapView() {
-        if (!mapInstance || typeof window.L === 'undefined') {
+        if (!mapInstance || typeof window.google === 'undefined' || !window.google.maps) {
             return;
         }
         if (mapPendingBounds) {
             applyMapBounds(mapPendingBounds);
             mapPendingBounds = null;
         } else {
-            setTimeout(function () {
-                mapInstance.invalidateSize();
-            }, 50);
+            window.google.maps.event.trigger(mapInstance, 'resize');
         }
     }
 
     function applyMapBounds(pending) {
-        if (!pending || !mapInstance || typeof window.L === 'undefined') {
+        if (!pending || !mapInstance || typeof window.google === 'undefined' || !window.google.maps) {
             return;
         }
         if (pending.single && Array.isArray(pending.coords)) {
-            mapInstance.setView(pending.coords, 13);
+            var singleLat = Number(pending.coords[0]);
+            var singleLng = Number(pending.coords[1]);
+            if (Number.isFinite(singleLat) && Number.isFinite(singleLng)) {
+                mapInstance.setCenter({ lat: singleLat, lng: singleLng });
+                mapInstance.setZoom(13);
+            }
         } else if (pending.boundsCoords && pending.boundsCoords.length) {
-            var bounds = window.L.latLngBounds(pending.boundsCoords);
-            mapInstance.fitBounds(bounds, { padding: [20, 20] });
+            var bounds = new window.google.maps.LatLngBounds();
+            var hasValidPoint = false;
+            pending.boundsCoords.forEach(function (coord) {
+                if (!Array.isArray(coord) || coord.length < 2) {
+                    return;
+                }
+                var lat = Number(coord[0]);
+                var lng = Number(coord[1]);
+                if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                    return;
+                }
+                bounds.extend({ lat: lat, lng: lng });
+                hasValidPoint = true;
+            });
+            if (hasValidPoint) {
+                mapInstance.fitBounds(bounds, { padding: 20 });
+            }
         }
-        setTimeout(function () {
-            mapInstance.invalidateSize();
-        }, 50);
+        window.google.maps.event.trigger(mapInstance, 'resize');
     }
 
-    function ensureLeaflet() {
-        if (window.L && typeof window.L.map === 'function') {
-            return $.Deferred().resolve(window.L).promise();
+    function resolveGoogleMapsApiKey() {
+        var candidates = [];
+        if (root && root.length) {
+            var attr = root.attr('data-google-maps-key');
+            if (typeof attr === 'string' && attr.trim() !== '') {
+                candidates.push(attr.trim());
+            }
         }
-        if (leafletAssetsDeferred) {
-            return leafletAssetsDeferred.promise();
+        if (typeof window !== 'undefined') {
+            ['sparkGoogleMapsKey', 'cmsGoogleMapsKey'].forEach(function (prop) {
+                if (typeof window[prop] === 'string' && window[prop].trim() !== '') {
+                    candidates.push(window[prop].trim());
+                }
+            });
+        }
+        if (document && document.documentElement) {
+            var docKey = document.documentElement.getAttribute('data-google-maps-key');
+            if (typeof docKey === 'string' && docKey.trim() !== '') {
+                candidates.push(docKey.trim());
+            }
+        }
+        var meta = document.querySelector('meta[name="google-maps-api-key"]');
+        if (meta && typeof meta.content === 'string' && meta.content.trim() !== '') {
+            candidates.push(meta.content.trim());
+        }
+        for (var i = 0; i < candidates.length; i++) {
+            if (candidates[i]) {
+                return candidates[i];
+            }
+        }
+        return '';
+    }
+
+    function ensureGoogleMaps() {
+        if (window.google && window.google.maps) {
+            return $.Deferred().resolve(window.google.maps).promise();
+        }
+        if (googleMapsDeferred) {
+            return googleMapsDeferred.promise();
         }
         var deferred = $.Deferred();
-        leafletAssetsDeferred = deferred;
-        if (!document.querySelector('link[data-map-leaflet]')) {
-            var link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-            link.setAttribute('data-map-leaflet', 'true');
-            document.head.appendChild(link);
-        }
-        var script = document.createElement('script');
-        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-        script.onload = function () {
-            if (window.L && typeof window.L.map === 'function') {
-                deferred.resolve(window.L);
-            } else {
-                deferred.reject(new Error('Leaflet failed to load.'));
+        googleMapsDeferred = deferred;
+        var script = document.querySelector('script[data-google-maps]');
+        if (!script) {
+            var params = ['libraries=marker', 'v=weekly'];
+            var key = resolveGoogleMapsApiKey();
+            if (key) {
+                params.unshift('key=' + encodeURIComponent(key));
             }
-            leafletAssetsDeferred = null;
+            script = document.createElement('script');
+            script.src = 'https://maps.googleapis.com/maps/api/js?' + params.join('&');
+            script.async = true;
+            script.defer = true;
+            script.setAttribute('data-google-maps', 'true');
+        }
+        script.onload = function () {
+            if (window.google && window.google.maps) {
+                deferred.resolve(window.google.maps);
+            } else {
+                deferred.reject(new Error('Google Maps failed to load.'));
+            }
+            googleMapsDeferred = null;
         };
         script.onerror = function () {
-            deferred.reject(new Error('Leaflet failed to load.'));
-            leafletAssetsDeferred = null;
+            deferred.reject(new Error('Google Maps failed to load.'));
+            googleMapsDeferred = null;
         };
-        document.head.appendChild(script);
+        if (!script.parentNode) {
+            document.head.appendChild(script);
+        }
         return deferred.promise();
     }
 
     function drawMap(mappable) {
-        if (!Array.isArray(mappable) || !mappable.length || typeof window.L === 'undefined') {
+        if (!Array.isArray(mappable) || !mappable.length || typeof window.google === 'undefined' || !window.google.maps) {
             return;
         }
         if (!mapInstance) {
-            mapInstance = window.L.map('mapLocationsMap', {
-                scrollWheelZoom: false,
-                zoomControl: true
+            var mapElement = document.getElementById('mapLocationsMap');
+            if (!mapElement) {
+                return;
+            }
+            if (!mapElement.hasAttribute('tabindex')) {
+                mapElement.setAttribute('tabindex', '0');
+            }
+            mapInstance = new window.google.maps.Map(mapElement, {
+                center: { lat: 20, lng: 0 },
+                zoom: 2,
+                mapTypeControl: false,
+                streetViewControl: false,
+                fullscreenControl: true,
+                zoomControl: true,
+                gestureHandling: 'none'
             });
-            window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(mapInstance);
+            mapElement.addEventListener('focus', function () {
+                mapInstance.setOptions({ gestureHandling: 'auto' });
+            });
+            mapElement.addEventListener('blur', function () {
+                mapInstance.setOptions({ gestureHandling: 'none' });
+            });
         }
         clearMapMarkers();
         mappable.forEach(function (entry) {
-            var marker = window.L.marker(entry.coords);
-            marker.bindPopup(buildMapPopup(entry.location));
-            marker.addTo(mapInstance);
-            mapMarkers.push(marker);
+            if (!Array.isArray(entry.coords) || entry.coords.length < 2) {
+                return;
+            }
+            var lat = Number(entry.coords[0]);
+            var lng = Number(entry.coords[1]);
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                return;
+            }
+            var position = { lat: lat, lng: lng };
+            var marker = new window.google.maps.Marker({
+                position: position,
+                map: mapInstance,
+                title: entry.location && entry.location.name ? entry.location.name : 'Location'
+            });
+            var infoWindow = new window.google.maps.InfoWindow({
+                content: buildMapPopup(entry.location)
+            });
+            marker.addListener('click', function () {
+                if (mapActiveInfoWindow && typeof mapActiveInfoWindow.close === 'function') {
+                    mapActiveInfoWindow.close();
+                }
+                infoWindow.open({ map: mapInstance, anchor: marker });
+                mapActiveInfoWindow = infoWindow;
+            });
+            mapMarkers.push({ marker: marker, infoWindow: infoWindow, position: position });
         });
         mapPendingBounds = buildPendingBounds(mappable);
         if (isMapContainerVisible()) {
@@ -796,14 +897,20 @@
         if (!mapMarkers.length) {
             return;
         }
-        mapMarkers.forEach(function (marker) {
-            if (marker && typeof marker.remove === 'function') {
-                marker.remove();
-            } else if (mapInstance && typeof mapInstance.removeLayer === 'function') {
-                mapInstance.removeLayer(marker);
+        mapMarkers.forEach(function (entry) {
+            if (entry && entry.infoWindow && typeof entry.infoWindow.close === 'function') {
+                entry.infoWindow.close();
+            }
+            if (entry && entry.marker) {
+                if (typeof entry.marker.setMap === 'function') {
+                    entry.marker.setMap(null);
+                } else if (entry.marker.map) {
+                    entry.marker.map = null;
+                }
             }
         });
         mapMarkers = [];
+        mapActiveInfoWindow = null;
     }
 
     function buildMapPopup(location) {
