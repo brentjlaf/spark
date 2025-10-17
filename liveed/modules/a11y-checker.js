@@ -1,11 +1,20 @@
 // File: a11y-checker.js
 (function ($) {
-  // Create hidden checker button
+  /**
+   * Floating trigger button that lets editors launch a full accessibility scan
+   * without leaving the canvas. The button lives off screen until it is
+   * animated into view by the toggle handler or keyboard shortcut.
+   */
   const checkerBtn = $(
     '<div class="accessibility-checker" role="button" aria-label="Check Accessibility">Check Accessibility</div>'
   );
   $('body').append(checkerBtn);
 
+  /**
+   * Slide the floating trigger button in and out of view. We keep the button in
+   * the DOM at all times but animate its `right` position so screen readers can
+   * still reach it when visible.
+   */
   function toggleAccessibilityChecker(){
     if (checkerBtn.is(':visible')){
       checkerBtn.animate({ right: '-150px' }, 500, function(){ checkerBtn.hide(); });
@@ -14,6 +23,8 @@
     }
   }
 
+  // Wire up an editor friendly keyboard shortcut (mouse down + "a") so power
+  // users can quickly launch the checker without hunting for the button.
   $(document).on('mousedown', function(e){
     if(e.button === 0){
       $(document).on('keydown.accessibilityCheck', function(ev){
@@ -27,6 +38,11 @@
     }
   });
 
+  /**
+   * Visually decorate an element with an accessibility warning. We add a CSS
+   * class, set an aria-label for screen reader context and inject a helper span
+   * that contains the human readable error copy.
+   */
   function addError($el, message, cls = 'highlight-issue') {
     $el.addClass(cls).attr('aria-label', message);
     $('<span>')
@@ -35,6 +51,10 @@
       .insertAfter($el);
   }
 
+  /**
+   * Remove any previous highlighting artifacts so each scan presents a clean
+   * state before populating new results.
+   */
   function clearHighlights($root) {
     $root
       .find('.highlight-issue, .highlight-htag')
@@ -43,10 +63,18 @@
     $root.find('.accessibility-bubble').remove();
   }
 
+  /**
+   * Convenience wrapper that applies the same error message to a collection of
+   * matched elements. Used for simple one-off attribute checks.
+   */
   function checkIssues($elements, issue) {
     addError($elements, issue);
   }
 
+  /**
+   * Ensure the document uses a valid heading hierarchy. Each heading receives a
+   * bubble showing the tag level and any skips in the outline are flagged.
+   */
   function checkHeadings($root) {
     if ($root.find('h1').length === 0) {
       $('<h1 class="error-message">Missing h1 tag</h1>').prependTo($root);
@@ -72,6 +100,10 @@
     });
   }
 
+  /**
+   * Warn about links that have meaningful destinations but unhelpful or missing
+   * text content.
+   */
   function checkLinks($root){
     $root.find('a').each(function () {
       const txt = $(this).text().trim();
@@ -93,6 +125,10 @@
     });
   }
 
+  /**
+   * Convert hex or rgba CSS color strings into RGB arrays so we can perform
+   * contrast calculations.
+   */
   function parseColor(color) {
     let match;
     if ((match = color.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i))) {
@@ -110,10 +146,17 @@
     }
     return null;
   }
+  /**
+   * Helper that normalizes a single color channel to linear lightness space as
+   * required by the WCAG luminance formula.
+   */
   function adjustColor(val) {
     val = val / 255;
     return val <= 0.03928 ? val / 12.92 : Math.pow((val + 0.055) / 1.055, 2.4);
   }
+  /**
+   * Calculate relative luminance for any supported color string.
+   */
   function getRelativeLuminance(color) {
     const rgb = parseColor(color);
     if (!rgb) return 1;
@@ -122,6 +165,9 @@
     const b = adjustColor(rgb[2]);
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
   }
+  /**
+   * Return the WCAG contrast ratio between two color values.
+   */
   function calculateContrastRatio(c1, c2) {
     const l1 = getRelativeLuminance(c1);
     const l2 = getRelativeLuminance(c2);
@@ -130,6 +176,10 @@
     return (lighter + 0.05) / (darker + 0.05);
   }
 
+  /**
+   * Flag any element where the text and background colors fall below 4.5:1,
+   * the standard contrast ratio for normal sized text.
+   */
   function checkColorContrast($root) {
     $root.find('*').each(function () {
       const bg = $(this).css('background-color');
@@ -146,6 +196,10 @@
     });
   }
 
+  /**
+   * Require form controls to have matching `<label>` elements referenced via
+   * the `for` attribute.
+   */
   function checkFormLabels($root){
     $root.find('input, select, textarea').each(function () {
       const label = $('label[for="' + $(this).attr('id') + '"]');
@@ -158,6 +212,10 @@
     });
   }
 
+  /**
+   * Warn when the base document language is missing since that impacts screen
+   * reader pronunciation.
+   */
   function checkLangAttribute() {
     if (!$('html').attr('lang')) {
       addError(
@@ -167,6 +225,10 @@
     }
   }
 
+  /**
+   * Encourage authors to replace non-semantic containers with semantic
+   * structural elements when appropriate.
+   */
   function checkSemanticHTML($root){
     $root.find('*').each(function () {
       const tag = $(this).prop('tagName').toLowerCase();
@@ -182,6 +244,9 @@
     });
   }
 
+  /**
+   * Remind editors to include <track> captions for audio and video content.
+   */
   function checkMediaAccessibility($root){
     $root.find('video, audio').each(function () {
       if (!$(this).find('track').length) {
@@ -193,6 +258,10 @@
     });
   }
 
+  /**
+   * Verify that text can scale to 200% without breaking layout by temporarily
+   * scaling a hidden probe element.
+   */
   function checkTextResizing() {
     $('body').append(
       '<div class="text-resize-test" style="font-size:100%;position:absolute;left:-9999px;">Text resizing test</div>'
@@ -208,6 +277,9 @@
     $('.text-resize-test').remove();
   }
 
+  /**
+   * Ensure the viewport meta tag exists and supports responsive scaling.
+   */
   function checkResponsiveDesign() {
     if (!$('meta[name="viewport"]').length) {
       $('head').append(
@@ -224,6 +296,10 @@
   }
 
   let keyboardBound = false;
+  /**
+   * Monitor keyboard focus so we can remind editors to provide tabbable
+   * experiences. The handler is only bound once per session.
+   */
   function checkKeyboardNavigation($root) {
     if (keyboardBound) return;
     $root.on('keydown.a11y', '*', function (e) {
@@ -237,6 +313,10 @@
     keyboardBound = true;
   }
 
+  /**
+   * Highlight whichever nodes currently have focus to expose potential focus
+   * traps or invisible focus states.
+   */
   function checkFocusManagement() {
     $(':focus').each(function () {
       addError(
@@ -246,6 +326,10 @@
     });
   }
 
+  /**
+   * Make sure notification widgets announce themselves appropriately by having
+   * an ARIA role.
+   */
   function checkNotifications($root) {
     $root.find('.alert, .notification').each(function () {
       if (!$(this).attr('role')) {
@@ -259,6 +343,10 @@
   }
 
   let dynamicObserver;
+  /**
+   * Observe DOM mutations to encourage authors to announce dynamic updates.
+   * Only one observer is created so repeated scans do not spawn duplicates.
+   */
   function checkDynamicContentUpdates() {
     if (dynamicObserver) return;
     dynamicObserver = new MutationObserver((mutations) => {
@@ -276,12 +364,20 @@
     dynamicObserver.observe(document.body, { childList: true, subtree: true });
   }
 
+  /**
+   * Inject a skip link at the top of the body to support quick keyboard
+   * navigation to the main content area.
+   */
   function addSkipLink() {
     if (!$('a.skip-main').length) {
       $('<a class="skip-main" href="#main-content">Skip to main content</a>').prependTo('body');
     }
   }
 
+  /**
+   * Master orchestration routine that performs every accessibility heuristic on
+   * the builder canvas, starting from a clean slate.
+   */
   function runChecks() {
     const $root = $('#canvas');
     clearHighlights($root);
@@ -306,8 +402,11 @@
     addSkipLink();
   }
 
+  // Expose the checker so other scripts (and manual console use) can invoke it.
   window.runAccessibilityCheck = runChecks;
 
+  // Trigger the scan from both the floating button and any inline action
+  // buttons that opt in via the `a11y-check-btn` class.
   checkerBtn.on('click', runChecks);
   $('.a11y-check-btn').on('click', runChecks);
 })(jQuery);

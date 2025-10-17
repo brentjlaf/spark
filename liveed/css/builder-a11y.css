@@ -1,7 +1,18 @@
-/* accessibility checker styles */
+/*
+ * Stylesheet for the visual layer of the accessibility checker. The rules
+ * below provide the error badges, floating trigger button and highlight states
+ * that the JavaScript module toggles while scanning the canvas.
+ */
+
+/* Outline flagged elements with a high-contrast red border so authors can see
+ * exactly where the issue originated. */
 .highlight-issue {
   border: 2px solid #cc0000 !important;
 }
+
+/* Companion block that displays the human readable warning copy injected by
+ * `addError` in the JS module. The transparent red background mirrors the
+ * border treatment for consistency. */
 .error-message {
   color: #fff !important;
   font-size: 14px;
@@ -13,6 +24,9 @@
   margin: 0 0 10px;
   display: block;
 }
+
+/* Fixed position launcher button that slides on and off screen. The high z-index
+ * ensures it sits above the builder UI so it is always reachable. */
 .accessibility-checker {
   position: fixed;
   top: 300px;
@@ -28,10 +42,15 @@
   cursor: pointer;
   display: none;
 }
+
+/* Provide hover affordance to communicate interactivity. */
 .accessibility-checker:hover {
   border: 1px solid #2f2063;
   background: #2f2063;
 }
+
+/* Badge that overlays each heading to visualize the level (h1-h6) and whether
+ * it is part of a valid outline. */
 .accessibility-bubble {
   position: absolute;
   top: -0px;
@@ -49,6 +68,13 @@
 }
 .accessibility-bubble.green { background-color: green; }
 .accessibility-bubble.red { background-color: red; }
+
+/* Keep heading badges anchored by giving the headings positioning context. */
 h1.highlight-htag, h2.highlight-htag, h3.highlight-htag, h4.highlight-htag, h5.highlight-htag, h6.highlight-htag { position: relative; }
+
+/* Add room for the badge so the inserted message does not overlap. */
 .error-message.highlight-htag { padding-left: 50px; }
+
+/* When a heading fails the outline check we reuse the badge but recolor it red
+ * to match the error state. */
 .error-message.highlight-htag .accessibility-bubble.green { background: #cc0000 !important; }
