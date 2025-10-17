@@ -13,4 +13,48 @@ function sanitize_tags($tags) {
     if (!is_array($tags)) return [];
     return array_values(array_filter(array_map('sanitize_text', $tags)));
 }
+
+if (!defined('SPARKCMS_DEFAULT_ROBOTS_DIRECTIVE')) {
+    define('SPARKCMS_DEFAULT_ROBOTS_DIRECTIVE', 'index,follow');
+}
+
+function sparkcms_default_robots_directive(): string {
+    return SPARKCMS_DEFAULT_ROBOTS_DIRECTIVE;
+}
+
+function sanitize_robots_directive($value): string {
+    $normalized = strtolower(trim((string)$value));
+    if ($normalized === '') {
+        return sparkcms_default_robots_directive();
+    }
+
+    $normalized = str_replace([';', '|'], ',', $normalized);
+    $parts = preg_split('/[\s,]+/', $normalized, -1, PREG_SPLIT_NO_EMPTY);
+
+    $indexDirective = 'index';
+    $followDirective = 'follow';
+
+    foreach ($parts as $part) {
+        if ($part === 'index' || $part === 'noindex') {
+            $indexDirective = $part;
+        }
+        if ($part === 'follow' || $part === 'nofollow') {
+            $followDirective = $part;
+        }
+    }
+
+    $directive = $indexDirective . ',' . $followDirective;
+    $allowed = [
+        'index,follow',
+        'index,nofollow',
+        'noindex,follow',
+        'noindex,nofollow',
+    ];
+
+    if (!in_array($directive, $allowed, true)) {
+        return sparkcms_default_robots_directive();
+    }
+
+    return $directive;
+}
 ?>

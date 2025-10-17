@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/data.php';
 require_once __DIR__ . '/../../includes/settings.php';
+require_once __DIR__ . '/../../includes/sanitize.php';
 require_login();
 
 $pagesFile = __DIR__ . '/../../data/pages.json';
@@ -173,6 +174,7 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
     $ogTitle = $p['og_title'] ?? '';
     $ogDescription = $p['og_description'] ?? '';
     $ogImage = $p['og_image'] ?? '';
+    $robotsDirective = sanitize_robots_directive($p['robots'] ?? sparkcms_default_robots_directive());
     $accessRaw = $p['access'] ?? 'public';
 
     $isPublished = !empty($p['published']);
@@ -198,6 +200,7 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
                         data-og_title="<?php echo htmlspecialchars($ogTitle, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>"
                         data-og_description="<?php echo htmlspecialchars($ogDescription, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>"
                         data-og_image="<?php echo htmlspecialchars($ogImage, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>"
+                        data-robots="<?php echo htmlspecialchars($robotsDirective, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>"
                         data-access="<?php echo htmlspecialchars($accessRaw, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>"
                         data-views="<?php echo $views; ?>"
                         data-last_modified="<?php echo $lastModified; ?>"
@@ -349,6 +352,16 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
                                 <div class="form-group">
                                     <label class="form-label" for="canonical_url">Canonical URL</label>
                                     <input type="url" class="form-input" name="canonical_url" id="canonical_url" placeholder="https://example.com/your-page">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="robots">Robots directives</label>
+                                    <select class="form-select" name="robots" id="robots">
+                                        <option value="index,follow">Index &amp; follow (default)</option>
+                                        <option value="index,nofollow">Index, nofollow</option>
+                                        <option value="noindex,follow">Noindex, follow</option>
+                                        <option value="noindex,nofollow">Noindex &amp; nofollow</option>
+                                    </select>
+                                    <p class="form-hint">Control whether search engines index the page and follow its links.</p>
                                 </div>
                             </div>
                             <div id="tab-og" class="page-modal-panel">
