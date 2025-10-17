@@ -221,7 +221,16 @@ function handle_save_event(array $events, array $categories): void
 
 function handle_delete_event(array $events): void
 {
-    $id = $_POST['id'] ?? ($_GET['id'] ?? '');
+    $payload = parse_json_body();
+    if (empty($payload)) {
+        $payload = $_POST;
+    }
+
+    $id = isset($payload['id']) ? trim((string) $payload['id']) : '';
+    if ($id === '') {
+        $id = isset($_GET['id']) ? trim((string) $_GET['id']) : '';
+    }
+
     $id = trim((string) $id);
     if ($id === '') {
         respond_json(['error' => 'Missing event id.'], 400);
@@ -240,7 +249,16 @@ function handle_delete_event(array $events): void
 
 function handle_end_event(array $events): void
 {
-    $id = $_POST['id'] ?? ($_GET['id'] ?? '');
+    $payload = parse_json_body();
+    if (empty($payload)) {
+        $payload = $_POST;
+    }
+
+    $id = isset($payload['id']) ? trim((string) $payload['id']) : '';
+    if ($id === '') {
+        $id = isset($_GET['id']) ? trim((string) $_GET['id']) : '';
+    }
+
     $id = trim((string) $id);
     if ($id === '') {
         respond_json(['error' => 'Missing event id.'], 400);
