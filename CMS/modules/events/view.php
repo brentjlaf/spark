@@ -82,9 +82,9 @@ $initialPayload = [
         </header>
 
         <nav class="events-tabs" aria-label="Events sections" data-events-tabs>
-            <button type="button" class="events-tab is-active" id="eventsTabUpcoming" data-events-tab="upcoming" role="tab" aria-selected="true" aria-controls="eventsPanelUpcoming">Upcoming events</button>
-            <button type="button" class="events-tab" id="eventsTabManagement" data-events-tab="management" role="tab" aria-selected="false" aria-controls="eventsPanelManagement">Event management</button>
-            <button type="button" class="events-tab" id="eventsTabOrders" data-events-tab="orders" role="tab" aria-selected="false" aria-controls="eventsPanelOrders">Orders &amp; sales</button>
+            <button type="button" class="events-tab is-active" id="eventsTabUpcoming" data-events-tab="upcoming" role="tab" aria-selected="true" aria-controls="eventsPanelUpcoming">Upcoming Events</button>
+            <button type="button" class="events-tab" id="eventsTabManagement" data-events-tab="management" role="tab" aria-selected="false" aria-controls="eventsPanelManagement">Event Management</button>
+            <button type="button" class="events-tab" id="eventsTabOrders" data-events-tab="orders" role="tab" aria-selected="false" aria-controls="eventsPanelOrders">Orders &amp; Sales</button>
             <button type="button" class="events-tab" id="eventsTabReports" data-events-tab="reports" role="tab" aria-selected="false" aria-controls="eventsPanelReports">Reports</button>
         </nav>
 
