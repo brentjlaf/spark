@@ -8,6 +8,23 @@ function sanitize_text(string $str): string {
 function sanitize_url(string $url): string {
     return filter_var(trim($url), FILTER_SANITIZE_URL) ?: '';
 }
+// Sanitize HTML datetime-local input values
+function sanitize_datetime_local($value): string {
+    $value = trim((string) $value);
+    if ($value === '') {
+        return '';
+    }
+
+    $formats = ['Y-m-d\TH:i', 'Y-m-d\TH:i:s'];
+    foreach ($formats as $format) {
+        $date = DateTimeImmutable::createFromFormat($format, $value);
+        if ($date instanceof DateTimeImmutable) {
+            return $date->format('Y-m-d\TH:i');
+        }
+    }
+
+    return '';
+}
 // Sanitizes an array of tags by running sanitize_text on each
 function sanitize_tags($tags) {
     if (!is_array($tags)) return [];

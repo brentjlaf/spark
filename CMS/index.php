@@ -4,6 +4,7 @@ require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/data.php';
 require_once __DIR__ . '/includes/sanitize.php';
 require_once __DIR__ . '/includes/settings.php';
+require_once __DIR__ . '/includes/page_schedule.php';
 // Load pages from JSON
 $pagesFile = __DIR__ . '/data/pages.json';
 $pages = get_cached_json($pagesFile);
@@ -277,7 +278,8 @@ if ($slug === 'search') {
     $results = [];
     $lower = strtolower($q);
     foreach ($pages as $p) {
-        if (!$logged_in && (empty($p['published']) || ($p['access'] ?? 'public') !== 'public')) {
+        $scheduleInfo = sparkcms_page_schedule_info($p);
+        if (!$logged_in && (!$scheduleInfo['is_live'] || ($p['access'] ?? 'public') !== 'public')) {
             continue;
         }
         if ($q === '' || stripos($p['title'], $lower) !== false || stripos($p['slug'], $lower) !== false || stripos($p['content'], $lower) !== false) {
@@ -347,7 +349,8 @@ if (!$page) {
     exit;
 }
 
-if (empty($page['published']) && !$logged_in) {
+$pageScheduleInfo = sparkcms_page_schedule_info($page);
+if (!$logged_in && !$pageScheduleInfo['is_live']) {
     http_response_code(404);
     $page = [
         'title' => 'Page Not Found',

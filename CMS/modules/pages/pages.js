@@ -115,7 +115,7 @@ $(function(){
             getPageRows().each(function(){
                 const $row = $(this);
                 counts.all++;
-                if ($row.data('published') == 1) {
+                if ($row.data('live') == 1) {
                     counts.published++;
                 } else {
                     counts.drafts++;
@@ -134,9 +134,9 @@ $(function(){
         function rowMatchesFilter($row) {
             switch (activeFilter) {
                 case 'published':
-                    return $row.data('published') == 1;
+                    return $row.data('live') == 1;
                 case 'drafts':
-                    return $row.data('published') != 1;
+                    return $row.data('live') != 1;
                 case 'restricted':
                     return (($row.data('access') || 'public') + '').toLowerCase() !== 'public';
                 case 'all':
@@ -217,8 +217,8 @@ $(function(){
         const comparators = {
             title: compareTitles,
             status: function($a, $b){
-                const statusA = parseNumber($a.data('published')) === 1 ? 1 : 0;
-                const statusB = parseNumber($b.data('published')) === 1 ? 1 : 0;
+                const statusA = parseNumber($a.data('live')) === 1 ? 1 : 0;
+                const statusB = parseNumber($b.data('live')) === 1 ? 1 : 0;
                 if (statusA !== statusB) {
                     return statusA - statusB;
                 }
@@ -325,6 +325,100 @@ $(function(){
             });
         }
 
+        function parseLocalDateTime(value){
+            if (!value) {
+                return null;
+            }
+            const parts = value.toString().split('T');
+            if (parts.length !== 2) {
+                return null;
+            }
+            const dateBits = parts[0].split('-').map(Number);
+            if (dateBits.length !== 3 || dateBits.some(Number.isNaN)) {
+                return null;
+            }
+            const timeBits = parts[1].split(':').map(Number);
+            if (timeBits.length < 2 || timeBits.slice(0, 2).some(Number.isNaN)) {
+                return null;
+            }
+            const [year, month, day] = dateBits;
+            const [hour, minute] = timeBits;
+            const parsed = new Date(year, month - 1, day, hour, minute);
+            if (Number.isNaN(parsed.getTime())) {
+                return null;
+            }
+            return parsed;
+        }
+
+        function evaluateScheduleState(data){
+            const publishedFlag = data && data.published ? 1 : 0;
+            const publishAt = data && data.publish_at ? data.publish_at.toString() : '';
+            const unpublishAt = data && data.unpublish_at ? data.unpublish_at.toString() : '';
+            const publishDate = parseLocalDateTime(publishAt);
+            const unpublishDate = parseLocalDateTime(unpublishAt);
+            const now = new Date();
+
+            let state = 'draft';
+            let isLive = 0;
+            let statusText = 'Draft';
+            let statusClass = 'status-draft';
+            let statusNote = '';
+
+            if (publishedFlag) {
+                state = 'published';
+                isLive = 1;
+                statusText = 'Published';
+                statusClass = 'status-published';
+
+                if (publishDate && now < publishDate) {
+                    state = 'scheduled';
+                    isLive = 0;
+                    statusText = 'Scheduled';
+                    statusClass = 'status-warning';
+                    statusNote = publishDate ? `Publishes ${formatTimestamp(publishDate)}` : '';
+                }
+
+                if (unpublishDate) {
+                    if (now >= unpublishDate) {
+                        state = 'expired';
+                        isLive = 0;
+                        statusText = 'Expired';
+                        statusClass = 'status-critical';
+                        statusNote = `Expired ${formatTimestamp(unpublishDate)}`;
+                    } else if (state !== 'scheduled') {
+                        statusNote = `Unpublishes ${formatTimestamp(unpublishDate)}`;
+                    }
+                }
+
+                if (publishDate && unpublishDate && publishDate.getTime() >= unpublishDate.getTime()) {
+                    if (now < publishDate) {
+                        state = 'scheduled';
+                        isLive = 0;
+                        statusText = 'Scheduled';
+                        statusClass = 'status-warning';
+                        statusNote = publishDate ? `Publishes ${formatTimestamp(publishDate)}` : '';
+                    } else {
+                        state = 'expired';
+                        isLive = 0;
+                        statusText = 'Expired';
+                        statusClass = 'status-critical';
+                        const reference = unpublishDate || publishDate;
+                        statusNote = reference ? `Expired ${formatTimestamp(reference)}` : '';
+                    }
+                }
+            }
+
+            return {
+                state,
+                isLive,
+                statusText,
+                statusClass,
+                statusNote,
+                publishAt: publishAt || '',
+                unpublishAt: unpublishAt || ''
+            };
+        }
+
         function updatePageRow(data){
             if (!data || !data.id) {
                 return;
@@ -344,6 +438,13 @@ $(function(){
             const isHomepageRow = homepageSlug !== '' && data.slug === homepageSlug;
             const robotsDirective = normalizeRobotsDirective(data.robots);
             data.robots = robotsDirective;
+            const scheduleState = evaluateScheduleState({
+                published: publishedFlag,
+                publish_at: data.publish_at,
+                unpublish_at: data.unpublish_at
+            });
+            data.publish_at = scheduleState.publishAt;
+            data.unpublish_at = scheduleState.unpublishAt;
             const sharedAttributes = {
                 'data-title': data.title,
                 'data-slug': data.slug,
@@ -358,6 +459,10 @@ $(function(){
                 'data-access': data.access,
                 'data-robots': robotsDirective,
                 'data-published': publishedFlag,
+                'data-live': scheduleState.isLive ? 1 : 0,
+                'data-schedule_state': scheduleState.state,
+                'data-publish_at': scheduleState.publishAt,
+                'data-unpublish_at': scheduleState.unpublishAt,
                 'data-views': viewsCount,
                 'data-last_modified': lastModifiedSeconds,
                 'data-homepage': isHomepageRow ? 1 : 0
@@ -378,6 +483,10 @@ $(function(){
             $row.data('access', data.access);
             $row.data('robots', robotsDirective);
             $row.data('published', publishedFlag);
+            $row.data('live', scheduleState.isLive ? 1 : 0);
+            $row.data('schedule_state', scheduleState.state);
+            $row.data('publish_at', scheduleState.publishAt);
+            $row.data('unpublish_at', scheduleState.unpublishAt);
             $row.data('views', viewsCount);
             $row.data('last_modified', lastModifiedSeconds);
             $row.data('homepage', isHomepageRow ? 1 : 0);
@@ -386,9 +495,18 @@ $(function(){
             $row.find('.pages-list-slug').text(`/${data.slug}`);
 
             const $rowStatusBadge = $row.find('.status-badge');
-            $rowStatusBadge.removeClass('status-published status-draft');
-            $rowStatusBadge.addClass(publishedFlag ? 'status-published' : 'status-draft');
-            $rowStatusBadge.text(publishedFlag ? 'Published' : 'Draft');
+            $rowStatusBadge.removeClass('status-published status-draft status-warning status-critical');
+            $rowStatusBadge.addClass(scheduleState.statusClass);
+            $rowStatusBadge.text(scheduleState.statusText);
+
+            const $statusNote = $row.find('[data-status-note]');
+            if ($statusNote.length) {
+                if (scheduleState.statusNote) {
+                    $statusNote.text(scheduleState.statusNote).removeAttr('hidden');
+                } else {
+                    $statusNote.text('').attr('hidden', 'hidden');
+                }
+            }
 
             const $rowViewLink = $row.find('[data-action="view"]').first();
             if ($rowViewLink.length) {
@@ -451,6 +569,8 @@ $(function(){
                 slug: data.slug,
                 content: data.content,
                 published: data.published,
+                publish_at: data.publish_at || '',
+                unpublish_at: data.unpublish_at || '',
                 template: data.template,
                 meta_title: data.meta_title,
                 meta_description: data.meta_description,
@@ -504,7 +624,9 @@ $(function(){
                 og_image: $('#og_image').val(),
                 access: $('#access').val(),
                 robots: normalizeRobotsDirective($('#robots').val() || ROBOTS_DEFAULT),
-                published: $('#published').is(':checked') ? 1 : 0
+                published: $('#published').is(':checked') ? 1 : 0,
+                publish_at: $('#publish_at').val(),
+                unpublish_at: $('#unpublish_at').val()
             };
             pageData.robots = normalizeRobotsDirective(pageData.robots);
 
@@ -549,6 +671,8 @@ $(function(){
                         $('#pageForm')[0].reset();
                         $('#published').prop('checked', false);
                         $('#homepage').prop('checked', false);
+                        $('#publish_at').val('');
+                        $('#unpublish_at').val('');
                         const homepageRequest = maybeUpdateHomepage(pageData.slug, shouldSetHomepage);
                         if (homepageRequest) {
                             homepageRequest
@@ -611,6 +735,8 @@ $(function(){
             $('#slug').val(row.attr('data-slug'));
             $('#content').val(row.data('content'));
             $('#published').prop('checked', row.data('published') == 1);
+            $('#publish_at').val(row.attr('data-publish_at') || '');
+            $('#unpublish_at').val(row.attr('data-unpublish_at') || '');
             const tmpl = row.data('template') ? row.data('template') : 'page.php';
             $('#template').val(tmpl);
             $('#meta_title').val(row.data('meta_title'));
@@ -635,6 +761,8 @@ $(function(){
             $('#canonical_url').val('');
             $('#robots').val(ROBOTS_DEFAULT);
             $('#homepage').prop('checked', false);
+            $('#publish_at').val('');
+            $('#unpublish_at').val('');
             closePageModal();
             slugEdited = false;
         });
@@ -649,6 +777,8 @@ $(function(){
             $('#cancelEdit').hide();
             $('#homepage').prop('checked', false);
             $('#robots').val(ROBOTS_DEFAULT);
+            $('#publish_at').val('');
+            $('#unpublish_at').val('');
             openPageModal();
             slugEdited = false;
         });
