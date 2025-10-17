@@ -11347,6 +11347,8 @@
 }
 
 .events-form-field input[type='text'],
+.events-form-field input[type='email'],
+.events-form-field input[type='tel'],
 .events-form-field input[type='datetime-local'],
 .events-form-field select {
     width: 100%;
