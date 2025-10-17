@@ -1,18 +1,24 @@
 <?php
 // File: modules/seo/view.php
+//
+// This module powers the SEO dashboard and detail view inside the CMS. It
+// analyses page content generated from templates and surfaces actionable SEO
+// metrics that are consumed by the accompanying JavaScript UI.
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/data.php';
 require_once __DIR__ . '/../../includes/settings.php';
 require_once __DIR__ . '/../../includes/sanitize.php';
 require_once __DIR__ . '/../../includes/score_history.php';
-require_login();
+require_login(); // Only authenticated administrators may access the dashboard.
 
+// Load the site structure and settings needed to render pages for analysis.
 $pagesFile = __DIR__ . '/../../data/pages.json';
 $pages = read_json_file($pagesFile);
 $settings = get_site_settings();
 $menusFile = __DIR__ . '/../../data/menus.json';
 $menus = read_json_file($menusFile);
 
+// Normalise the base path for building asset/template URLs.
 $scriptBase = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
 if (substr($scriptBase, -4) === '/CMS') {
     $scriptBase = substr($scriptBase, 0, -4);
@@ -21,11 +27,19 @@ $scriptBase = rtrim($scriptBase, '/');
 
 $templateDir = realpath(__DIR__ . '/../../../theme/templates/pages');
 
+/**
+ * Wrapper for strlen that prefers multibyte support for accurate character
+ * counts in templates and metadata.
+ */
 function seo_strlen(string $value): int
 {
     return function_exists('mb_strlen') ? mb_strlen($value) : strlen($value);
 }
 
+/**
+ * Render a page template while stripping editor-specific markup so we can
+ * analyse the final HTML the visitor would receive.
+ */
 function capture_template_html(string $templateFile, array $settings, array $menus, string $scriptBase): string
 {
     $page = ['content' => '{{CONTENT}}'];
@@ -45,6 +59,10 @@ function capture_template_html(string $templateFile, array $settings, array $men
     return $html;
 }
 
+/**
+ * Resolve a page's template and merge its content into the template shell so
+ * the DOM parser can operate on a complete page.
+ */
 function build_page_html(array $page, array $settings, array $menus, string $scriptBase, ?string $templateDir): string
 {
     static $templateCache = [];
@@ -68,6 +86,10 @@ function build_page_html(array $page, array $settings, array $menus, string $scr
     return str_replace('{{CONTENT}}', $content, $templateHtml);
 }
 
+/**
+ * Provide a friendly summary sentence based on the calculated score and
+ * presence of critical issues.
+ */
 function describe_seo_health(int $score, int $criticalIssues): string
 {
     if ($score >= 90 && $criticalIssues === 0) {
@@ -82,6 +104,9 @@ function describe_seo_health(int $score, int $criticalIssues): string
     return 'This page has critical SEO blockers that may prevent it from ranking effectively.';
 }
 
+/**
+ * Create a human readable summary of the violation counts for quick display.
+ */
 function summarize_seo_violations(array $violations): string
 {
     $parts = [];
@@ -105,6 +130,9 @@ function summarize_seo_violations(array $violations): string
     return implode(', ', $parts) . ' issue' . ($violations['total'] === 1 ? '' : 's');
 }
 
+/**
+ * Map plain-text issue descriptions to severity and tailored recommendations.
+ */
 function classify_seo_issue(string $issue): array
 {
     $lower = strtolower($issue);
@@ -185,6 +213,9 @@ function classify_seo_issue(string $issue): array
     ];
 }
 
+/**
+ * Strip markup and count words from rendered HTML to gauge content depth.
+ */
 function extract_word_count(string $html): int
 {
     $clean = preg_replace('#<(script|style|noscript|template)[^>]*>.*?<\\/\\1>#si', ' ', $html);
@@ -198,6 +229,9 @@ function extract_word_count(string $html): int
     return str_word_count($text);
 }
 
+/**
+ * Count the number of internal versus external anchor links on a page.
+ */
 function count_links(DOMDocument $doc): array
 {
     $internal = 0;
@@ -219,11 +253,14 @@ function count_links(DOMDocument $doc): array
     return ['internal' => $internal, 'external' => $external];
 }
 
+// Suppress DOM warnings triggered by imperfect HTML from page content.
 libxml_use_internal_errors(true);
 
+// Accumulate per-page reports and capture the timestamp for display.
 $report = [];
 $lastScan = date('M j, Y g:i A');
 
+// Analyse each page the CMS knows about and compute SEO metrics.
 foreach ($pages as $page) {
     $title = $page['title'] ?? 'Untitled';
     $slug = $page['slug'] ?? '';
@@ -232,6 +269,7 @@ foreach ($pages as $page) {
     $doc = new DOMDocument();
     $loaded = trim($pageHtml) !== '' && $doc->loadHTML('<?xml encoding="utf-8" ?>' . $pageHtml);
 
+    // Initialise the metrics structure used by both the dashboard and detail views.
     $metrics = [
         'title' => '',
         'titleLength' => 0,
@@ -249,6 +287,7 @@ foreach ($pages as $page) {
     ];
 
     if ($loaded) {
+        // Extract metadata and structural signals when the HTML parses correctly.
         $titles = $doc->getElementsByTagName('title');
         if ($titles->length > 0) {
             $metrics['title'] = trim($titles->item(0)->textContent);
@@ -304,6 +343,7 @@ foreach ($pages as $page) {
         $metrics['wordCount'] = extract_word_count($pageHtml);
 
         if (!$metrics['hasOpenGraph']) {
+            // Some themes use property attributes instead of name, so double check.
             foreach ($metaTags as $meta) {
                 if (strtolower(trim($meta->getAttribute('property'))) === 'og:title') {
                     $metrics['hasOpenGraph'] = true;
@@ -312,10 +352,13 @@ foreach ($pages as $page) {
             }
         }
     } else {
+        // Even if the DOM fails to load, fall back to a word count estimate.
         $metrics['wordCount'] = extract_word_count($pageHtml);
     }
 
+    // Ensure every page exposes an appropriately sized meta description.
     if ($metrics['metaDescriptionLength'] === 0) {
+        // Reuse stored metadata fields if the rendered HTML lacks them.
         $fallbackDescription = trim((string)($page['meta_description'] ?? ''));
         if ($fallbackDescription !== '') {
             $metrics['metaDescription'] = $fallbackDescription;
@@ -324,6 +367,7 @@ foreach ($pages as $page) {
     }
 
     if (!$metrics['hasCanonical']) {
+        // Treat canonical URLs defined in the CMS as equivalent to link tags.
         $fallbackCanonical = trim((string)($page['canonical_url'] ?? ''));
         if ($fallbackCanonical !== '') {
             $metrics['hasCanonical'] = true;
@@ -331,6 +375,7 @@ foreach ($pages as $page) {
     }
 
     $issues = [];
+    // Track counts by severity so we can build the score and summaries.
     $violations = [
         'critical' => 0,
         'serious' => 0,
@@ -346,6 +391,7 @@ foreach ($pages as $page) {
     };
 
     if ($metrics['titleLength'] === 0) {
+        // Pull from stored meta fields when the live HTML is missing a title.
         $fallbackTitle = trim((string)($page['meta_title'] ?? ''));
         if ($fallbackTitle === '') {
             $fallbackTitle = trim((string)($page['title'] ?? ''));
@@ -370,12 +416,14 @@ foreach ($pages as $page) {
         $addIssue('Meta description length should be between 70-160 characters', 'moderate');
     }
 
+    // Validate heading structure because it guides crawlers and assistive tech.
     if ($metrics['h1Count'] === 0) {
         $addIssue('No H1 heading found on the page', 'serious');
     } elseif ($metrics['h1Count'] > 1) {
         $addIssue('Multiple H1 headings detected', 'moderate');
     }
 
+    // Reward deeper content and flag thin pages that need attention.
     if ($metrics['wordCount'] < 150) {
         $addIssue('Word count is below 150 words', 'serious');
     } elseif ($metrics['wordCount'] < 300) {
@@ -406,12 +454,14 @@ foreach ($pages as $page) {
         $addIssue('Robots meta tag blocks indexing (noindex)', 'critical');
     }
 
+    // Deduct weighted penalties from 100 to approximate an SEO score.
     $score = 100;
     $score -= $violations['critical'] * 18;
     $score -= $violations['serious'] * 12;
     $score -= $violations['moderate'] * 7;
     $score -= $violations['minor'] * 4;
     if ($violations['total'] === 0) {
+        // Perfect pages cap at 98 to leave headroom for future enhancements.
         $score = 98;
     }
     $score = max(0, min(100, (int)round($score)));
@@ -427,12 +477,14 @@ foreach ($pages as $page) {
     ];
 }
 
+// Summarise totals for KPI cards.
 $totalPages = count($report);
 $scoreSum = 0;
 $criticalIssues = 0;
 $optimizedPages = 0;
 $needsWork = 0;
 
+// Prepare both an ordered list and quick lookup for the frontend payload.
 $pageEntries = [];
 $pageEntryMap = [];
 
@@ -456,6 +508,7 @@ foreach ($report as $entry) {
     }
 
     $issueDetails = [];
+    // Pair each short issue description with metadata for the modal view.
     foreach ($entry['issues'] as $issueText) {
         $detail = classify_seo_issue($issueText);
         $issueDetails[] = [
@@ -473,8 +526,10 @@ foreach ($report as $entry) {
         $issuePreview = ['No outstanding SEO issues'];
     }
 
+    // Persist historic comparisons so the UI can show score deltas.
     $previousScore = derive_previous_score('seo', $slug !== '' ? $slug : ($entry['title'] !== '' ? $entry['title'] : (string)count($pageEntries)), $score);
 
+    // Shape the data used by the dashboard and modal components.
     $pageData = [
         'title' => $entry['title'],
         'slug' => $slug,
@@ -503,6 +558,7 @@ foreach ($report as $entry) {
 
 $avgScore = $totalPages > 0 ? (int)round($scoreSum / $totalPages) : 0;
 
+// Provide totals for each filter pill shown in the dashboard.
 $filterCounts = [
     'all' => $totalPages,
     'critical' => 0,
@@ -516,6 +572,7 @@ foreach ($pageEntries as $page) {
     }
 }
 
+// Build URLs for linking back to the dashboard and opening detail views.
 $scriptPath = isset($_SERVER['PHP_SELF']) ? $_SERVER['PHP_SELF'] : '';
 $queryParams = is_array($_GET) ? $_GET : [];
 unset($queryParams['page']);
@@ -528,11 +585,14 @@ $detailSlug = $detailSlug !== null ? trim($detailSlug) : null;
 
 $selectedPage = null;
 if ($detailSlug !== null && $detailSlug !== '') {
+    // When a slug is supplied in the URL, preload the detail page view.
     $selectedPage = $pageEntryMap[$detailSlug] ?? null;
 }
 
+// Clean up any parsing errors stored during DOM processing.
 libxml_clear_errors();
 
+// Prepare the stats block consumed by the frontend to avoid recalculation.
 $dashboardStats = [
     'totalPages' => $totalPages,
     'avgScore' => $avgScore,
@@ -553,6 +613,7 @@ $dashboardStats = [
             $previousScore = (int)($selectedPage['previousScore'] ?? $currentScore);
             $deltaMeta = describe_score_delta($currentScore, $previousScore);
 
+            // Tally issues by severity to power the filter buttons.
             $impactCounts = [
                 'critical' => 0,
                 'serious' => 0,
@@ -882,6 +943,7 @@ $dashboardStats = [
 <?php endif; ?>
 </div>
 <script>
+    // Expose the processed dataset for the JavaScript module to hydrate the UI.
     window.__SEO_MODULE_DATA__ = <?php echo json_encode([
         'pages' => $pageEntries,
         'stats' => $dashboardStats,

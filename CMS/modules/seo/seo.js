@@ -1,6 +1,11 @@
 (function ($) {
     'use strict';
 
+    /**
+     * Retrieve the preloaded module payload if present. The PHP view injects
+     * window.__SEO_MODULE_DATA__ so the dashboard can be hydrated without
+     * additional HTTP requests.
+     */
     function getModuleData() {
         if (window.__SEO_MODULE_DATA__ && typeof window.__SEO_MODULE_DATA__ === 'object') {
             return window.__SEO_MODULE_DATA__;
@@ -8,6 +13,11 @@
         return { pages: [], stats: {} };
     }
 
+    /**
+     * Convert the Date instance from stats.lastScan into a human friendly
+     * string. We attempt to use toLocaleString and gracefully degrade when the
+     * runtime lacks full internationalisation support.
+     */
     function formatLastScanTimestamp(date) {
         if (!(date instanceof Date) || isNaN(date.getTime())) {
             return '';
@@ -38,6 +48,10 @@
         }
     }
 
+    /**
+     * Ensure score-like values become integers between 0 and 100. The server
+     * may provide strings so we defensively parse and clamp.
+     */
     function normalizeScore(value, fallback) {
         var number = Number(value);
         if (Number.isFinite && Number.isFinite(number)) {
@@ -50,10 +64,18 @@
         return fallback;
     }
 
+    /**
+     * Locale-aware, case-insensitive comparison used as a secondary sort tie
+     * breaker for page titles and URLs.
+     */
     function compareStrings(a, b) {
         return String(a || '').localeCompare(String(b || ''), undefined, { sensitivity: 'base' });
     }
 
+    /**
+     * Translate the change between current and previous scores into metadata
+     * that powers the UI badge.
+     */
     function getScoreDeltaMeta(current, previous) {
         var currentScore = normalizeScore(current, 0);
         var previousScore = typeof previous === 'undefined' || previous === null ? currentScore : normalizeScore(previous, currentScore);
@@ -76,16 +98,26 @@
         };
     }
 
+    /**
+     * Build the HTML used beside scores to communicate improvements or
+     * regressions.
+     */
     function renderScoreDelta(current, previous) {
         var meta = getScoreDeltaMeta(current, previous);
         return '<span class="score-delta ' + meta.className + '"><span aria-hidden="true">' + meta.display + '</span><span class="sr-only">' + meta.srText + '</span></span>';
     }
 
+    /**
+     * Normalise the optimisation level into a slug used for CSS modifiers.
+     */
     function getLevelBadge(level) {
         var normalized = String(level || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
         return 'level-' + (normalized || '');
     }
 
+    /**
+     * Choose the UI class for the score ring based on thresholds.
+     */
     function getScoreQualityClass(score) {
         if (score >= 90) {
             return 'seo-score--excellent';
@@ -99,6 +131,10 @@
         return 'seo-score--poor';
     }
 
+    /**
+     * Reduce the violation counts object into the summary sentence displayed
+     * throughout the UI.
+     */
     function formatSeoViolations(violations) {
         if (!violations) {
             return 'No outstanding SEO issues';
@@ -123,6 +159,10 @@
         return total + ' total' + (parts.length ? ' (' + parts.join(', ') + ')' : '');
     }
 
+    /**
+     * Build the HTML list summarising the collected page metrics for the
+     * modal detail view.
+     */
     function renderMetricList(metrics) {
         if (!metrics) {
             return '';
@@ -146,6 +186,10 @@
         return items.join('');
     }
 
+    /**
+     * Ensure impact strings align with the known severity palette before
+     * applying CSS classes.
+     */
     function normalizeImpact(impact) {
         var value = String(impact || '').toLowerCase();
         if (['critical', 'serious', 'moderate', 'minor'].indexOf(value) !== -1) {
@@ -154,6 +198,10 @@
         return 'review';
     }
 
+    /**
+     * Calculate the value used for ordering in the dashboard table/grid for
+     * the requested sort key.
+     */
     function getSortValue(page, key) {
         if (!page) {
             return 0;
@@ -173,6 +221,10 @@
         }
     }
 
+    /**
+     * Produce a sorted copy of the page array without mutating the original
+     * collection supplied by the server.
+     */
     function sortPages(pages, sortKey, direction) {
         if (!Array.isArray(pages)) {
             return [];
@@ -201,6 +253,10 @@
         return items;
     }
 
+    /**
+     * Check if the page qualifies for the currently selected optimisation
+     * state filter.
+     */
     function matchesFilter(page, filter) {
         switch (filter) {
             case 'critical':
@@ -214,6 +270,10 @@
         }
     }
 
+    /**
+     * Determine whether the page should appear for the active search query by
+     * concatenating relevant text snippets.
+     */
     function matchesQuery(page, query) {
         if (!query) {
             return true;
@@ -230,6 +290,10 @@
         return haystacks.join(' ').toLowerCase().indexOf(query) !== -1;
     }
 
+    /**
+     * Update the DOM order of grid cards/table rows to match the sorted
+     * results while preserving existing nodes.
+     */
     function reorderElements($container, selector, order) {
         var orderMap = {};
         order.forEach(function (slug, index) {
@@ -251,6 +315,10 @@
         });
     }
 
+    /**
+     * Show or hide the provided DOM elements by toggling both visual and
+     * accessibility attributes.
+     */
     function updateVisibility($elements, visibleSlugs) {
         $elements.each(function () {
             var $el = $(this);
@@ -263,6 +331,10 @@
         });
     }
 
+    /**
+     * Mirror the latest scan timestamp in both data attributes and visible
+     * text so the dashboard reflects the current value.
+     */
     function updateLastScanDisplay($root, lastScan) {
         if (!lastScan) {
             return;
@@ -271,6 +343,10 @@
         $root.find('.seo-last-scan-value').text(lastScan);
     }
 
+    /**
+     * Update the KPI counters at the top of the dashboard (total pages,
+     * average score, etc.).
+     */
     function updateStats($root, stats) {
         if (!stats) {
             return;
@@ -289,6 +365,11 @@
         }
     }
 
+    /**
+     * Aggregate stats for the dashboard cards based on the provided page
+     * results. Existing stats from the server are merged so we can maintain
+     * values such as detailBaseUrl.
+     */
     function calculateDashboardStats(pages, previousStats) {
         var totalPages = Array.isArray(pages) ? pages.length : 0;
         var totalScore = 0;
@@ -344,6 +425,10 @@
         return nextStats;
     }
 
+    /**
+     * Attach all interactive behaviour for the dashboard list view including
+     * sorting, filtering, searching, modal handling, and the mock scan action.
+     */
     function initDashboard($root, pages, pagesMap, stats, moduleData) {
         stats = stats || {};
         updateStats($root, stats);
@@ -383,6 +468,7 @@
             $modal.attr('aria-hidden', 'true');
         }
 
+        // Hide the modal and restore focus to whichever element triggered it.
         function closeModal() {
             if (!$modal.length) {
                 return;
@@ -395,6 +481,7 @@
             lastFocusedElement = null;
         }
 
+        // Populate the modal with a given page's data and show it on screen.
         function openModal(page) {
             if (!page) {
                 return;
@@ -446,6 +533,8 @@
             }
 
             if (window.sessionStorage) {
+                // Remember the last opened slug so the UI could restore it on
+                // subsequent visits if desired.
                 try {
                     window.sessionStorage.setItem('seo:lastViewedSlug', activeSlug);
                 } catch (error) {
@@ -454,6 +543,8 @@
             }
         }
 
+        // Helper used by click/keyboard handlers to open the corresponding
+        // modal entry from the slug stored on the DOM node.
         function openModalBySlug(slug) {
             var page = pagesMap[slug];
             if (page) {
@@ -461,6 +552,10 @@
             }
         }
 
+        /**
+         * Update the toggle button so its icon, aria state, and label reflect
+         * the current sort direction.
+         */
         function updateSortDirectionControl(direction) {
             if (!$sortDirectionBtn.length) {
                 return;
@@ -479,6 +574,10 @@
             }
         }
 
+        /**
+         * Recalculate the filtered and sorted result set then sync the grid
+         * and table UI with that data.
+         */
         function applyFilters() {
             var normalizedQuery = searchQuery.trim().toLowerCase();
             var filtered = pages.filter(function (page) {
@@ -564,6 +663,7 @@
 
         var $scanAllBtn = $root.find('[data-seo-action="scan-all"]');
         if ($scanAllBtn.length) {
+            // Mock the scan flow by recalculating stats after a short delay.
             $scanAllBtn.on('click', function () {
                 var $btn = $(this);
                 if ($btn.prop('disabled')) {
@@ -649,11 +749,17 @@
         }
     }
 
+    /**
+     * Bind behaviours for the individual page detail view (severity filters
+     * and the rescan button).
+     */
     function initDetail($root) {
         var $issueCards = $root.find('[data-impact]');
         var $buttons = $root.find('[data-seo-severity]');
         var $status = $('#seoIssueFilterStatus');
 
+        // Toggle which issue cards are visible for the selected severity and
+        // update the live region so screen reader users receive feedback.
         function updateIssueVisibility(filter) {
             var visibleCount = 0;
             $issueCards.each(function () {
@@ -685,6 +791,8 @@
             updateIssueVisibility(filter);
         });
 
+        // Simulate a page re-scan when the button is clicked to reinforce what
+        // the real integration would do.
         $root.find('[data-seo-action="rescan-page"]').on('click', function () {
             alert('Re-scanning this page...\n\nA fresh crawl would analyse metadata, headings, internal links, and structured data to refresh the SEO score.');
         });
@@ -692,11 +800,13 @@
         updateIssueVisibility('all');
     }
 
+    // Kick off the dashboard/detail initialisers once the DOM is ready.
     $(function () {
         var moduleData = getModuleData();
         var pages = Array.isArray(moduleData.pages) ? moduleData.pages : [];
         var stats = moduleData.stats || {};
         var pagesMap = {};
+        // Create a quick lookup by slug for modal interactions.
         pages.forEach(function (page) {
             pagesMap[String(page.slug || '')] = page;
         });
