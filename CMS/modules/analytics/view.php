@@ -31,7 +31,6 @@ $zeroViewPages = array_values(array_filter($pages, static function ($page) {
     return (int) ($page['views'] ?? 0) === 0;
 }));
 $zeroViewCount = count($zeroViewPages);
-$zeroViewExamples = array_slice($zeroViewPages, 0, 3);
 
 $initialEntries = [];
 $previousTotalViews = 0;
@@ -193,26 +192,18 @@ $summaryComparisons = [
                         <p class="analytics-insight-subtitle">Pages that could use extra attention</p>
                     </div>
                 </header>
-                <p class="analytics-insight-summary" id="analyticsZeroSummary"><?php echo $zeroViewCount > 0
-                    ? 'You have ' . number_format($zeroViewCount) . ' page' . ($zeroViewCount === 1 ? '' : 's') . ' with no recorded views.'
-                    : 'Great job! Every published page has at least one view.'; ?></p>
-                <?php if ($zeroViewCount > 0): ?>
-                    <ul class="analytics-insight-list" id="analyticsZeroList">
-                        <?php foreach ($zeroViewExamples as $page): ?>
-                            <li>
-                                <div>
-                                    <span class="analytics-insight-item-title"><?php echo htmlspecialchars($page['title'] ?? 'Untitled', ENT_QUOTES); ?></span>
-                                    <span class="analytics-insight-item-slug"><?php echo htmlspecialchars($page['slug'] ?? '', ENT_QUOTES); ?></span>
-                                </div>
-                                <span class="analytics-insight-metric">0 views</span>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                    <p class="analytics-insight-empty" id="analyticsZeroEmpty" hidden>Great job! Every published page has at least one view.</p>
-                <?php else: ?>
-                    <ul class="analytics-insight-list" id="analyticsZeroList" hidden></ul>
-                    <p class="analytics-insight-empty" id="analyticsZeroEmpty">Great job! Every published page has at least one view.</p>
-                <?php endif; ?>
+                <div class="analytics-insight-chart">
+                    <div class="analytics-insight-chart__controls" role="group" aria-label="Select a time range for the page views chart">
+                        <button type="button" class="analytics-insight-chart__tab is-active" data-analytics-trend="day" aria-pressed="true">Last 24 hours</button>
+                        <button type="button" class="analytics-insight-chart__tab" data-analytics-trend="week" aria-pressed="false">Last 7 days</button>
+                        <button type="button" class="analytics-insight-chart__tab" data-analytics-trend="month" aria-pressed="false">Last 30 days</button>
+                        <button type="button" class="analytics-insight-chart__tab" data-analytics-trend="year" aria-pressed="false">Last 12 months</button>
+                    </div>
+                    <div class="analytics-insight-chart__canvas">
+                        <canvas id="analyticsOpportunityChart" aria-label="Page views trend chart" role="img"></canvas>
+                    </div>
+                    <p class="analytics-insight-summary" id="analyticsOpportunitySummary">Visualize how page views shift across different time ranges.</p>
+                </div>
             </article>
         </section>
 
