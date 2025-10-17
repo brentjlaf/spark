@@ -85,23 +85,6 @@
     "canonical_url": ""
   },
   {
-    "id": 6,
-    "title": "Testimonials",
-    "slug": "testimonials",
-    "content": "",
-    "meta_title": "Testimonials",
-    "meta_description": "Hear from our clients about their experiences working with us and the results we helped them achieve.",
-    "og_title": "Testimonials",
-    "og_description": "Hear from our clients about their experiences working with us and the results we helped them achieve.",
-    "og_image": "",
-    "last_modified": 1758985980,
-    "published": true,
-    "access": "public",
-    "template": "page.php",
-    "views": 1630,
-    "canonical_url": ""
-  },
-  {
     "id": 7,
     "title": "Careers",
     "slug": "careers",
