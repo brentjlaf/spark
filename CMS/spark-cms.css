@@ -11332,7 +11332,6 @@
 .events-form-grid {
     display: grid;
     gap: 1.35rem;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
 
 .events-form-field {
