@@ -379,7 +379,7 @@
         row.append($('<div class="maps-table__cell" data-label="Categories"></div>').append(categories));
         row.append($('<div class="maps-table__cell" data-label="Updated"></div>').text(updated));
         var actions = $('<div class="maps-table__cell maps-table__actions" data-label="Actions"></div>');
-        actions.append('<button type="button" class="maps-icon-btn" data-map-edit-location="' + location.id + '" aria-label="Edit"><i class="fas fa-pen"></i></button>');
+        actions.append('<button type="button" class="a11y-btn a11y-btn--icon maps-action-btn" data-map-edit-location="' + location.id + '"><i class="fas fa-pen" aria-hidden="true"></i><span class="sr-only">Edit location</span></button>');
         row.append(actions);
         return row;
     }
@@ -409,8 +409,8 @@
             item.append(color, name, count);
             if (!category.is_virtual) {
                 var actions = $('<div class="maps-category-actions"></div>');
-                actions.append('<button type="button" class="maps-icon-btn" data-map-edit-category="' + category.id + '" aria-label="Edit category"><i class="fas fa-pen"></i></button>');
-                actions.append('<button type="button" class="maps-icon-btn" data-map-delete-category="' + category.id + '" aria-label="Delete category"><i class="fas fa-trash"></i></button>');
+                actions.append('<button type="button" class="a11y-btn a11y-btn--icon maps-action-btn" data-map-edit-category="' + category.id + '"><i class="fas fa-pen" aria-hidden="true"></i><span class="sr-only">Edit category</span></button>');
+                actions.append('<button type="button" class="a11y-btn a11y-btn--icon maps-action-btn maps-action-btn--danger" data-map-delete-category="' + category.id + '"><i class="fas fa-trash" aria-hidden="true"></i><span class="sr-only">Delete category</span></button>');
                 item.append(actions);
             }
             list.append(item);
