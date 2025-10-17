@@ -101,6 +101,26 @@ $(function(){
                     draggedMediaId = null;
                     draggedMediaFolder = null;
                 });
+                if(typeof item.droppable === 'function'){
+                    item.droppable({
+                        accept: '#imageGrid .image-card',
+                        tolerance: 'pointer',
+                        hoverClass: 'drop-target',
+                        drop: function(event, ui){
+                            const dragged = ui.draggable || $(event.target);
+                            const mediaId = dragged.data('id');
+                            const sourceFolder = dragged.data('folder') || '';
+                            const target = $(this).data('folder');
+                            if(mediaId && target && target !== sourceFolder){
+                                moveMedia(mediaId, target, sourceFolder);
+                            }
+                            $(this).removeClass('drop-target');
+                            dragged.removeClass('is-dragging');
+                            draggedMediaId = null;
+                            draggedMediaFolder = null;
+                        }
+                    });
+                }
                 list.append(item);
             });
 
@@ -924,6 +944,18 @@ $(function(){
         draggedMediaFolder = null;
         $('.folder-item').removeClass('drop-target');
         $(this).removeClass('is-dragging');
+    });
+
+    $('#imageGrid').on('sortstart', function(e, ui){
+        const item = ui.item || $(ui.helper);
+        draggedMediaId = item.data('id');
+        draggedMediaFolder = item.data('folder') || '';
+    });
+
+    $('#imageGrid').on('sortstop', function(){
+        draggedMediaId = null;
+        draggedMediaFolder = null;
+        $('.folder-item').removeClass('drop-target');
     });
 
     $('#imageGrid').on('click','.remove-btn',function(e){ e.stopPropagation(); deleteImage($(this).data('id')); });
