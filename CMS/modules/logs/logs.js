@@ -8,6 +8,7 @@ $(function(){
     const timeline = $('#logsTimeline');
     const matchCountEl = $('#logsMatchCount');
     const filterContainer = $('#logsFilters');
+    const userFilter = $('#logsUserFilter');
     const refreshBtn = $('#logsRefreshBtn');
     const endpoint = dashboard.data('endpoint');
 
@@ -23,6 +24,7 @@ $(function(){
     };
 
     let currentAction = 'all';
+    let currentUser = 'all';
     let allLogs = [];
 
     function escapeHtml(str) {
@@ -37,6 +39,21 @@ $(function(){
 
     function slugifyAction(label) {
         return label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'unknown';
+    }
+
+    function normalizeUserValue(value) {
+        if (value === null || typeof value === 'undefined') {
+            return '';
+        }
+        return String(value).trim();
+    }
+
+    function userKeyFromNormalized(normalized) {
+        return normalized === '' ? 'system' : normalized.toLowerCase();
+    }
+
+    function userDisplayFromNormalized(normalized) {
+        return normalized === '' ? 'System' : normalized;
     }
 
     function formatAbsolute(timestamp) {
@@ -127,9 +144,15 @@ $(function(){
             } else if (rawDetails !== null && rawDetails !== '' && typeof rawDetails !== 'undefined') {
                 details = [String(rawDetails)];
             }
+            const normalizedUser = normalizeUserValue(item && item.user);
+            const userKey = userKeyFromNormalized(normalizedUser);
+            const userDisplay = userDisplayFromNormalized(normalizedUser);
+
             return {
                 time: parseInt(item.time, 10) || 0,
-                user: item && item.user ? String(item.user) : '',
+                user: normalizedUser,
+                user_display: userDisplay,
+                user_key: userKey,
                 page_title: item && item.page_title ? String(item.page_title) : (context === 'system' ? 'System activity' : 'Unknown'),
                 action: label,
                 action_slug: slug,
@@ -157,6 +180,12 @@ $(function(){
     }
 
     function renderFilters(logs) {
+        if (!filterContainer.length) {
+            return;
+        }
+
+        logs = Array.isArray(logs) ? logs : [];
+
         const actions = summarizeActions(logs);
         if (currentAction !== 'all' && !actions.some(function(action){ return action.slug === currentAction; })) {
             currentAction = 'all';
@@ -191,12 +220,12 @@ $(function(){
         const relative = relativeTime(timestamp);
         const context = log.context || 'page';
         const pageTitle = log.page_title || (context === 'system' ? 'System activity' : 'Unknown');
-        const user = log.user && log.user !== '' ? log.user : 'System';
+        const userDisplay = log.user_display || 'System';
         const details = Array.isArray(log.details) ? log.details : (log.details ? [log.details] : []);
         const detailsHtml = details.length ? '<ul class="logs-activity-details">' + details.map(function(detail){
             return '<li>' + escapeHtml(detail) + '</li>';
         }).join('') + '</ul>' : '<span class="logs-activity-details-empty">—</span>';
-        const searchText = (user + ' ' + pageTitle + ' ' + label + ' ' + details.join(' ')).toLowerCase();
+        const searchText = (userDisplay + ' ' + pageTitle + ' ' + label + ' ' + details.join(' ')).toLowerCase();
 
         return (
             '<tr class="logs-activity-row" data-search="' + escapeHtml(searchText) + '" data-action="' + escapeHtml(slug) + '">' +
@@ -207,7 +236,7 @@ $(function(){
                     '<span class="logs-activity-page">' + escapeHtml(pageTitle) + '</span>' +
                 '</td>' +
                 '<td class="logs-activity-cell logs-activity-cell--user" data-label="Editor">' +
-                    '<span class="logs-activity-user">' + escapeHtml(user) + '</span>' +
+                    '<span class="logs-activity-user">' + escapeHtml(userDisplay) + '</span>' +
                 '</td>' +
                 '<td class="logs-activity-cell logs-activity-cell--details" data-label="Details">' +
                     detailsHtml +
@@ -223,7 +252,11 @@ $(function(){
 
     function updateTimeline(logs) {
         if (!logs.length) {
-            timeline.html('<div class="logs-empty"><i class="fas fa-clipboard-list" aria-hidden="true"></i><p>No activity recorded yet.</p><p class="logs-empty-hint">Updates will appear here as your team edits content.</p></div>');
+            const hasAnyLogs = allLogs.length > 0;
+            const isFiltered = currentAction !== 'all' || currentUser !== 'all';
+            const message = hasAnyLogs && isFiltered ? 'No activity matches the current filters.' : 'No activity recorded yet.';
+            const hint = hasAnyLogs && isFiltered ? 'Try selecting a different editor or action.' : 'Updates will appear here as your team edits content.';
+            timeline.html('<div class="logs-empty"><i class="fas fa-clipboard-list" aria-hidden="true"></i><p>' + escapeHtml(message) + '</p><p class="logs-empty-hint">' + escapeHtml(hint) + '</p></div>');
             return;
         }
         const rows = logs.map(buildRow).join('');
@@ -319,8 +352,18 @@ $(function(){
         }
     }
 
+    function logsForCurrentUser() {
+        if (currentUser === 'all') {
+            return allLogs;
+        }
+        return allLogs.filter(function(log){
+            return log.user_key === currentUser;
+        });
+    }
+
     function applyFilters() {
-        const filtered = allLogs.filter(function(log){
+        const userFiltered = logsForCurrentUser();
+        const filtered = userFiltered.filter(function(log){
             const slug = log.action_slug || slugifyAction(getActionLabel(log));
             return currentAction === 'all' || slug === currentAction;
         });
@@ -329,10 +372,53 @@ $(function(){
         updateMatchCount(filtered.length);
     }
 
+    function renderUserFilter(logs) {
+        if (!userFilter.length) {
+            return;
+        }
+
+        const userMap = new Map();
+        logs.forEach(function(log){
+            const key = log.user_key || userKeyFromNormalized(normalizeUserValue(log.user));
+            const label = log.user_display || userDisplayFromNormalized(normalizeUserValue(log.user));
+            if (!userMap.has(key)) {
+                userMap.set(key, label);
+            }
+        });
+
+        if (currentUser !== 'all' && !userMap.has(currentUser)) {
+            currentUser = 'all';
+        }
+
+        const sortedUsers = Array.from(userMap.entries()).sort(function(a, b){
+            if (a[0] === 'system') {
+                return -1;
+            }
+            if (b[0] === 'system') {
+                return 1;
+            }
+            return a[1].toLowerCase().localeCompare(b[1].toLowerCase());
+        });
+
+        if (!sortedUsers.length) {
+            currentUser = 'all';
+        }
+
+        userFilter.empty();
+        userFilter.append($('<option value="all">All editors</option>'));
+        sortedUsers.forEach(function(entry){
+            userFilter.append($('<option></option>').val(entry[0]).text(entry[1]));
+        });
+
+        userFilter.prop('disabled', sortedUsers.length === 0);
+        userFilter.val(currentUser);
+    }
+
     function setLogs(logs) {
         allLogs = normalizeLogs(logs);
-        renderFilters(allLogs);
         updateStats(allLogs);
+        renderUserFilter(allLogs);
+        renderFilters(logsForCurrentUser());
         applyFilters();
     }
 
@@ -346,6 +432,15 @@ $(function(){
         $(this).addClass('active');
         applyFilters();
     });
+
+    if (userFilter.length) {
+        userFilter.on('change', function(){
+            const selected = $(this).val();
+            currentUser = selected && selected !== 'all' ? String(selected) : 'all';
+            renderFilters(logsForCurrentUser());
+            applyFilters();
+        });
+    }
 
     if (refreshBtn.length) {
         refreshBtn.on('click', function(){

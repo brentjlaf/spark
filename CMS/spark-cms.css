@@ -1166,6 +1166,79 @@
             }
         }
 
+        .logs-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .logs-user-filter {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .logs-user-filter__label {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #475569;
+            margin: 0;
+        }
+
+        .logs-user-filter__select {
+            appearance: none;
+            -webkit-appearance: none;
+            padding: 10px 44px 10px 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.6);
+            background-color: #fff;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%278%27 viewBox=%270 0 12 8%27%3E%3Cpath fill=%27none%27 stroke=%27%231f2937%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%271.5%27 d=%27M1 1.5L6 6.5 11 1.5%27/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 12px 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #0f172a;
+            min-width: 200px;
+            cursor: pointer;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .logs-user-filter__select:hover {
+            border-color: rgba(99, 102, 241, 0.45);
+        }
+
+        .logs-user-filter__select:focus-visible {
+            outline: none;
+            border-color: rgba(79, 70, 229, 0.7);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+        }
+
+        .logs-user-filter__select:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+            background-color: #f8fafc;
+        }
+
+        @media (min-width: 768px) {
+            .logs-controls {
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                flex-wrap: wrap;
+            }
+
+            .logs-user-filter {
+                flex-direction: row;
+                align-items: center;
+                gap: 12px;
+                margin-left: auto;
+            }
+        }
+
         .logs-filters {
             display: flex;
             flex-wrap: wrap;

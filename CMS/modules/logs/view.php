@@ -101,6 +101,7 @@ $last7Days = 0;
 $uniqueUsers = [];
 $uniquePages = [];
 $actionsSummary = [];
+$userOptions = [];
 
 foreach ($logs as $log) {
     $timestamp = (int) $log['time'];
@@ -111,9 +112,15 @@ foreach ($logs as $log) {
         $last7Days++;
     }
 
-    $userKey = strtolower(trim($log['user']));
-    if ($userKey !== '') {
+    $userName = trim((string) ($log['user'] ?? ''));
+    $userKey = strtolower($userName);
+    if ($userName !== '') {
         $uniqueUsers[$userKey] = true;
+        if (!isset($userOptions[$userKey])) {
+            $userOptions[$userKey] = $userName;
+        }
+    } else {
+        $userOptions['system'] = 'System';
     }
 
     $pageKey = strtolower(trim($log['page_title']));
@@ -136,8 +143,19 @@ usort($actionsSummary, function ($a, $b) {
     return $b['count'] <=> $a['count'];
 });
 
+uasort($userOptions, function ($a, $b) {
+    return strcasecmp($a, $b);
+});
+
+if (isset($userOptions['system'])) {
+    $systemLabel = $userOptions['system'];
+    unset($userOptions['system']);
+    $userOptions = ['system' => $systemLabel] + $userOptions;
+}
+
 $topActions = array_slice($actionsSummary, 0, 4);
 $topAction = $actionsSummary[0] ?? null;
+$userOptionsCount = count($userOptions);
 
 $logsJson = htmlspecialchars(json_encode($logs, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8');
 $matchCountLabel = 'No entries to display';
@@ -229,17 +247,28 @@ if ($uniqueUsersCount === 1) {
                 </div>
             </div>
 
-            <div class="logs-filters" id="logsFilters">
-                <button type="button" class="logs-filter-btn active" data-filter="all">
-                    <span>All activity</span>
-                    <span class="logs-filter-count" id="logsAllCount"><?php echo $totalLogs; ?></span>
-                </button>
-                <?php foreach ($topActions as $action): ?>
-                    <button type="button" class="logs-filter-btn" data-filter="<?php echo htmlspecialchars($action['slug'], ENT_QUOTES, 'UTF-8'); ?>">
-                        <span><?php echo htmlspecialchars($action['label'], ENT_QUOTES, 'UTF-8'); ?></span>
-                        <span class="logs-filter-count" data-filter-count="<?php echo htmlspecialchars($action['slug'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo $action['count']; ?></span>
+            <div class="logs-controls">
+                <div class="logs-filters" id="logsFilters">
+                    <button type="button" class="logs-filter-btn active" data-filter="all">
+                        <span>All activity</span>
+                        <span class="logs-filter-count" id="logsAllCount"><?php echo $totalLogs; ?></span>
                     </button>
-                <?php endforeach; ?>
+                    <?php foreach ($topActions as $action): ?>
+                        <button type="button" class="logs-filter-btn" data-filter="<?php echo htmlspecialchars($action['slug'], ENT_QUOTES, 'UTF-8'); ?>">
+                            <span><?php echo htmlspecialchars($action['label'], ENT_QUOTES, 'UTF-8'); ?></span>
+                            <span class="logs-filter-count" data-filter-count="<?php echo htmlspecialchars($action['slug'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo $action['count']; ?></span>
+                        </button>
+                    <?php endforeach; ?>
+                </div>
+                <div class="logs-user-filter">
+                    <label class="logs-user-filter__label" for="logsUserFilter">View activity by</label>
+                    <select class="logs-user-filter__select" id="logsUserFilter"<?php echo $userOptionsCount === 0 ? ' disabled' : ''; ?>>
+                        <option value="all">All editors</option>
+                        <?php foreach ($userOptions as $value => $label): ?>
+                            <option value="<?php echo htmlspecialchars($value, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
             </div>
 
             <div class="logs-activity-table-wrapper" id="logsTimeline">
