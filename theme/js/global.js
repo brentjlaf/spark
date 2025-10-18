@@ -88,7 +88,7 @@
         css = document.createElement('link');
         css.rel = 'stylesheet';
         css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-        css.integrity = 'sha256-o9N1j7kG0FZbY2gGSt7G3TzogmiEJeZVr3Xgw3yZ1wY=';
+        css.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
         css.crossOrigin = '';
         css.setAttribute('data-leaflet', 'true');
         document.head.appendChild(css);
@@ -98,7 +98,7 @@
       if (!script) {
         script = document.createElement('script');
         script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-        script.integrity = 'sha256-0uPZkXh8f7ET/4WrJkCZg2LkT0mrbDxHfHMH0Gh7u7g=';
+        script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
         script.crossOrigin = '';
         script.async = true;
         script.defer = true;
