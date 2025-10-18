@@ -14,8 +14,12 @@ if ($old === '' || $new === '') {
 
 $root = dirname(__DIR__,2);
 $uploads = $root . '/uploads';
-$oldDir = $uploads . '/' . basename($old);
-$newDir = $uploads . '/' . basename($new);
+$oldBase = basename($old);
+$newBase = basename($new);
+$oldDir = $uploads . '/' . $oldBase;
+$newDir = $uploads . '/' . $newBase;
+$normalizedOld = strtolower($oldBase);
+$normalizedNew = strtolower($newBase);
 
 if (!is_dir($oldDir)) {
     echo json_encode(['status' => 'error', 'message' => 'Folder not found']);
@@ -27,7 +31,23 @@ if ($oldDir === $newDir) {
     exit;
 }
 
-if (file_exists($newDir)) {
+if ($normalizedOld === 'general') {
+    echo json_encode(['status' => 'error', 'message' => 'The General folder cannot be renamed.']);
+    exit;
+}
+
+$existingFolders = glob($uploads . '/*', GLOB_ONLYDIR) ?: [];
+$normalizedExisting = array_map(function($path){
+    return strtolower(basename($path));
+}, $existingFolders);
+$normalizedExisting = array_values(array_diff($normalizedExisting, [$normalizedOld]));
+
+if ($normalizedNew === 'general') {
+    echo json_encode(['status' => 'error', 'message' => 'Another General folder cannot be created.']);
+    exit;
+}
+
+if (in_array($normalizedNew, $normalizedExisting, true) || file_exists($newDir)) {
     echo json_encode(['status' => 'error', 'message' => 'A folder with that name already exists.']);
     exit;
 }
