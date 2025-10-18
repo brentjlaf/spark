@@ -27,6 +27,7 @@ usort($sortedPages, function ($a, $b) {
 });
 
 $topPages = array_slice($sortedPages, 0, 3);
+$lowViewPages = array_slice(array_reverse($sortedPages), 0, 3);
 $zeroViewPages = array_values(array_filter($pages, static function ($page) {
     return (int) ($page['views'] ?? 0) === 0;
 }));
@@ -182,14 +183,42 @@ $summaryComparisons = [
                     <p class="analytics-insight-empty" id="analyticsTopEmpty">Traffic insights will appear once pages start receiving views.</p>
                 <?php endif; ?>
             </article>
+            <article class="analytics-insight-card">
+                <header class="analytics-insight-header">
+                    <div class="analytics-insight-icon">
+                        <i class="fa-solid fa-arrow-trend-down" aria-hidden="true"></i>
+                    </div>
+                    <div>
+                        <h3 class="analytics-insight-title">Needs attention</h3>
+                        <p class="analytics-insight-subtitle">Pages with the fewest views right now</p>
+                    </div>
+                </header>
+                <?php if (!empty($lowViewPages)): ?>
+                    <ul class="analytics-insight-list" id="analyticsLowList">
+                        <?php foreach ($lowViewPages as $page): ?>
+                            <li>
+                                <div>
+                                    <span class="analytics-insight-item-title"><?php echo htmlspecialchars($page['title'] ?? 'Untitled', ENT_QUOTES); ?></span>
+                                    <span class="analytics-insight-item-slug"><?php echo htmlspecialchars($page['slug'] ?? '', ENT_QUOTES); ?></span>
+                                </div>
+                                <span class="analytics-insight-metric"><?php echo number_format((int) ($page['views'] ?? 0)); ?> views</span>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <p class="analytics-insight-empty" id="analyticsLowEmpty" hidden>You&rsquo;re all caught up&mdash;no pages have low traffic.</p>
+                <?php else: ?>
+                    <ul class="analytics-insight-list" id="analyticsLowList" hidden></ul>
+                    <p class="analytics-insight-empty" id="analyticsLowEmpty">You&rsquo;re all caught up&mdash;no pages have low traffic.</p>
+                <?php endif; ?>
+            </article>
             <article class="analytics-insight-card analytics-insight-card--secondary">
                 <header class="analytics-insight-header">
                     <div class="analytics-insight-icon">
                         <i class="fa-solid fa-lightbulb" aria-hidden="true"></i>
                     </div>
                     <div>
-                        <h3 class="analytics-insight-title">Optimization opportunities</h3>
-                        <p class="analytics-insight-subtitle">Pages where targeted improvements can increase engagement</p>
+                        <h3 class="analytics-insight-title">Page snapshot</h3>
+                        <p class="analytics-insight-subtitle">Interactive view of traffic trends across your site</p>
                     </div>
                 </header>
                 <div class="analytics-insight-chart">
