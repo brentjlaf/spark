@@ -370,11 +370,11 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
                                 <h3 class="page-modal-panel-title" id="pageSeoHeading">SEO Options</h3>
                                 <div class="page-modal-stack">
                                     <div class="form-group">
-                                        <label class="form-label" for="meta_title">Meta Title</label>
+                                        <label class="form-label" for="meta_title">Meta Title <span class="form-label-note">50–60 characters</span></label>
                                         <input type="text" class="form-input" name="meta_title" id="meta_title">
                                     </div>
                                     <div class="form-group">
-                                        <label class="form-label" for="meta_description">Meta Description</label>
+                                        <label class="form-label" for="meta_description">Meta Description <span class="form-label-note">150–160 characters</span></label>
                                         <textarea class="form-textarea" name="meta_description" id="meta_description" rows="3"></textarea>
                                     </div>
                                     <div class="form-group">
