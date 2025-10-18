@@ -222,9 +222,6 @@ $(function(){
                 }
                 return compareTitles($a, $b);
             },
-            template: function($a, $b){
-                return compareStrings(($a.data('template') || '').toString(), ($b.data('template') || '').toString());
-            },
             views: function($a, $b){
                 return parseNumber($a.data('views')) - parseNumber($b.data('views'));
             },
@@ -528,11 +525,6 @@ $(function(){
             const $rowAccess = $row.find('.pages-list-access');
             if ($rowAccess.length) {
                 $rowAccess.text(isRestricted ? 'Private' : 'Public');
-            }
-
-            const $rowTemplate = $row.find('.pages-list-template');
-            if ($rowTemplate.length) {
-                $rowTemplate.text(data.template || 'page.php');
             }
 
             const $rowViews = $row.find('.pages-list-views');

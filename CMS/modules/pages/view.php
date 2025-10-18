@@ -136,12 +136,6 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
                             </button>
                         </th>
                         <th scope="col" aria-sort="none">
-                            <button type="button" class="pages-sort-btn" data-pages-sort="template" data-default-direction="asc">
-                                <span>Template</span>
-                                <span class="pages-sort-indicator" aria-hidden="true"></span>
-                            </button>
-                        </th>
-                        <th scope="col" aria-sort="none">
                             <button type="button" class="pages-sort-btn" data-pages-sort="views" data-default-direction="desc">
                                 <span>Views</span>
                                 <span class="pages-sort-indicator" aria-hidden="true"></span>
@@ -260,9 +254,6 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
                                     <?php echo htmlspecialchars($statusNote, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>
                                 <?php endif; ?>
                             </span>
-                        </td>
-                        <td class="pages-list-cell pages-list-cell--template" data-label="Template">
-                            <span class="pages-list-template"><?php echo htmlspecialchars($templateName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></span>
                         </td>
                         <td class="pages-list-cell pages-list-cell--views" data-label="Views">
                             <span class="pages-list-views"><?php echo $viewsDisplay; ?></span>
