@@ -9187,9 +9187,12 @@
     gap: 20px;
 }
 
+
 .forms-library-grid {
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
 }
 
 .forms-library-grid .forms-card {
