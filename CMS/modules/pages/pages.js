@@ -1,7 +1,5 @@
 // File: pages.js
 $(function(){
-        $('#pageTabs').tabs();
-
         const $searchInput = $('#pagesSearchInput');
         const $filterButtons = $('[data-pages-filter]');
         const $listView = $('#pagesListView');
@@ -749,7 +747,6 @@ $(function(){
             $('#robots').val(normalizeRobotsDirective(row.data('robots')));
             $('#homepage').prop('checked', row.data('homepage') == 1);
             $('#cancelEdit').show();
-            $('#pageTabs').tabs('option', 'active', 0);
             openPageModal();
             slugEdited = true;
         });
@@ -773,7 +770,6 @@ $(function(){
             $('#published').prop('checked', false);
             $('#content').val('');
             $('#canonical_url').val('');
-            $('#pageTabs').tabs('option', 'active', 0);
             $('#cancelEdit').hide();
             $('#homepage').prop('checked', false);
             $('#robots').val(ROBOTS_DEFAULT);
