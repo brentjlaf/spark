@@ -6340,6 +6340,14 @@
             color: #4a5568;
         }
 
+        .form-label-note {
+            display: inline-block;
+            margin-left: 8px;
+            font-weight: 400;
+            font-size: 0.8rem;
+            color: #718096;
+        }
+
         .form-input,
         .form-select,
         .form-textarea {
