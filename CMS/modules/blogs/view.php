@@ -154,71 +154,73 @@
             </header>
             <div class="blog-modal__body">
                 <form id="postForm" class="blog-modal__form">
-                    <div class="form-group blog-modal__field">
-                        <label for="postTitle">Title *</label>
-                        <input type="text" id="postTitle" name="title" required>
-                    </div>
-                    <div class="form-group blog-modal__field">
-                        <label for="postSlug">Slug</label>
-                        <input type="text" id="postSlug" name="slug" placeholder="auto-generated-from-title">
-                    </div>
-                    <div class="form-group blog-modal__field">
-                        <label for="postExcerpt">Excerpt</label>
-                        <textarea id="postExcerpt" name="excerpt" placeholder="Brief description of the post..."></textarea>
-                    </div>
-                    <div class="form-group blog-modal__field">
-                        <label for="postImage">Featured Image</label>
-                        <div class="blog-image-input">
-                            <input type="text" id="postImage" name="image" placeholder="Select an image from the Media Library" aria-describedby="postImageHint">
-                            <button type="button" class="blog-btn blog-btn--subtle" id="chooseFeaturedImage">
-                                <i class="fa-solid fa-images" aria-hidden="true"></i>
-                                <span>Select from Media Library</span>
-                            </button>
+                    <div class="blog-modal__layout">
+                        <div class="blog-modal__main">
+                            <div class="form-group blog-modal__field">
+                                <label for="postTitle">Title *</label>
+                                <input type="text" id="postTitle" name="title" required>
+                            </div>
+                            <div class="form-group blog-modal__field">
+                                <label for="postSlug">Slug</label>
+                                <input type="text" id="postSlug" name="slug" placeholder="auto-generated-from-title">
+                            </div>
+                            <div class="form-group blog-modal__field">
+                                <label for="postExcerpt">Excerpt</label>
+                                <textarea id="postExcerpt" name="excerpt" placeholder="Brief description of the post..."></textarea>
+                            </div>
+                            <div class="form-group blog-modal__field">
+                                <label for="postImage">Featured Image</label>
+                                <div class="blog-image-input">
+                                    <input type="text" id="postImage" name="image" placeholder="Select an image from the Media Library" aria-describedby="postImageHint">
+                                    <button type="button" class="blog-btn blog-btn--subtle" id="chooseFeaturedImage">
+                                        <i class="fa-solid fa-images" aria-hidden="true"></i>
+                                        <span>Select from Media Library</span>
+                                    </button>
+                                </div>
+                                <p class="blog-modal__hint" id="postImageHint">Choose an image from the Media Library or paste a trusted image URL to highlight this post.</p>
+                                <div class="blog-image-preview" id="postImagePreview" aria-live="polite"></div>
+                            </div>
+                            <div class="form-group blog-modal__field">
+                                <label for="postImageAlt">Image alternative text</label>
+                                <input type="text" id="postImageAlt" name="imageAlt" placeholder="Describe the featured image for screen readers">
+                            </div>
+                            <div class="form-group blog-modal__field">
+                                <label for="postContent">Content *</label>
+                                <div class="editor-container blog-modal__editor">
+                                    <div id="postContent" class="editor-content" contenteditable="true"></div>
+                                </div>
+                            </div>
                         </div>
-                        <p class="blog-modal__hint" id="postImageHint">Choose an image from the Media Library or paste a trusted image URL to highlight this post.</p>
-                        <div class="blog-image-preview" id="postImagePreview" aria-live="polite"></div>
-                    </div>
-                    <div class="form-group blog-modal__field">
-                        <label for="postImageAlt">Image alternative text</label>
-                        <input type="text" id="postImageAlt" name="imageAlt" placeholder="Describe the featured image for screen readers">
-                    </div>
-                    <div class="form-group blog-modal__field">
-                        <label for="postContent">Content *</label>
-                        <div class="editor-container blog-modal__editor">
-                            <div id="postContent" class="editor-content" contenteditable="true"></div>
-                        </div>
-                    </div>
-                    <div class="blog-modal__grid">
-                        <div class="form-group blog-modal__field">
-                            <label for="postCategory">Category *</label>
-                            <select id="postCategory" name="category" required>
-                                <option value="">Select Category</option>
-                            </select>
-                        </div>
-                        <div class="form-group blog-modal__field">
-                            <label for="postAuthor">Author *</label>
-                            <select id="postAuthor" name="author" required>
-                                <option value="">Select Author</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="blog-modal__grid">
-                        <div class="form-group blog-modal__field">
-                            <label for="postStatus">Status *</label>
-                            <select id="postStatus" name="status" required>
-                                <option value="draft">Draft</option>
-                                <option value="published">Published</option>
-                                <option value="scheduled">Scheduled</option>
-                            </select>
-                        </div>
-                        <div class="form-group blog-modal__field">
-                            <label for="publishDate">Publish Date</label>
-                            <input type="datetime-local" id="publishDate" name="publishDate">
-                        </div>
-                    </div>
-                    <div class="form-group blog-modal__field">
-                        <label for="postTags">Tags</label>
-                        <input type="text" id="postTags" name="tags" placeholder="Separate tags with commas">
+                        <aside class="blog-modal__sidebar" aria-label="Post settings sidebar">
+                            <div class="form-group blog-modal__field">
+                                <label for="postCategory">Category *</label>
+                                <select id="postCategory" name="category" required>
+                                    <option value="">Select Category</option>
+                                </select>
+                            </div>
+                            <div class="form-group blog-modal__field">
+                                <label for="postAuthor">Author *</label>
+                                <select id="postAuthor" name="author" required>
+                                    <option value="">Select Author</option>
+                                </select>
+                            </div>
+                            <div class="form-group blog-modal__field">
+                                <label for="postStatus">Status *</label>
+                                <select id="postStatus" name="status" required>
+                                    <option value="draft">Draft</option>
+                                    <option value="published">Published</option>
+                                    <option value="scheduled">Scheduled</option>
+                                </select>
+                            </div>
+                            <div class="form-group blog-modal__field">
+                                <label for="publishDate">Publish Date</label>
+                                <input type="datetime-local" id="publishDate" name="publishDate">
+                            </div>
+                            <div class="form-group blog-modal__field">
+                                <label for="postTags">Tags</label>
+                                <input type="text" id="postTags" name="tags" placeholder="Separate tags with commas">
+                            </div>
+                        </aside>
                     </div>
                     <input type="hidden" id="postId" name="id">
                 </form>
