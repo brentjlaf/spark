@@ -8310,7 +8310,7 @@
 .page-modal-surface {
     background: #ffffff;
     border-radius: 18px;
-    width: min(1024px, 94vw);
+    width: min(1624px, 94vw);
     max-height: 90vh;
     overflow-y: auto;
     position: relative;
