@@ -406,7 +406,23 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
                                     </div>
                                     <div class="form-group">
                                         <label class="form-label" for="og_image">OG Image URL</label>
-                                        <input type="text" class="form-input" name="og_image" id="og_image">
+                                        <div class="page-media-picker" data-page-og-image-picker>
+                                            <div class="page-media-preview" data-page-media-preview aria-live="polite">
+                                                <span class="page-media-placeholder">No image selected yet.</span>
+                                            </div>
+                                            <div class="page-media-actions">
+                                                <button type="button" class="page-modal-button page-modal-button--secondary" data-page-media-open>
+                                                    <i class="fa-solid fa-image" aria-hidden="true"></i>
+                                                    <span>Choose image</span>
+                                                </button>
+                                                <button type="button" class="page-modal-button page-modal-button--ghost" data-page-media-clear hidden>
+                                                    <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+                                                    <span>Remove image</span>
+                                                </button>
+                                            </div>
+                                            <input type="url" class="form-input page-media-input" name="og_image" id="og_image" placeholder="https://example.com/og-image.jpg">
+                                        </div>
+                                        <p class="form-hint">Select from the media library or paste a direct URL.</p>
                                     </div>
                                 </div>
                             </section>
@@ -417,6 +433,28 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
                         <button type="submit" class="page-modal-button page-modal-button--primary">Save Page</button>
                     </footer>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal page-media-modal" id="pageMediaPickerModal" role="dialog" aria-modal="true" aria-labelledby="pageMediaPickerTitle" aria-describedby="pageMediaPickerDescription">
+        <div class="modal-content page-media-modal__content">
+            <div class="page-media-modal__surface">
+                <button type="button" class="page-media-modal__close" data-page-media-close aria-label="Close media picker">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+                <header class="page-media-modal__header">
+                    <span class="page-media-modal__subtitle">Media library</span>
+                    <h2 class="page-media-modal__title" id="pageMediaPickerTitle">Select an OG image</h2>
+                    <p class="page-media-modal__description" id="pageMediaPickerDescription">Choose an image from the media library to populate the Open Graph preview.</p>
+                </header>
+                <div class="page-media-modal__body">
+                    <label class="page-media-modal__search" for="pageMediaPickerSearch">
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        <input type="search" id="pageMediaPickerSearch" placeholder="Search media by name or tag" aria-label="Search media library" data-page-media-search>
+                    </label>
+                    <div class="page-media-grid" data-page-media-grid role="listbox" aria-label="Media library images" aria-live="polite"></div>
+                </div>
             </div>
         </div>
     </div>
