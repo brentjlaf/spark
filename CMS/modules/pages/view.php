@@ -319,13 +319,9 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
                     <input type="hidden" name="id" id="pageId">
                     <input type="hidden" name="content" id="content">
                     <div class="page-modal-body">
-                        <div id="pageTabs" class="page-modal-tabs">
-                            <ul>
-                                <li><a href="#tab-settings">Page Settings</a></li>
-                                <li><a href="#tab-seo">SEO Options</a></li>
-                                <li><a href="#tab-og">Social Open Graph</a></li>
-                            </ul>
-                            <div id="tab-settings" class="page-modal-panel">
+                        <div class="page-modal-sections" id="pageSections">
+                            <section class="page-modal-panel" aria-labelledby="pageSettingsHeading">
+                                <h3 class="page-modal-panel-title" id="pageSettingsHeading">Page Settings</h3>
                                 <div class="page-modal-grid">
                                     <div class="form-group">
                                         <label class="form-label" for="title">Title</label>
@@ -378,45 +374,51 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
                                         </label>
                                     </div>
                                 </div>
-                            </div>
-                            <div id="tab-seo" class="page-modal-panel">
-                                <div class="form-group">
-                                    <label class="form-label" for="meta_title">Meta Title</label>
-                                    <input type="text" class="form-input" name="meta_title" id="meta_title">
+                            </section>
+                            <section class="page-modal-panel" aria-labelledby="pageSeoHeading">
+                                <h3 class="page-modal-panel-title" id="pageSeoHeading">SEO Options</h3>
+                                <div class="page-modal-stack">
+                                    <div class="form-group">
+                                        <label class="form-label" for="meta_title">Meta Title</label>
+                                        <input type="text" class="form-input" name="meta_title" id="meta_title">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="meta_description">Meta Description</label>
+                                        <textarea class="form-textarea" name="meta_description" id="meta_description" rows="3"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="canonical_url">Canonical URL</label>
+                                        <input type="url" class="form-input" name="canonical_url" id="canonical_url" placeholder="https://example.com/your-page">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="robots">Robots directives</label>
+                                        <select class="form-select" name="robots" id="robots">
+                                            <option value="index,follow">Index &amp; follow (default)</option>
+                                            <option value="index,nofollow">Index, nofollow</option>
+                                            <option value="noindex,follow">Noindex, follow</option>
+                                            <option value="noindex,nofollow">Noindex &amp; nofollow</option>
+                                        </select>
+                                        <p class="form-hint">Control whether search engines index the page and follow its links.</p>
+                                    </div>
                                 </div>
-                                <div class="form-group">
-                                    <label class="form-label" for="meta_description">Meta Description</label>
-                                    <textarea class="form-textarea" name="meta_description" id="meta_description" rows="3"></textarea>
+                            </section>
+                            <section class="page-modal-panel" aria-labelledby="pageOgHeading">
+                                <h3 class="page-modal-panel-title" id="pageOgHeading">Social Open Graph</h3>
+                                <div class="page-modal-stack">
+                                    <div class="form-group">
+                                        <label class="form-label" for="og_title">OG Title</label>
+                                        <input type="text" class="form-input" name="og_title" id="og_title">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="og_description">OG Description</label>
+                                        <textarea class="form-textarea" name="og_description" id="og_description" rows="3"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="og_image">OG Image URL</label>
+                                        <input type="text" class="form-input" name="og_image" id="og_image">
+                                    </div>
                                 </div>
-                                <div class="form-group">
-                                    <label class="form-label" for="canonical_url">Canonical URL</label>
-                                    <input type="url" class="form-input" name="canonical_url" id="canonical_url" placeholder="https://example.com/your-page">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label" for="robots">Robots directives</label>
-                                    <select class="form-select" name="robots" id="robots">
-                                        <option value="index,follow">Index &amp; follow (default)</option>
-                                        <option value="index,nofollow">Index, nofollow</option>
-                                        <option value="noindex,follow">Noindex, follow</option>
-                                        <option value="noindex,nofollow">Noindex &amp; nofollow</option>
-                                    </select>
-                                    <p class="form-hint">Control whether search engines index the page and follow its links.</p>
-                                </div>
-                            </div>
-                            <div id="tab-og" class="page-modal-panel">
-                                <div class="form-group">
-                                    <label class="form-label" for="og_title">OG Title</label>
-                                    <input type="text" class="form-input" name="og_title" id="og_title">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label" for="og_description">OG Description</label>
-                                    <textarea class="form-textarea" name="og_description" id="og_description" rows="3"></textarea>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label" for="og_image">OG Image URL</label>
-                                    <input type="text" class="form-input" name="og_image" id="og_image">
-                                </div>
-                            </div>
+                            </section>
                         </div>
                     </div>
                     <footer class="page-modal-footer">
