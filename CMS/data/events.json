@@ -2,10 +2,10 @@
   {
     "id": "evt_2024summit",
     "title": "Spark Growth Summit",
-    "description": "<p>A full-day conference covering marketing automation, customer journeys, and retention strategies.</p>",
+    "description": "<p>A two-day conference covering marketing automation, customer journeys, and retention strategies.</p>",
     "location": "Riverfront Convention Center",
     "start": "2026-11-19T09:00:00-05:00",
-    "end": "2026-11-19T18:00:00-05:00",
+    "end": "2026-11-20T16:30:00-05:00",
     "status": "published",
     "tickets": [
       {
@@ -95,10 +95,10 @@
   {
     "id": "evt_bootcamp2025",
     "title": "Digital Experience Bootcamp",
-    "description": "<p>Hands-on training focused on designing seamless customer journeys across email, web, and mobile channels.</p>",
+    "description": "<p>A two-day, hands-on training focused on designing seamless customer journeys across email, web, and mobile channels.</p>",
     "location": "Spark Campus East Auditorium",
     "start": "2025-08-14T09:30:00-04:00",
-    "end": "2025-08-14T16:30:00-04:00",
+    "end": "2025-08-15T16:30:00-04:00",
     "status": "published",
     "tickets": [
       {
@@ -190,10 +190,10 @@
   {
     "id": "evt_automationtour25",
     "title": "Automation Roadshow: Northeast",
-    "description": "<p>A traveling series featuring customer stories, product clinics, and community roundtables.</p>",
+    "description": "<p>A two-day traveling series featuring customer stories, product clinics, and community roundtables.</p>",
     "location": "Boston Exchange Center",
     "start": "2025-05-29T08:30:00-04:00",
-    "end": "2025-05-29T15:30:00-04:00",
+    "end": "2025-05-30T15:30:00-04:00",
     "status": "published",
     "tickets": [
       {
