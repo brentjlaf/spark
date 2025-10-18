@@ -12,7 +12,13 @@ if ($folder === '') {
 }
 
 $root = dirname(__DIR__, 2);
-$dir = $root . '/uploads/' . basename($folder);
+$base = basename($folder);
+$dir = $root . '/uploads/' . $base;
+
+if (strtolower($base) === 'general') {
+    echo json_encode(['status' => 'error', 'message' => 'The General folder cannot be deleted.']);
+    exit;
+}
 if (!is_dir($dir)) {
     echo json_encode(['status' => 'error', 'message' => 'Folder not found']);
     exit;

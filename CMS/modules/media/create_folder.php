@@ -28,7 +28,30 @@ if (preg_match('/[\\\/]/', $folder)) {
 }
 
 $root = dirname(__DIR__, 2);
-$dir = $root . '/uploads/' . basename($folder);
+$uploadsDir = $root . '/uploads';
+$requested = basename($folder);
+$normalizedRequested = strtolower($requested);
+
+$existingFolders = glob($uploadsDir . '/*', GLOB_ONLYDIR) ?: [];
+$normalizedExisting = array_map(function($path){
+    return strtolower(basename($path));
+}, $existingFolders);
+
+$generalExists = in_array('general', $normalizedExisting, true);
+
+if ($normalizedRequested === 'general') {
+    if ($generalExists) {
+        http_response_code(409);
+        echo json_encode(['status' => 'error', 'message' => 'The General folder already exists']);
+        exit;
+    }
+} elseif (in_array($normalizedRequested, $normalizedExisting, true)) {
+    http_response_code(409);
+    echo json_encode(['status' => 'error', 'message' => 'A folder with that name already exists']);
+    exit;
+}
+
+$dir = $uploadsDir . '/' . $requested;
 
 if (is_dir($dir)) {
     http_response_code(409);
