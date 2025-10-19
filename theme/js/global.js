@@ -371,7 +371,7 @@
     }
     var detail = (prefix || '').toString().trim();
     if (!detail) {
-      detail = '/blog';
+      detail = '/blogs';
     }
     if (/^https?:\/\//i.test(detail)) {
       return detail.replace(/\/+$/, '') + '/' + slug;

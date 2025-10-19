@@ -36,8 +36,8 @@
     <dl class="sparkDialog _tpl-box mb-3">
         <dt>Detail Page URL Prefix</dt>
         <dd>
-            <input type="text" class="form-control" name="custom_base" value="/blog">
-            <small class="form-text text-muted">Example: <code>/blog</code> or <code>https://example.com/blog</code>. The post slug is appended automatically.</small>
+            <input type="text" class="form-control" name="custom_base" value="/blogs">
+            <small class="form-text text-muted">Example: <code>/blogs</code> or <code>https://example.com/blogs</code>. The post slug is appended automatically.</small>
         </dd>
     </dl>
     <dl class="sparkDialog _tpl-box mb-3">

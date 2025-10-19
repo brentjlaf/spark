@@ -16,8 +16,11 @@ $menus = get_cached_json($menusFile);
 
 $blogFile = __DIR__ . '/data/blog_posts.json';
 $blogPosts = get_cached_json($blogFile);
+$blogPost = null;
 $mediaFile = __DIR__ . '/data/media.json';
 $mediaItems = get_cached_json($mediaFile);
+
+$logged_in = is_logged_in();
 
 // Base paths used by theme templates
 $scriptBase = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
@@ -33,6 +36,28 @@ function sparkcms_parse_blog_limit($value) {
 
 function sparkcms_normalize_blog_category($value) {
     return strtolower(trim((string) $value));
+}
+
+function sparkcms_is_blog_post_live($post) {
+    if (!is_array($post)) {
+        return false;
+    }
+    $status = strtolower((string) ($post['status'] ?? ''));
+    if ($status === 'published') {
+        return true;
+    }
+    if ($status === 'scheduled') {
+        $publishDate = $post['publishDate'] ?? '';
+        if ($publishDate === '') {
+            return false;
+        }
+        $timestamp = strtotime($publishDate);
+        if ($timestamp === false) {
+            return false;
+        }
+        return $timestamp <= time();
+    }
+    return false;
 }
 
 function sparkcms_format_blog_date($value) {
@@ -52,7 +77,7 @@ function sparkcms_resolve_blog_detail_url($scriptBase, $prefix, $slug) {
     }
     $detail = trim((string) $prefix);
     if ($detail === '') {
-        $detail = '/blog';
+        $detail = '/blogs';
     }
     if (preg_match('#^https?://#i', $detail)) {
         return rtrim($detail, '/') . '/' . rawurlencode($slug);
@@ -149,7 +174,7 @@ function sparkcms_hydrate_blog_lists($html, $scriptBase) {
         return $html;
     }
     $published = array_values(array_filter($blogPosts, function ($post) {
-        return is_array($post) && strtolower($post['status'] ?? '') === 'published';
+        return sparkcms_is_blog_post_live($post);
     }));
 
     $libxmlState = libxml_use_internal_errors(true);
@@ -248,7 +273,7 @@ function sparkcms_hydrate_blog_lists($html, $scriptBase) {
 }
 
 function render_theme_page($templateFile, $page, $scriptBase) {
-    global $settings, $menus, $logged_in, $blogPosts;
+    global $settings, $menus, $logged_in, $blogPosts, $blogPost;
     $themeBase = $scriptBase . '/theme';
     ob_start();
     include $templateFile;
@@ -270,7 +295,6 @@ function render_theme_page($templateFile, $page, $scriptBase) {
 // Determine page slug
 $slug = isset($_GET['page']) ? sanitize_text($_GET['page']) : ($settings['homepage'] ?? 'home');
 
-$logged_in = is_logged_in();
 $preview_mode = isset($_GET['preview']) && $logged_in;
 
 if ($slug === 'search') {
@@ -288,7 +312,7 @@ if ($slug === 'search') {
     }
     foreach ($blogPosts as $b) {
         if ($q === '' || stripos($b['title'], $lower) !== false || stripos($b['slug'], $lower) !== false || stripos($b['excerpt'], $lower) !== false || stripos($b['content'], $lower) !== false || stripos($b['tags'], $lower) !== false) {
-            $results[] = ['title' => $b['title'], 'slug' => $b['slug']];
+            $results[] = ['title' => $b['title'], 'slug' => 'blogs/' . ltrim($b['slug'], '/')];
         }
     }
     foreach ($mediaItems as $m) {
@@ -322,11 +346,71 @@ if ($slug === 'search') {
 
 $pageIndex = null;
 $page = null;
-foreach ($pages as $i => $p) {
-    if ($p['slug'] === $slug) {
-        $pageIndex = $i;
-        $page = $p;
-        break;
+$pageSource = 'pages';
+
+if ($slug === 'blog') {
+    $slug = 'blogs';
+}
+
+if (preg_match('#^(blog|blogs)/(.*)$#', $slug, $matches)) {
+    $detailSegment = trim($matches[2]);
+    if ($detailSegment !== '') {
+        $detailSlug = rawurldecode($detailSegment);
+        foreach ($blogPosts as $candidate) {
+            if (!is_array($candidate)) {
+                continue;
+            }
+            if (($candidate['slug'] ?? '') !== $detailSlug) {
+                continue;
+            }
+            if ($logged_in || sparkcms_is_blog_post_live($candidate)) {
+                $blogPost = $candidate;
+            }
+            break;
+        }
+        if ($blogPost) {
+            $pageSource = 'blog-detail';
+            $slug = $matches[1];
+            $detailTitle = $blogPost['title'] ?? 'Blog Post';
+            $detailExcerpt = trim(strip_tags($blogPost['excerpt'] ?? ''));
+            if ($detailExcerpt === '') {
+                $detailExcerpt = trim(strip_tags($blogPost['content'] ?? ''));
+            }
+            if ($detailExcerpt !== '') {
+                if (function_exists('mb_substr')) {
+                    $detailExcerpt = mb_substr($detailExcerpt, 0, 160);
+                } else {
+                    $detailExcerpt = substr($detailExcerpt, 0, 160);
+                }
+            }
+            $detailUrl = sparkcms_resolve_blog_detail_url($scriptBase, '/blogs', $blogPost['slug'] ?? '');
+            $page = [
+                'id' => 'blog-detail-' . ($blogPost['id'] ?? $detailSlug),
+                'title' => $detailTitle,
+                'content' => '',
+                'template' => 'blog-detail.php',
+                'meta_title' => $detailTitle,
+                'meta_description' => $detailExcerpt,
+                'og_title' => $detailTitle,
+                'og_description' => $detailExcerpt,
+                'og_image' => $blogPost['featured_image'] ?? ($blogPost['featuredImage'] ?? ''),
+                'canonical_url' => $detailUrl,
+                'access' => 'public',
+                'robots' => 'index,follow'
+            ];
+        }
+    } else {
+        $slug = $matches[1];
+    }
+}
+
+if ($pageSource === 'pages') {
+    foreach ($pages as $i => $p) {
+        if ($p['slug'] === $slug) {
+            $pageIndex = $i;
+            $page = $p;
+            break;
+        }
     }
 }
 
@@ -349,24 +433,26 @@ if (!$page) {
     exit;
 }
 
-$pageScheduleInfo = sparkcms_page_schedule_info($page);
-if (!$logged_in && !$pageScheduleInfo['is_live']) {
-    http_response_code(404);
-    $page = [
-        'title' => 'Page Not Found',
-        'content' =>
-            '<h1>Page Not Found</h1>' .
-            '<p>The page you are looking for might have been moved or deleted.</p>' .
-            '<p><a href="' . htmlspecialchars($scriptBase) . '/">Return to homepage</a>' .
-            ' or use the site search to find what you are looking for.</p>'
-    ];
-    $templateFile = realpath(__DIR__ . '/../theme/templates/pages/errors/404.php');
-    if ($templateFile && file_exists($templateFile)) {
-        render_theme_page($templateFile, $page, $scriptBase);
-    } else {
-        echo $page['content'];
+if ($pageSource === 'pages') {
+    $pageScheduleInfo = sparkcms_page_schedule_info($page);
+    if (!$logged_in && !$pageScheduleInfo['is_live']) {
+        http_response_code(404);
+        $page = [
+            'title' => 'Page Not Found',
+            'content' =>
+                '<h1>Page Not Found</h1>' .
+                '<p>The page you are looking for might have been moved or deleted.</p>' .
+                '<p><a href="' . htmlspecialchars($scriptBase) . '/">Return to homepage</a>' .
+                ' or use the site search to find what you are looking for.</p>'
+        ];
+        $templateFile = realpath(__DIR__ . '/../theme/templates/pages/errors/404.php');
+        if ($templateFile && file_exists($templateFile)) {
+            render_theme_page($templateFile, $page, $scriptBase);
+        } else {
+            echo $page['content'];
+        }
+        exit;
     }
-    exit;
 }
 
 if ($page) {
@@ -406,7 +492,7 @@ if ($pageIndex !== null) {
 }
 
 // If logged in show the page builder instead of the static page
-if ($logged_in && !$preview_mode) {
+if ($pageSource === 'pages' && $logged_in && !$preview_mode) {
     $_GET['id'] = $page['id'];
     require __DIR__ . '/../liveed/builder.php';
     return;
