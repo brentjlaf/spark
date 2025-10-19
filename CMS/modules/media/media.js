@@ -18,6 +18,11 @@ $(function(){
     let draggedMediaFolder = null;
     const usageCache = {};
 
+    const MAX_IMAGE_SIZE_BYTES = 3 * 1024 * 1024;
+    const MAX_VIDEO_SIZE_BYTES = 10 * 1024 * 1024;
+    const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'heic', 'heif'];
+    const VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'wmv', 'flv', 'm4v'];
+
     const reservedFolderNames = ['.', '..', 'con', 'prn', 'aux', 'nul', 'com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7', 'com8', 'com9', 'lpt1', 'lpt2', 'lpt3', 'lpt4', 'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9'];
 
     const defaultSelectFolderHeading = $('#selectFolderState h3').text();
@@ -547,8 +552,55 @@ $(function(){
         $('#uploadStatusMessage').text('');
     }
 
+    function getFileExtension(name = ''){
+        const parts = name.split('.');
+        return parts.length > 1 ? parts.pop().toLowerCase() : '';
+    }
+
+    function getFileCategory(file){
+        const type = (file && file.type ? file.type : '').toLowerCase();
+        if(type.startsWith('image/')) return 'image';
+        if(type.startsWith('video/')) return 'video';
+        const ext = getFileExtension(file && file.name ? file.name : '');
+        if(IMAGE_EXTENSIONS.indexOf(ext) !== -1) return 'image';
+        if(VIDEO_EXTENSIONS.indexOf(ext) !== -1) return 'video';
+        return 'other';
+    }
+
+    function validateUploadFiles(fileList){
+        const files = Array.isArray(fileList) ? fileList : Array.from(fileList || []);
+        const oversized = { image: [], video: [] };
+        files.forEach(file => {
+            const category = getFileCategory(file);
+            if(category === 'image' && file.size > MAX_IMAGE_SIZE_BYTES){
+                oversized.image.push(file.name || 'Untitled image');
+            }else if(category === 'video' && file.size > MAX_VIDEO_SIZE_BYTES){
+                oversized.video.push(file.name || 'Untitled video');
+            }
+        });
+
+        if(oversized.image.length || oversized.video.length){
+            const messages = ['Some files are too large to upload. Images must be 3 MB or smaller and videos must be 10 MB or smaller. Please resize the files and try uploading again.'];
+            if(oversized.image.length){
+                messages.push('Images over 3 MB: ' + oversized.image.join(', '));
+            }
+            if(oversized.video.length){
+                messages.push('Videos over 10 MB: ' + oversized.video.join(', '));
+            }
+            return messages.join('\n\n');
+        }
+
+        return '';
+    }
+
     function uploadFiles(files){
         if(!currentFolder || !files.length) return;
+        const validationMessage = validateUploadFiles(files);
+        if(validationMessage){
+            alertModal(validationMessage);
+            $('#fileInput').val('');
+            return;
+        }
         const fd = new FormData();
         Array.from(files).forEach(f => fd.append('files[]', f));
         fd.append('folder', currentFolder);
