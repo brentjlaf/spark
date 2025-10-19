@@ -580,27 +580,33 @@ $(function(){
             }
         });
 
-        if(oversized.image.length || oversized.video.length){
-            const messages = ['Some files are too large to upload. Images will be optimized during upload so their final size is 3 MB or smaller. Videos must be 10 MB or smaller; please optimize oversized videos before trying to upload them again.'];
+        const result = { error: '', warning: '' };
+
+        if(oversized.video.length){
+            const messages = [
+                'Some files are too large to upload. Images will be optimized during upload so their final size is 3 MB or smaller. Videos must be 10 MB or smaller; please optimize oversized videos before trying to upload them again.',
+                'Videos over 10 MB: ' + oversized.video.join(', ') + '. Please optimize these videos before uploading again.'
+            ];
             if(oversized.image.length){
                 messages.push('Images over 3 MB: ' + oversized.image.join(', '));
             }
-            if(oversized.video.length){
-                messages.push('Videos over 10 MB: ' + oversized.video.join(', ') + '. Please optimize these videos before uploading again.');
-            }
-            return messages.join('\n\n');
+            result.error = messages.join('\n\n');
+        } else if(oversized.image.length){
+            result.warning = 'Images over 3 MB will be optimized during upload so that their final size is 3 MB or smaller. Large images: ' + oversized.image.join(', ');
         }
 
-        return '';
+        return result;
     }
 
     function uploadFiles(files){
         if(!currentFolder || !files.length) return;
-        const validationMessage = validateUploadFiles(files);
-        if(validationMessage){
-            alertModal(validationMessage);
+        const validationResult = validateUploadFiles(files);
+        if(validationResult.error){
+            alertModal(validationResult.error);
             $('#fileInput').val('');
             return;
+        } else if(validationResult.warning){
+            alertModal(validationResult.warning);
         }
         const fd = new FormData();
         Array.from(files).forEach(f => fd.append('files[]', f));
