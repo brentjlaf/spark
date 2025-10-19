@@ -77,9 +77,46 @@ $templateDir = realpath(__DIR__ . '/../../../theme/templates/pages');
 function dashboard_capture_template_html(string $templateFile, array $settings, array $menus, string $scriptBase): string {
     $page = ['content' => '{{CONTENT}}'];
     $themeBase = $scriptBase . '/theme';
+
+    $templateContents = @file_get_contents($templateFile);
+    if ($templateContents === false) {
+        return '{{CONTENT}}';
+    }
+
+    $namespace = '__DashboardTemplate' . md5($templateFile);
+    $wrappedContents = "<?php namespace {$namespace}; ?>\n" . $templateContents;
+
+    $temporaryFile = @tempnam(dirname($templateFile), 'dash_tpl_');
+    if ($temporaryFile === false) {
+        return '{{CONTENT}}';
+    }
+
+    $bytesWritten = @file_put_contents($temporaryFile, $wrappedContents);
+    if ($bytesWritten === false) {
+        @unlink($temporaryFile);
+        return '{{CONTENT}}';
+    }
+
+    $currentWorkingDirectory = getcwd();
+    $html = '';
     ob_start();
-    include $templateFile;
-    $html = ob_get_clean();
+
+    try {
+        chdir(dirname($templateFile));
+        include $temporaryFile;
+        $html = (string)ob_get_clean();
+    } catch (Throwable $exception) {
+        ob_end_clean();
+        $html = '{{CONTENT}}';
+    } finally {
+        chdir($currentWorkingDirectory);
+        @unlink($temporaryFile);
+    }
+
+    if ($html === '') {
+        $html = '{{CONTENT}}';
+    }
+
     $html = preg_replace('/<div class="drop-area"><\/div>/', '{{CONTENT}}', $html, 1);
     if (strpos($html, '{{CONTENT}}') === false) {
         $html .= '{{CONTENT}}';
@@ -89,6 +126,7 @@ function dashboard_capture_template_html(string $templateFile, array $settings, 
     $html = str_replace('draggable="true"', '', $html);
     $html = preg_replace('#\sdata-ts="[^"]*"#i', '', $html);
     $html = preg_replace('#\sdata-(?:blockid|template|original|active|custom_[A-Za-z0-9_-]+)="[^"]*"#i', '', $html);
+
     return $html;
 }
 
