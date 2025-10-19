@@ -11516,6 +11516,36 @@
     font-size: 0.8rem;
 }
 
+.seo-issue-chip--critical {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.seo-issue-chip--serious {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.seo-issue-chip--moderate {
+    background: #fffbeb;
+    color: #92400e;
+}
+
+.seo-issue-chip--minor {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.seo-issue-chip--review {
+    background: #ede9fe;
+    color: #5b21b6;
+}
+
+.seo-issue-chip--pass {
+    background: #dcfce7;
+    color: #166534;
+}
+
 .seo-card-link {
     background: none;
     border: none;
