@@ -15,6 +15,11 @@ $allowed = [
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $folder = sanitize_text($_POST['folder'] ?? '');
     $tags = sanitize_tags(explode(',', $_POST['tags'] ?? ''));
+    $optimizeImages = true;
+    if(isset($_POST['optimize_images'])) {
+        $value = strtolower((string)$_POST['optimize_images']);
+        $optimizeImages = !in_array($value, ['0', 'false', 'no'], true);
+    }
     $root = dirname(__DIR__, 2);
     $baseDir = $root . '/uploads';
     if ($folder) {
@@ -80,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             continue;
         }
 
-        if ($category === 'images') {
+        if ($category === 'images' && $optimizeImages) {
             optimize_image($dest, 3 * 1024 * 1024);
             clearstatcache(true, $dest);
             $optimizedSize = @filesize($dest);
