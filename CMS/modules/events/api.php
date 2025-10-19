@@ -97,6 +97,7 @@ function handle_overview(array $events, array $orders, array $salesByEvent): voi
             'title' => $event['title'] ?? 'Untitled',
             'image' => $event['image'] ?? '',
             'start' => $event['start'] ?? '',
+            'end' => $event['end'] ?? '',
             'tickets_sold' => $metrics['tickets_sold'] ?? 0,
             'revenue' => $metrics['revenue'] ?? 0,
         ];

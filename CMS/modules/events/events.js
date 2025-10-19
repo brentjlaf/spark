@@ -633,6 +633,7 @@
             id: String(item.id ?? ''),
             title: item.title ?? 'Untitled event',
             start: item.start ?? '',
+            end: item.end ?? '',
             tickets_sold: Number.parseInt(item.tickets_sold ?? 0, 10) || 0,
             revenue: Number(item.revenue ?? 0) || 0,
         };
@@ -701,6 +702,21 @@
         return `${date.getFullYear()}-${month}-${day}`;
     }
 
+    function startOfDay(date) {
+        if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+            return null;
+        }
+        return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    }
+
+    function endOfMonth(date) {
+        const reference = date instanceof Date ? date : new Date(date);
+        if (Number.isNaN(reference.getTime())) {
+            return null;
+        }
+        return new Date(reference.getFullYear(), reference.getMonth() + 1, 0, 23, 59, 59, 999);
+    }
+
     function compareUpcomingByStart(a, b) {
         const dateA = parseDateValue(a?.start);
         const dateB = parseDateValue(b?.start);
@@ -716,17 +732,45 @@
         return dateA.getTime() - dateB.getTime();
     }
 
+    function eventOccursInMonth(event, monthDate) {
+        if (!(monthDate instanceof Date) || Number.isNaN(monthDate.getTime())) {
+            return false;
+        }
+
+        const monthStart = startOfMonth(monthDate);
+        const monthEnd = endOfMonth(monthDate);
+        if (!monthStart || !monthEnd) {
+            return false;
+        }
+
+        const startDate = parseDateValue(event?.start);
+        const normalizedStart = startOfDay(startDate);
+        if (!normalizedStart) {
+            return false;
+        }
+
+        const endDate = parseDateValue(event?.end);
+        let normalizedEnd = startOfDay(endDate);
+        if (!normalizedEnd || normalizedEnd.getTime() < normalizedStart.getTime()) {
+            normalizedEnd = normalizedStart;
+        }
+
+        return normalizedStart.getTime() <= monthEnd.getTime() && normalizedEnd.getTime() >= monthStart.getTime();
+    }
+
     function getEarliestEventMonth(list = state.upcoming) {
         let earliest = null;
         list.forEach((item) => {
-            const date = parseDateValue(item.start);
-            if (!date) {
-                return;
-            }
-            const month = startOfMonth(date);
-            if (!earliest || month.getTime() < earliest.getTime()) {
-                earliest = month;
-            }
+            const candidates = [parseDateValue(item.start), parseDateValue(item.end)];
+            candidates.forEach((candidate) => {
+                if (!candidate) {
+                    return;
+                }
+                const month = startOfMonth(candidate);
+                if (!earliest || month.getTime() < earliest.getTime()) {
+                    earliest = month;
+                }
+            });
         });
         return earliest;
     }
@@ -734,14 +778,16 @@
     function getLatestEventMonth(list = state.upcoming) {
         let latest = null;
         list.forEach((item) => {
-            const date = parseDateValue(item.start);
-            if (!date) {
-                return;
-            }
-            const month = startOfMonth(date);
-            if (!latest || month.getTime() > latest.getTime()) {
-                latest = month;
-            }
+            const candidates = [parseDateValue(item.start), parseDateValue(item.end)];
+            candidates.forEach((candidate) => {
+                if (!candidate) {
+                    return;
+                }
+                const month = startOfMonth(candidate);
+                if (!latest || month.getTime() > latest.getTime()) {
+                    latest = month;
+                }
+            });
         });
         return latest;
     }
@@ -1292,10 +1338,7 @@
         }
 
         if (normalized.length > 0) {
-            const monthHasEvent = normalized.some((item) => {
-                const date = parseDateValue(item.start);
-                return date && isSameMonth(date, state.calendar.currentMonth);
-            });
+            const monthHasEvent = normalized.some((item) => eventOccursInMonth(item, state.calendar.currentMonth));
             if (!monthHasEvent && earliestMonth) {
                 state.calendar.currentMonth = startOfMonth(earliestMonth);
             }
@@ -1382,15 +1425,30 @@
 
         const eventsByDay = new Map();
         state.upcoming.forEach((event) => {
-            const date = parseDateValue(event.start);
-            if (!date) {
+            const startDate = parseDateValue(event.start);
+            const startDay = startOfDay(startDate);
+            if (!startDay) {
                 return;
             }
-            const key = formatDateKey(date);
-            if (eventsByDay.has(key)) {
-                eventsByDay.get(key).push(event);
-            } else {
-                eventsByDay.set(key, [event]);
+
+            const endDate = parseDateValue(event.end);
+            let endDay = startOfDay(endDate);
+            if (!endDay || endDay.getTime() < startDay.getTime()) {
+                endDay = startDay;
+            }
+
+            for (let current = new Date(startDay.getTime()); current.getTime() <= endDay.getTime(); current.setDate(current.getDate() + 1)) {
+                const key = formatDateKey(current);
+                const occurrence = {
+                    ...event,
+                    occurrenceDate: new Date(current.getTime()),
+                    isFirstDay: current.getTime() === startDay.getTime(),
+                };
+                if (eventsByDay.has(key)) {
+                    eventsByDay.get(key).push(occurrence);
+                } else {
+                    eventsByDay.set(key, [occurrence]);
+                }
             }
         });
 
@@ -1435,7 +1493,7 @@
                     item.className = 'events-calendar-event';
                     item.dataset.eventId = event.id || '';
 
-                    const timeLabel = formatTimeLabel(event.start);
+                    const timeLabel = event.isFirstDay ? formatTimeLabel(event.start) : '';
                     if (timeLabel) {
                         const timeSpan = document.createElement('span');
                         timeSpan.className = 'events-calendar-event-time';
