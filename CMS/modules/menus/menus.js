@@ -290,6 +290,9 @@ $(function () {
 
     function prepareItem(item) {
         item = item || {};
+        if (!item.link && item.slug) {
+            item.link = '/' + String(item.slug).replace(/^\/+/, '');
+        }
         if (!item.type) {
             if (item.link && item.link.startsWith('/')) {
                 item.type = 'page';
