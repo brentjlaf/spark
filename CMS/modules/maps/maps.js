@@ -902,6 +902,10 @@
         mapPendingBounds = buildPendingBounds(mappable);
         if (isMapContainerVisible()) {
             applyPendingMapView();
+        } else {
+            setTimeout(function () {
+                applyPendingMapView();
+            }, 150);
         }
     }
 
