@@ -7,7 +7,7 @@ require_login();
 
 $allowed = [
     'images' => ['jpg','jpeg','png','gif','webp','svg'],
-    'videos' => ['mp4','webm','mov'],
+    'videos' => ['mp4','m4v','webm','mov'],
     'audio' => ['mp3'],
     'documents' => ['pdf','doc','docx','txt','xlsx','csv']
 ];
