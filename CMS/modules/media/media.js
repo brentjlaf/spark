@@ -581,12 +581,12 @@ $(function(){
         });
 
         if(oversized.image.length || oversized.video.length){
-            const messages = ['Some files are too large to upload. Images must be 3 MB or smaller and videos must be 10 MB or smaller. Please resize the files and try uploading again.'];
+            const messages = ['Some files are too large to upload. Images will be optimized during upload so their final size is 3 MB or smaller. Videos must be 10 MB or smaller; please optimize oversized videos before trying to upload them again.'];
             if(oversized.image.length){
                 messages.push('Images over 3 MB: ' + oversized.image.join(', '));
             }
             if(oversized.video.length){
-                messages.push('Videos over 10 MB: ' + oversized.video.join(', '));
+                messages.push('Videos over 10 MB: ' + oversized.video.join(', ') + '. Please optimize these videos before uploading again.');
             }
             return messages.join('\n\n');
         }
