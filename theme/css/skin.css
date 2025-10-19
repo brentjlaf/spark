@@ -1634,3 +1634,126 @@ section.container-fluid {
   .map-block__map { min-height: 300px; border-radius: 14px; }
   .map-block__item { padding: 1rem; }
 }
+
+/* Blog Post Detail Block */
+.blog-post-detail {
+    position: relative;
+    padding-top: clamp(3rem, 5vw, 4rem);
+    padding-bottom: clamp(3rem, 5vw, 4rem);
+}
+
+.blog-post-detail__loading,
+.blog-post-detail__empty {
+    font-size: 1rem;
+}
+
+.blog-post-detail__back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.blog-post-detail__back-link:hover,
+.blog-post-detail__back-link:focus-visible {
+    text-decoration: underline;
+}
+
+.blog-post-detail__header {
+    margin-bottom: 2rem;
+}
+
+.blog-post-detail__category {
+    display: inline-block;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.blog-post-detail__title {
+    margin-top: 1rem;
+    margin-bottom: 0.75rem;
+    font-family: var(--font-family-display, var(--font-family-sans-serif));
+    font-size: clamp(2.25rem, 5vw, 3.5rem);
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.blog-post-detail__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-size: 0.95rem;
+    color: var(--gray-6);
+}
+
+.blog-post-detail__featured {
+    margin: 0;
+}
+
+.blog-post-detail__image {
+    width: 100%;
+    height: auto;
+    border-radius: var(--border-radius-lg, 1rem);
+    object-fit: cover;
+    box-shadow: 0 24px 45px rgba(15, 23, 42, 0.12);
+}
+
+.blog-post-detail__image-caption {
+    font-size: 0.9rem;
+    color: var(--gray-6);
+    font-style: italic;
+}
+
+.blog-post-detail__content {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: var(--gray-9);
+}
+
+.blog-post-detail__content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--border-radius, 0.75rem);
+}
+
+.blog-post-detail__tags {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.blog-post-detail__tags-label {
+    color: var(--gray-6);
+    letter-spacing: 0.08em;
+}
+
+.blog-post-detail__tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.blog-post-detail__tag {
+    font-weight: 500;
+}
+
+.blog-post-detail__actions {
+    display: flex;
+}
+
+.blog-post-detail__actions .btn {
+    align-self: flex-start;
+}
+
+@media (max-width: 767.98px) {
+    .blog-post-detail__title {
+        font-size: clamp(2rem, 8vw, 2.5rem);
+    }
+
+    .blog-post-detail__meta {
+        gap: 0.75rem;
+    }
+}
