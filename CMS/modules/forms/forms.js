@@ -22,6 +22,21 @@ $(function(){
     const $exportForm = $('#exportSubmissionsForm');
     const $exportFormId = $('#exportFormId');
     const $exportButton = $('#exportSubmissionsBtn');
+    const $confirmationEnabled = $('#confirmationEmailEnabled');
+    const $confirmationDetails = $('#confirmationEmailDetails');
+    const $confirmationField = $('#confirmationEmailField');
+    const $confirmationFieldHint = $('#confirmationEmailFieldHint');
+    const $confirmationSubject = $('#confirmationEmailSubject');
+    const $confirmationTitle = $('#confirmationEmailTitle');
+    const $confirmationDescription = $('#confirmationEmailDescription');
+    const $confirmationFromName = $('#confirmationEmailFromName');
+    const $confirmationFromEmail = $('#confirmationEmailFromEmail');
+    const confirmationDefaults = {
+        subject: ($form.attr('data-default-subject') || '').trim(),
+        title: ($form.attr('data-default-title') || '').trim(),
+        fromName: ($form.attr('data-default-from-name') || '').trim(),
+        fromEmail: ($form.attr('data-default-from-email') || '').trim()
+    };
 
     const FIELD_TYPE_LABELS = {
         text: 'Text input',
@@ -166,6 +181,131 @@ $(function(){
             recentSubmissions: Number(dashboard.data('recent-submissions')),
             lastSubmission: dashboard.data('last-submission')
         });
+    }
+
+    function isValidEmail(value){
+        if(typeof value !== 'string'){
+            return false;
+        }
+        const trimmed = value.trim();
+        if(trimmed === ''){
+            return false;
+        }
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+    }
+
+    function getAvailableEmailFieldNames(){
+        const names = [];
+        $('#formPreview > li').each(function(){
+            const $li = $(this);
+            const type = String($li.data('type') || '').toLowerCase();
+            if(type !== 'email'){
+                return;
+            }
+            const nameVal = ($li.find('.field-name').val() || '').trim();
+            if(!nameVal){
+                return;
+            }
+            const labelVal = ($li.find('.field-label').val() || '').trim();
+            names.push({
+                name: nameVal,
+                label: labelVal || nameVal
+            });
+        });
+        return names;
+    }
+
+    function refreshConfirmationEmailFieldOptions(selectedName){
+        const currentSelection = typeof selectedName === 'string' ? selectedName : ($confirmationField.val() || '');
+        const emailFields = getAvailableEmailFieldNames();
+
+        $confirmationField.empty();
+
+        if(!emailFields.length){
+            $confirmationField.append('<option value="">Add an email field to enable confirmation emails</option>');
+            $confirmationField.prop('disabled', true);
+            $confirmationFieldHint.text('Add an email field to your form to send confirmation emails.');
+            return;
+        }
+
+        $confirmationField.prop('disabled', false);
+        $confirmationField.append('<option value="">Select an email field</option>');
+
+        let hasSelection = false;
+        emailFields.forEach(function(item){
+            const option = $('<option></option>')
+                .attr('value', item.name)
+                .text(item.label + ' (' + item.name + ')');
+            if(item.name === currentSelection){
+                option.prop('selected', true);
+                hasSelection = true;
+            }
+            $confirmationField.append(option);
+        });
+
+        if(currentSelection && !hasSelection){
+            const missingOption = $('<option></option>')
+                .attr('value', currentSelection)
+                .text(currentSelection + ' (saved field missing)')
+                .prop('selected', true);
+            $confirmationField.append(missingOption);
+        }
+
+        $confirmationFieldHint.text('Choose which form field holds the visitor\'s email address.');
+    }
+
+    function toggleConfirmationEmailDetails(visible){
+        if(!$confirmationDetails.length){
+            return;
+        }
+        if(visible){
+            $confirmationDetails.removeAttr('hidden');
+        } else {
+            $confirmationDetails.attr('hidden', true);
+        }
+    }
+
+    function resetConfirmationEmailConfig(){
+        $confirmationEnabled.prop('checked', false);
+        $confirmationSubject.val(confirmationDefaults.subject);
+        $confirmationTitle.val(confirmationDefaults.title);
+        $confirmationDescription.val('');
+        $confirmationFromName.val(confirmationDefaults.fromName);
+        $confirmationFromEmail.val(confirmationDefaults.fromEmail);
+        refreshConfirmationEmailFieldOptions('');
+        toggleConfirmationEmailDetails(false);
+    }
+
+    function getConfirmationEmailConfig(){
+        return {
+            enabled: $confirmationEnabled.is(':checked'),
+            email_field: ($confirmationField.val() || '').trim(),
+            subject: ($confirmationSubject.val() || '').trim(),
+            title: ($confirmationTitle.val() || '').trim(),
+            description: ($confirmationDescription.val() || '').trim(),
+            from_name: ($confirmationFromName.val() || '').trim(),
+            from_email: ($confirmationFromEmail.val() || '').trim()
+        };
+    }
+
+    function applyConfirmationEmailConfig(config){
+        const payload = config && typeof config === 'object' ? config : {};
+        const selectedField = typeof payload.email_field === 'string' ? payload.email_field : '';
+        refreshConfirmationEmailFieldOptions(selectedField);
+
+        const enabled = payload.enabled === true;
+        $confirmationEnabled.prop('checked', enabled);
+
+        $confirmationSubject.val(typeof payload.subject === 'string' && payload.subject.trim() !== '' ? payload.subject : confirmationDefaults.subject);
+        $confirmationTitle.val(typeof payload.title === 'string' && payload.title.trim() !== '' ? payload.title : confirmationDefaults.title);
+        $confirmationDescription.val(typeof payload.description === 'string' ? payload.description : '');
+        $confirmationFromName.val(typeof payload.from_name === 'string' && payload.from_name.trim() !== '' ? payload.from_name : confirmationDefaults.fromName);
+        $confirmationFromEmail.val(typeof payload.from_email === 'string' && payload.from_email.trim() !== '' ? payload.from_email : confirmationDefaults.fromEmail);
+
+        if(selectedField){
+            $confirmationField.val(selectedField);
+        }
+        toggleConfirmationEmailDetails(enabled);
     }
 
     function fetchPerFormStats(){
@@ -692,6 +832,7 @@ $(function(){
         $formPreview.empty();
         selectField(null);
         hideBuilderAlert();
+        resetConfirmationEmailConfig();
     }
 
     function openFormBuilder(title){
@@ -948,6 +1089,7 @@ $(function(){
                 setManualNameFlag(nameInput, false);
             }
             updatePreview($li);
+            refreshConfirmationEmailFieldOptions($confirmationField.val());
         });
 
         labelInput.on('blur', function(){
@@ -957,6 +1099,7 @@ $(function(){
                 setManualNameFlag(nameInput, false);
             }
             updatePreview($li);
+            refreshConfirmationEmailFieldOptions($confirmationField.val());
         });
 
         nameInput.on('input', function(){
@@ -967,6 +1110,7 @@ $(function(){
                 setManualNameFlag(nameInput, true);
             }
             updatePreview($li);
+            refreshConfirmationEmailFieldOptions($confirmationField.val());
         });
 
         nameInput.on('blur', function(){
@@ -975,6 +1119,7 @@ $(function(){
                 $(this).val(autoName);
                 setManualNameFlag(nameInput, false);
                 updatePreview($li);
+                refreshConfirmationEmailFieldOptions($confirmationField.val());
             }
         });
 
@@ -988,6 +1133,7 @@ $(function(){
             selectField($li);
         }
         hideBuilderAlert();
+        refreshConfirmationEmailFieldOptions($confirmationField.val());
     }
 
     $('#fieldPalette').on('click', '.palette-item', function(e){
@@ -1010,7 +1156,12 @@ $(function(){
 
     $('.palette-item').draggable({ helper:'clone', revert:'invalid' });
 
-    $formPreview.sortable({ placeholder:'ui-sortable-placeholder' }).droppable({
+    $formPreview.sortable({
+        placeholder:'ui-sortable-placeholder',
+        stop:function(){
+            refreshConfirmationEmailFieldOptions($confirmationField.val());
+        }
+    }).droppable({
         accept:'.palette-item',
         drop:function(e,ui){
             const type = ui.draggable.data('type');
@@ -1018,6 +1169,26 @@ $(function(){
                 addField(type, {}, { isNew: true });
             }
         }
+    });
+
+    $confirmationEnabled.on('change', function(){
+        const enabled = $(this).is(':checked');
+        if(enabled){
+            if(($confirmationSubject.val() || '').trim() === ''){
+                $confirmationSubject.val(confirmationDefaults.subject);
+            }
+            if(($confirmationTitle.val() || '').trim() === ''){
+                $confirmationTitle.val(confirmationDefaults.title);
+            }
+            if(($confirmationFromName.val() || '').trim() === ''){
+                $confirmationFromName.val(confirmationDefaults.fromName);
+            }
+            if(($confirmationFromEmail.val() || '').trim() === ''){
+                $confirmationFromEmail.val(confirmationDefaults.fromEmail);
+            }
+            refreshConfirmationEmailFieldOptions($confirmationField.val());
+        }
+        toggleConfirmationEmailDetails(enabled);
     });
 
     $('#newFormBtn').on('click', function(){
@@ -1100,6 +1271,7 @@ $(function(){
             (formData.fields || []).forEach(function(fd){
                 addField(fd.type, fd, { suppressSelect: true });
             });
+            applyConfirmationEmailConfig(formData.confirmation_email || {});
             const firstField = $('#formPreview > li').first();
             if(firstField.length){
                 selectField(firstField);
@@ -1137,6 +1309,7 @@ $(function(){
             return;
         }
 
+        const confirmationConfig = getConfirmationEmailConfig();
         const $items = $('#formPreview > li');
         if(!$items.length){
             showBuilderAlert('Add at least one field before saving.');
@@ -1189,6 +1362,23 @@ $(function(){
             errors.push('Field names must be unique. Duplicate names: ' + duplicateNames.join(', ') + '.');
         }
 
+        if(confirmationConfig.enabled){
+            const availableNames = getAvailableEmailFieldNames().map(function(item){ return item.name; });
+            if(!confirmationConfig.email_field){
+                errors.push('Select which email field should receive the confirmation email.');
+            } else if(!availableNames.includes(confirmationConfig.email_field)){
+                errors.push('Confirmation email must point to an email field in the form.');
+            }
+            if(!confirmationConfig.from_email){
+                errors.push('Provide a From email address for the confirmation email.');
+            } else if(!isValidEmail(confirmationConfig.from_email)){
+                errors.push('Enter a valid From email address for the confirmation email.');
+            }
+            if(!confirmationConfig.subject){
+                errors.push('Add a subject line for the confirmation email.');
+            }
+        }
+
         if(errors.length){
             showBuilderAlert(errors.join(' '));
             const $firstError = $('#formPreview > li.field-error').first();
@@ -1230,7 +1420,8 @@ $(function(){
         const payload = {
             id: $formId.val(),
             name: formName,
-            fields: JSON.stringify(fields)
+            fields: JSON.stringify(fields),
+            confirmation_email: JSON.stringify(confirmationConfig)
         };
 
         $.post('modules/forms/save_form.php', payload)
@@ -1252,6 +1443,7 @@ $(function(){
             selectField(null);
         }
         hideBuilderAlert();
+        refreshConfirmationEmailFieldOptions($confirmationField.val());
     });
 
     $('#fieldSettings').on('input change', '.field-body input, .field-body textarea', function(){
@@ -1274,6 +1466,7 @@ $(function(){
         }
     });
 
+    resetConfirmationEmailConfig();
     bootstrapStatsFromDataset();
     resetSubmissionsCard();
     loadForms();
