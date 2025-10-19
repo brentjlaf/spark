@@ -1235,6 +1235,32 @@
     return layout;
   }
 
+  function parseIsoDate(value) {
+    if (!value) {
+      return null;
+    }
+    if (value instanceof Date) {
+      return value;
+    }
+    var normalized = String(value).trim();
+    if (!normalized) {
+      return null;
+    }
+    var timestamp = Date.parse(normalized);
+    if (!Number.isNaN(timestamp)) {
+      return new Date(timestamp);
+    }
+    var fallback = normalized
+      .replace(/-/g, '/')
+      .replace(/T/, ' ')
+      .replace(/Z$/, ' UTC');
+    timestamp = Date.parse(fallback);
+    if (!Number.isNaN(timestamp)) {
+      return new Date(timestamp);
+    }
+    return null;
+  }
+
   function eventMatchesCategoryFilter(event, filter, categoriesIndex) {
     if (!filter) {
       return true;
