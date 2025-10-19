@@ -19,6 +19,7 @@ if ($templateDir) {
     }
 }
 $homepage = $settings['homepage'] ?? 'home';
+$homepageSlug = (string) $homepage;
 
 // Page stats
 $totalPages = count($pages);
@@ -54,6 +55,22 @@ $filterCounts = [
     'restricted' => $restrictedPages,
 ];
 $pagesWord = $totalPages === 1 ? 'page' : 'pages';
+
+$orderedPages = [];
+$homepagePageData = null;
+foreach ($pages as $pageEntry) {
+    $pageSlug = (string) ($pageEntry['slug'] ?? '');
+    if ($homepageSlug !== '' && $pageSlug === $homepageSlug) {
+        $homepagePageData = $pageEntry;
+        continue;
+    }
+    $orderedPages[] = $pageEntry;
+}
+if ($homepagePageData !== null) {
+    array_unshift($orderedPages, $homepagePageData);
+} elseif (empty($orderedPages)) {
+    $orderedPages = $pages;
+}
 ?>
 <div class="content-section" id="pages">
     <div class="pages-dashboard a11y-dashboard" data-last-updated="<?php echo htmlspecialchars($lastUpdatedDisplay, ENT_QUOTES); ?>">
@@ -157,7 +174,7 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
                     </tr>
                 </thead>
                 <tbody>
-<?php foreach ($pages as $p): ?>
+<?php foreach ($orderedPages as $p): ?>
 <?php
     $id = isset($p['id']) ? (int) $p['id'] : 0;
     $title = isset($p['title']) && $p['title'] !== '' ? (string) $p['title'] : 'Untitled Page';
@@ -200,6 +217,7 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
     $modifiedDisplay = $lastModified > 0 ? date('M j, Y g:i A', $lastModified) : 'No edits yet';
     $viewUrl = '../?page=' . urlencode($slug);
     $accessLabel = $isRestricted ? 'Private' : 'Public';
+    $isHomepageRow = $homepageSlug !== '' && $slug === $homepageSlug;
 ?>
                     <tr class="pages-list-row"
                         data-id="<?php echo $id; ?>"
@@ -222,7 +240,7 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
                         data-access="<?php echo htmlspecialchars($accessRaw, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>"
                         data-views="<?php echo $views; ?>"
                         data-last_modified="<?php echo $lastModified; ?>"
-                        data-homepage="<?php echo $homepage === $p['slug'] ? 1 : 0; ?>"
+                        data-homepage="<?php echo $isHomepageRow ? 1 : 0; ?>"
                         data-page-item="1"
                         data-view="list">
                         <td class="pages-list-cell pages-list-cell--title" data-label="Page">
@@ -231,7 +249,7 @@ $pagesWord = $totalPages === 1 ? 'page' : 'pages';
                                 <span class="pages-list-slug"><?php echo '/' . htmlspecialchars($slug, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></span>
                             </div>
                             <div class="pages-list-badges">
-                                <?php if ($homepage === $p['slug']): ?>
+                                <?php if ($isHomepageRow): ?>
                                     <span class="pages-card__badge pages-card__badge--home">
                                         <i class="fa-solid fa-house" aria-hidden="true"></i>
                                         Homepage
