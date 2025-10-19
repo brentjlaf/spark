@@ -609,17 +609,29 @@
                 if ($btn.prop('disabled')) {
                     return;
                 }
-                $btn.prop('disabled', true).addClass('is-loading');
+
                 const $icon = $btn.find('i');
                 const originalIcon = $icon.attr('class');
+                const $label = $btn.find('span');
+                const originalText = $label.text();
+
+                $btn.prop('disabled', true).addClass('is-loading');
                 $icon.attr('class', 'fas fa-spinner fa-spin');
-                $btn.find('span').text('Scanning...');
+                $label.text('Scanning...');
+
                 window.setTimeout(function () {
-                    $icon.attr('class', originalIcon);
-                    $btn.find('span').text('Run Speed Scan');
-                    $btn.prop('disabled', false).removeClass('is-loading');
-                    window.alert('Speed scan complete!\n\nIn production this would trigger Lighthouse or WebPageTest runs for every page and refresh the dashboard with updated metrics.');
-                }, 1600);
+                    const reloaded = loadSpeedModule('');
+                    if (!reloaded) {
+                        if (stats && stats.moduleUrl) {
+                            window.location.href = stats.moduleUrl;
+                            return;
+                        }
+
+                        $icon.attr('class', originalIcon);
+                        $label.text(originalText);
+                        $btn.prop('disabled', false).removeClass('is-loading');
+                    }
+                }, 900);
             });
         }
 
