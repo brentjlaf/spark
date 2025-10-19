@@ -7,6 +7,7 @@ $(function(){
     let currentFormName = '';
     let currentSubmissions = [];
     let lastSubmissionTrigger = null;
+    let confirmationPreviewTrigger = null;
     let formsCache = [];
 
     const $drawer = $('#formBuilderDrawer');
@@ -31,6 +32,12 @@ $(function(){
     const $confirmationDescription = $('#confirmationEmailDescription');
     const $confirmationFromName = $('#confirmationEmailFromName');
     const $confirmationFromEmail = $('#confirmationEmailFromEmail');
+    const $confirmationPreviewButton = $('#previewConfirmationEmail');
+    const $confirmationPreviewModal = $('#confirmationEmailPreviewModal');
+    const $confirmationPreviewClose = $('#closeConfirmationPreview');
+    const $confirmationPreviewSubject = $('#confirmationPreviewSubject');
+    const $confirmationPreviewSender = $('#confirmationPreviewSender');
+    const $confirmationPreviewFrame = $('#confirmationEmailPreviewFrame');
     const confirmationDefaults = {
         subject: ($form.attr('data-default-subject') || '').trim(),
         title: ($form.attr('data-default-title') || '').trim(),
@@ -306,6 +313,74 @@ $(function(){
             $confirmationField.val(selectedField);
         }
         toggleConfirmationEmailDetails(enabled);
+    }
+
+    function setConfirmationPreviewLoading(isLoading){
+        if(!$confirmationPreviewButton.length){
+            return;
+        }
+        $confirmationPreviewButton.prop('disabled', isLoading);
+        if(isLoading){
+            $confirmationPreviewButton.attr('aria-busy', 'true');
+        } else {
+            $confirmationPreviewButton.removeAttr('aria-busy');
+        }
+    }
+
+    function writeConfirmationPreview(html){
+        if(!$confirmationPreviewFrame.length){
+            return;
+        }
+        const iframe = $confirmationPreviewFrame[0];
+        if('srcdoc' in iframe){
+            iframe.setAttribute('srcdoc', html);
+        } else if(iframe.contentDocument){
+            const doc = iframe.contentDocument;
+            doc.open();
+            doc.write(html);
+            doc.close();
+        }
+    }
+
+    function clearConfirmationPreview(){
+        writeConfirmationPreview('<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;background-color:#f8fafc;"></body></html>');
+    }
+
+    function formatPreviewSender(name, email){
+        const trimmedName = (name || '').trim();
+        const trimmedEmail = (email || '').trim();
+        if(trimmedName && trimmedEmail){
+            if(trimmedName.toLowerCase() === trimmedEmail.toLowerCase()){
+                return trimmedEmail;
+            }
+            return trimmedName + ' <' + trimmedEmail + '>';
+        }
+        return trimmedName || trimmedEmail || '—';
+    }
+
+    function openConfirmationPreview(trigger){
+        if(!$confirmationPreviewModal.length){
+            return;
+        }
+        confirmationPreviewTrigger = trigger ? $(trigger) : null;
+        $confirmationPreviewModal.addClass('active').attr('aria-hidden', 'false');
+        setTimeout(function(){
+            $confirmationPreviewClose.trigger('focus');
+        }, 0);
+    }
+
+    function closeConfirmationPreview(){
+        if(!$confirmationPreviewModal.length || !$confirmationPreviewModal.hasClass('active')){
+            return;
+        }
+        $confirmationPreviewModal.removeClass('active').attr('aria-hidden', 'true');
+        $confirmationPreviewSubject.text('—');
+        $confirmationPreviewSender.text('—');
+        clearConfirmationPreview();
+        if(confirmationPreviewTrigger && confirmationPreviewTrigger.length){
+            confirmationPreviewTrigger.trigger('focus');
+        }
+        confirmationPreviewTrigger = null;
     }
 
     function fetchPerFormStats(){
@@ -1465,6 +1540,63 @@ $(function(){
             closeSubmissionModal();
         }
     });
+
+    if($confirmationPreviewButton.length){
+        $confirmationPreviewButton.on('click', function(){
+            const trigger = this;
+            const config = getConfirmationEmailConfig();
+            setConfirmationPreviewLoading(true);
+            $.ajax({
+                url: 'modules/forms/preview_confirmation_email.php',
+                method: 'POST',
+                dataType: 'json',
+                data: {
+                    subject: config.subject,
+                    title: config.title,
+                    description: config.description,
+                    from_name: config.from_name,
+                    from_email: config.from_email
+                }
+            }).done(function(response){
+                if(!response || response.success !== true || typeof response.html !== 'string'){
+                    const errorMessage = response && response.error ? response.error : 'Unable to generate the confirmation email preview.';
+                    showBuilderAlert(errorMessage);
+                    return;
+                }
+                hideBuilderAlert();
+                $confirmationPreviewSubject.text(response.subject || '—');
+                $confirmationPreviewSender.text(formatPreviewSender(response.from_name, response.from_email));
+                writeConfirmationPreview(response.html);
+                openConfirmationPreview(trigger);
+            }).fail(function(jqXHR){
+                let message = 'Unable to generate the confirmation email preview.';
+                if(jqXHR && jqXHR.responseJSON && jqXHR.responseJSON.error){
+                    message = jqXHR.responseJSON.error;
+                }
+                showBuilderAlert(message);
+            }).always(function(){
+                setConfirmationPreviewLoading(false);
+            });
+        });
+    }
+
+    $confirmationPreviewClose.on('click', function(){
+        closeConfirmationPreview();
+    });
+
+    $confirmationPreviewModal.on('click', function(event){
+        if(event.target === this){
+            closeConfirmationPreview();
+        }
+    });
+
+    $(document).on('keydown.formsConfirmationPreview', function(event){
+        if(event.key === 'Escape'){
+            closeConfirmationPreview();
+        }
+    });
+
+    clearConfirmationPreview();
 
     resetConfirmationEmailConfig();
     bootstrapStatsFromDataset();
