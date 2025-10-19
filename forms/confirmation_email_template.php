@@ -15,10 +15,43 @@ if (!function_exists('build_absolute_asset_url')) {
             return $path;
         }
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        if ($path[0] !== '/') {
-            $path = '/' . ltrim($path, '/');
+        $scriptName = isset($_SERVER['SCRIPT_NAME']) && is_string($_SERVER['SCRIPT_NAME'])
+            ? trim($_SERVER['SCRIPT_NAME'])
+            : '';
+        $scriptDir = $scriptName !== '' ? rtrim(dirname($scriptName), '/') : '';
+
+        $basePath = '';
+        if ($scriptDir !== '' && $scriptDir !== '.') {
+            $cmsSegmentPos = strpos($scriptDir, '/CMS/');
+            if ($cmsSegmentPos !== false) {
+                $basePath = substr($scriptDir, 0, $cmsSegmentPos);
+            } elseif (substr($scriptDir, -4) === '/CMS') {
+                $basePath = substr($scriptDir, 0, -4);
+            } elseif (substr($scriptDir, -6) === '/forms') {
+                $basePath = substr($scriptDir, 0, -6);
+            } else {
+                $basePath = $scriptDir;
+            }
+
+            $basePath = rtrim($basePath, '/');
         }
-        return $scheme . '://' . $host . $path;
+
+        $normalizedPath = ltrim($path, '/');
+        if ($normalizedPath === '') {
+            return '';
+        }
+
+        if (stripos($normalizedPath, 'CMS/') === 0) {
+            $assetPath = '/' . $normalizedPath;
+        } else {
+            $assetPath = '/CMS/' . $normalizedPath;
+        }
+
+        if ($basePath !== '') {
+            $assetPath = $basePath . $assetPath;
+        }
+
+        return $scheme . '://' . $host . $assetPath;
     }
 }
 
