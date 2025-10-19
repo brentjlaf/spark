@@ -404,6 +404,7 @@ $(function(){
                         xlsx: '<i class="fa-solid fa-file-excel" aria-hidden="true"></i>',
                         mp3: '<i class="fa-solid fa-file-audio" aria-hidden="true"></i>',
                         mp4: '<i class="fa-solid fa-file-video" aria-hidden="true"></i>',
+                        m4v: '<i class="fa-solid fa-file-video" aria-hidden="true"></i>',
                         webm: '<i class="fa-solid fa-file-video" aria-hidden="true"></i>',
                         mov: '<i class="fa-solid fa-file-video" aria-hidden="true"></i>'
                     };
