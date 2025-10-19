@@ -28,13 +28,14 @@ function process_items($itemsData, $pages){
             $pageId = (int)($it['page'] ?? 0);
             $slug = '';
             foreach ($pages as $p) {
-                if ($p['id'] == $pageId) { $slug = $p['slug']; break; }
+                if ($p['id'] == $pageId) { $slug = trim((string)($p['slug'] ?? ''), '/'); break; }
             }
             if ($slug === '') continue;
             $item = [
                 'label' => $label !== '' ? $label : $slug,
                 'type' => 'page',
                 'page' => $pageId,
+                'slug' => $slug,
                 'link' => '/' . $slug,
                 'new_tab' => $newTab
             ];
