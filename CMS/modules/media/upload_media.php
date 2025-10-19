@@ -80,6 +80,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             continue;
         }
 
+        if ($category === 'images') {
+            optimize_image($dest, 3 * 1024 * 1024);
+            clearstatcache(true, $dest);
+            $optimizedSize = @filesize($dest);
+            if ($optimizedSize !== false) {
+                $size = $optimizedSize;
+            }
+        }
+
         $thumbPath = null;
         if ($category === 'images') {
             $thumbDir = $baseDir . '/thumbs';
@@ -131,6 +140,159 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     echo json_encode($response);
     exit;
+}
+
+function optimize_image(string $path, int $maxSizeBytes = 3145728): void {
+    if (!file_exists($path)) {
+        return;
+    }
+
+    clearstatcache(true, $path);
+    $currentSize = @filesize($path);
+    if ($currentSize === false || $currentSize <= $maxSizeBytes) {
+        return;
+    }
+
+    $info = @getimagesize($path);
+    if (!$info) {
+        return;
+    }
+
+    [$width, $height, $type] = $info;
+
+    $createMap = [
+        IMAGETYPE_JPEG => 'imagecreatefromjpeg',
+        IMAGETYPE_PNG  => 'imagecreatefrompng',
+        IMAGETYPE_WEBP => 'imagecreatefromwebp',
+    ];
+
+    $saveMap = [
+        IMAGETYPE_JPEG => 'imagejpeg',
+        IMAGETYPE_PNG  => 'imagepng',
+        IMAGETYPE_WEBP => 'imagewebp',
+    ];
+
+    if (!isset($createMap[$type], $saveMap[$type])) {
+        return;
+    }
+
+    $createFn = $createMap[$type];
+    $saveFn = $saveMap[$type];
+
+    if (!function_exists($createFn) || !function_exists($saveFn)) {
+        return;
+    }
+
+    $image = @$createFn($path);
+    if (!$image) {
+        return;
+    }
+
+    $currentImage = $image;
+    $currentWidth = $width;
+    $currentHeight = $height;
+    $currentSize = @filesize($path) ?: $currentSize;
+
+    $quality = 85;
+    $compression = 6;
+    $maxIterations = 12;
+    $iteration = 0;
+    $tmpPath = $path . '.tmp';
+
+    if ($type === IMAGETYPE_PNG || $type === IMAGETYPE_WEBP) {
+        imagealphablending($currentImage, false);
+        imagesavealpha($currentImage, true);
+    }
+
+    while ($iteration < $maxIterations && $currentSize > $maxSizeBytes) {
+        $iteration++;
+
+        switch ($type) {
+            case IMAGETYPE_JPEG:
+                $saveFn($currentImage, $tmpPath, max(10, $quality));
+                break;
+            case IMAGETYPE_WEBP:
+                $saveFn($currentImage, $tmpPath, max(10, $quality));
+                break;
+            case IMAGETYPE_PNG:
+                $saveFn($currentImage, $tmpPath, min(9, max(0, $compression)));
+                break;
+        }
+
+        if (!file_exists($tmpPath)) {
+            break;
+        }
+
+        clearstatcache(true, $tmpPath);
+        $newSize = @filesize($tmpPath);
+        if ($newSize !== false && ($newSize < $currentSize || $newSize <= $maxSizeBytes)) {
+            @rename($tmpPath, $path);
+            $currentSize = $newSize;
+        } else {
+            @unlink($tmpPath);
+        }
+
+        if ($currentSize <= $maxSizeBytes) {
+            break;
+        }
+
+        if (($type === IMAGETYPE_JPEG || $type === IMAGETYPE_WEBP) && $quality > 50) {
+            $quality -= 5;
+            continue;
+        }
+
+        if ($type === IMAGETYPE_PNG && $compression < 9) {
+            $compression++;
+            continue;
+        }
+
+        $newWidth = (int) round($currentWidth * 0.9);
+        $newHeight = (int) round($currentHeight * 0.9);
+
+        if ($newWidth < 1 || $newHeight < 1) {
+            break;
+        }
+
+        $resized = imagecreatetruecolor($newWidth, $newHeight);
+
+        if ($type === IMAGETYPE_PNG || $type === IMAGETYPE_WEBP) {
+            imagealphablending($resized, false);
+            imagesavealpha($resized, true);
+            $transparent = imagecolorallocatealpha($resized, 0, 0, 0, 127);
+            imagefill($resized, 0, 0, $transparent);
+        }
+
+        imagecopyresampled(
+            $resized,
+            $currentImage,
+            0,
+            0,
+            0,
+            0,
+            $newWidth,
+            $newHeight,
+            $currentWidth,
+            $currentHeight
+        );
+
+        if ($currentImage !== $image) {
+            imagedestroy($currentImage);
+        }
+
+        $currentImage = $resized;
+        $currentWidth = $newWidth;
+        $currentHeight = $newHeight;
+    }
+
+    if (file_exists($tmpPath)) {
+        @unlink($tmpPath);
+    }
+
+    if ($currentImage !== $image) {
+        imagedestroy($currentImage);
+    }
+
+    imagedestroy($image);
 }
 
 function create_thumbnail($src, $dest, $maxWidth) {
