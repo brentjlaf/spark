@@ -528,19 +528,33 @@ foreach ($report as $entry) {
     // Pair each short issue description with metadata for the modal view.
     foreach ($entry['issues'] as $issueText) {
         $detail = classify_seo_issue($issueText);
+        $impact = strtolower((string)($detail['impact'] ?? ''));
+        if ($impact === '') {
+            $impact = 'review';
+        }
         $issueDetails[] = [
             'description' => $issueText,
-            'impact' => $detail['impact'],
+            'impact' => $impact,
             'recommendation' => $detail['recommendation'],
         ];
     }
 
     $issuePreview = array_slice(array_map(static function ($detail) {
-        return $detail['description'];
+        $impact = strtolower((string)($detail['impact'] ?? ''));
+        if ($impact === '') {
+            $impact = 'review';
+        }
+        return [
+            'description' => $detail['description'],
+            'impact' => $impact,
+        ];
     }, $issueDetails), 0, 4);
 
     if (empty($issuePreview)) {
-        $issuePreview = ['No outstanding SEO issues'];
+        $issuePreview = [[
+            'description' => 'No outstanding SEO issues',
+            'impact' => 'pass',
+        ]];
     }
 
     // Persist historic comparisons so the UI can show score deltas.
@@ -883,7 +897,14 @@ $dashboardStats = [
                     </ul>
                     <div class="seo-page-issues">
                         <?php foreach ($page['issues']['preview'] as $issue): ?>
-                            <span class="seo-issue-chip"><?php echo htmlspecialchars($issue); ?></span>
+                            <?php
+                                $issueDescription = is_array($issue) ? ($issue['description'] ?? '') : (string)$issue;
+                                $issueImpact = is_array($issue) ? ($issue['impact'] ?? 'review') : 'review';
+                                $impactSlug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', (string)$issueImpact));
+                                $impactSlug = trim($impactSlug, '-');
+                                $impactClass = $impactSlug !== '' ? ' seo-issue-chip--' . htmlspecialchars($impactSlug, ENT_QUOTES) : '';
+                            ?>
+                            <span class="seo-issue-chip<?php echo $impactClass; ?>"><?php echo htmlspecialchars($issueDescription); ?></span>
                         <?php endforeach; ?>
                     </div>
                     <footer>

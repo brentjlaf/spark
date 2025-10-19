@@ -317,7 +317,16 @@
             page.summaryLine || ''
         ];
         if (page.issues && page.issues.preview) {
-            haystacks.push(page.issues.preview.join(' '));
+            var previewText = page.issues.preview.map(function (item) {
+                if (typeof item === 'string') {
+                    return item;
+                }
+                if (item && typeof item === 'object') {
+                    return String(item.description || '');
+                }
+                return '';
+            }).join(' ');
+            haystacks.push(previewText);
         }
         return haystacks.join(' ').toLowerCase().indexOf(query) !== -1;
     }
