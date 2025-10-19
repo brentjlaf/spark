@@ -61,7 +61,7 @@
     "views": 2540,
     "last_modified": 1751976000,
     "published": true,
-    "template": "page.php",
+    "template": "blog-list.php",
     "meta_title": "Blogs",
     "meta_description": "Latest blog posts and updates",
     "og_title": "Blogs",

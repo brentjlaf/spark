@@ -123,7 +123,7 @@ $selectedTypesAttr = htmlspecialchars(json_encode($normalizedTypes, JSON_UNESCAP
                                 <?php
                                     $record = $r['record'];
                                     if(($r['type'] ?? '') === 'Post') {
-                                        $viewUrl = '../' . urlencode($record['slug'] ?? $r['slug']);
+                                        $viewUrl = '../blogs/' . urlencode($record['slug'] ?? $r['slug']);
                                         $status = ucfirst($record['status'] ?? 'draft');
                                     } elseif(($r['type'] ?? '') === 'Media') {
                                         $viewUrl = '../' . ltrim($record['file'] ?? $r['slug'], '/');
