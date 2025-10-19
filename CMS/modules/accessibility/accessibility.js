@@ -282,7 +282,6 @@
         const $modalDescription = $('#a11yDetailDescription');
         const $fullAuditBtn = $modal.find('[data-a11y-action="full-audit"]');
         const $scanAllBtn = $('#scanAllPagesBtn');
-        const $downloadReportBtn = $('#downloadWcagReport');
 
         let currentFilter = 'all';
         let currentView = 'grid';
@@ -597,12 +596,6 @@
                         window.location.reload();
                     }
                 }, 900);
-            });
-        }
-
-        if ($downloadReportBtn.length) {
-            $downloadReportBtn.on('click', function () {
-                window.alert('Generating WCAG compliance report...\n\nThe report includes severity breakdowns, remediation recommendations, and scan history.');
             });
         }
 
