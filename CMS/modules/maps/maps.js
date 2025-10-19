@@ -471,6 +471,7 @@
             var isActive = view === state.viewMode;
             button.toggleClass('is-active', isActive);
             button.attr('aria-selected', isActive ? 'true' : 'false');
+            button.attr('aria-pressed', isActive ? 'true' : 'false');
             button.attr('tabindex', isActive ? '0' : '-1');
         });
         if (state.viewMode === 'map') {
