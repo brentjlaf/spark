@@ -306,12 +306,13 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    background: linear-gradient(135deg, rgba(248, 250, 252, 0.9), #ffffff);
     padding: 0.4rem;
     border-radius: 999px;
     margin-bottom: 1.25rem;
     border: 1px solid rgba(148, 163, 184, 0.45);
+    background: linear-gradient(135deg, rgba(248, 250, 252, 0.92), #ffffff);
     box-shadow: 0 14px 40px rgba(15, 23, 42, 0.14);
+    backdrop-filter: blur(12px);
 }
 
 .maps-view-toggle__btn {
@@ -320,6 +321,7 @@ body {
     background: transparent;
     color: #475569;
     font-weight: 600;
+    font-size: 0.95rem;
     letter-spacing: 0.01em;
     padding: 0.6rem 1.25rem;
     border-radius: 999px;
@@ -329,6 +331,7 @@ body {
     cursor: pointer;
     transition: color 0.25s ease, transform 0.25s ease;
     isolation: isolate;
+    line-height: 1.35;
 }
 
 .maps-view-toggle__btn::before {
@@ -364,16 +367,22 @@ body {
     transform: translateY(-1px);
 }
 
-.maps-view-toggle__btn.is-active {
+.maps-view-toggle__btn.is-active,
+.maps-view-toggle__btn[aria-selected="true"],
+.maps-view-toggle__btn[aria-pressed="true"] {
     color: #ffffff;
 }
 
-.maps-view-toggle__btn.is-active::before {
+.maps-view-toggle__btn.is-active::before,
+.maps-view-toggle__btn[aria-selected="true"]::before,
+.maps-view-toggle__btn[aria-pressed="true"]::before {
     background: linear-gradient(135deg, #2563eb, #4338ca);
     box-shadow: 0 18px 36px rgba(37, 99, 235, 0.35);
 }
 
-.maps-view-toggle__btn.is-active i {
+.maps-view-toggle__btn.is-active i,
+.maps-view-toggle__btn[aria-selected="true"] i,
+.maps-view-toggle__btn[aria-pressed="true"] i {
     color: #e0e7ff;
     transform: translateY(-1px);
 }
@@ -381,6 +390,14 @@ body {
 .maps-view-toggle__btn:focus-visible {
     outline: none;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .maps-view-toggle__btn,
+    .maps-view-toggle__btn::before,
+    .maps-view-toggle__btn i {
+        transition: none;
+    }
 }
 
 .maps-view-panel {
