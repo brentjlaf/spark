@@ -269,6 +269,12 @@ $lastSubmissionLabel = $latestSubmission > 0
                                         <p class="form-hint">Use this space to confirm next steps or share helpful resources. Line breaks are preserved.</p>
                                     </div>
                                 </div>
+                                <div class="forms-confirmation-actions">
+                                    <button type="button" class="a11y-btn a11y-btn--secondary" id="previewConfirmationEmail">
+                                        <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                                        <span>Preview confirmation email</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -277,6 +283,31 @@ $lastSubmissionLabel = $latestSubmission > 0
                         <button type="button" class="a11y-btn a11y-btn--ghost" id="cancelFormEdit">Cancel</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal forms-confirmation-preview-modal" id="confirmationEmailPreviewModal" role="dialog" aria-modal="true" aria-labelledby="confirmationPreviewTitle" aria-describedby="confirmationPreviewDescription" aria-hidden="true">
+        <div class="modal-content">
+            <button type="button" class="modal-close" id="closeConfirmationPreview" aria-label="Close confirmation email preview">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
+            <header class="forms-confirmation-preview-modal__header">
+                <span class="forms-confirmation-preview-modal__eyebrow">Confirmation email</span>
+                <h2 class="forms-confirmation-preview-modal__title" id="confirmationPreviewTitle">Preview</h2>
+                <p class="forms-confirmation-preview-modal__meta" id="confirmationPreviewDescription">This is how your confirmation message will appear in inboxes.</p>
+                <dl class="forms-confirmation-preview-modal__details">
+                    <div class="forms-confirmation-preview-modal__detail">
+                        <dt>Subject</dt>
+                        <dd id="confirmationPreviewSubject">—</dd>
+                    </div>
+                    <div class="forms-confirmation-preview-modal__detail">
+                        <dt>From</dt>
+                        <dd id="confirmationPreviewSender">—</dd>
+                    </div>
+                </dl>
+            </header>
+            <div class="forms-confirmation-preview-modal__body">
+                <iframe id="confirmationEmailPreviewFrame" title="Confirmation email preview" srcdoc="<!DOCTYPE html><html><head><meta charset=&quot;UTF-8&quot;></head><body style='margin:0;background-color:#f8fafc;'></body></html>"></iframe>
             </div>
         </div>
     </div>

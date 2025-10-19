@@ -10085,6 +10085,16 @@
     grid-column: 1 / -1;
 }
 
+.forms-confirmation-actions {
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.forms-confirmation-actions .a11y-btn {
+    gap: 8px;
+}
+
 @media (max-width: 768px) {
     .forms-confirmation-settings {
         padding: 20px;
@@ -10092,6 +10102,95 @@
 
     .forms-confirmation-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+.forms-confirmation-preview-modal .modal-content {
+    width: min(720px, 96vw);
+    max-width: 720px;
+    padding: 0;
+    border-radius: 20px;
+    box-shadow: 0 28px 54px rgba(15, 23, 42, 0.22);
+    overflow: hidden;
+    position: relative;
+}
+
+.forms-confirmation-preview-modal__header {
+    padding: 28px 32px 16px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.forms-confirmation-preview-modal__eyebrow {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6366f1;
+    margin-bottom: 6px;
+}
+
+.forms-confirmation-preview-modal__title {
+    margin: 0;
+    font-size: 24px;
+    color: #1f2937;
+    font-weight: 700;
+}
+
+.forms-confirmation-preview-modal__meta {
+    margin: 6px 0 16px;
+    color: #475569;
+    font-size: 14px;
+}
+
+.forms-confirmation-preview-modal__details {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    padding: 0;
+}
+
+.forms-confirmation-preview-modal__detail {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.forms-confirmation-preview-modal__detail dt {
+    margin: 0;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.forms-confirmation-preview-modal__detail dd {
+    margin: 0;
+    font-size: 14px;
+    color: #0f172a;
+    word-break: break-word;
+}
+
+.forms-confirmation-preview-modal__body {
+    background: #f8fafc;
+    height: min(520px, 70vh);
+}
+
+.forms-confirmation-preview-modal__body iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #f8fafc;
+}
+
+@media (max-width: 640px) {
+    .forms-confirmation-preview-modal .modal-content {
+        width: 94vw;
+    }
+
+    .forms-confirmation-preview-modal__header {
+        padding: 24px 20px 14px;
     }
 }
 
