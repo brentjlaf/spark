@@ -15,7 +15,15 @@ $templates = [];
 if ($templateDir) {
     foreach (glob($templateDir . '/*.php') as $t) {
         $name = basename($t);
-        if ($name[0] !== '_') $templates[] = $name;
+        if ($name[0] === '_') {
+            continue;
+        }
+
+        if ($name === 'blog-list.php') {
+            continue;
+        }
+
+        $templates[] = $name;
     }
 }
 $homepage = $settings['homepage'] ?? 'home';

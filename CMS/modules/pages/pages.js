@@ -11,6 +11,8 @@ $(function(){
         let homepageSlug = ($listView.data('homepageSlug') || '').toString();
         const homepageBadgeHtml = '<span class="pages-card__badge pages-card__badge--home"><i class="fa-solid fa-house" aria-hidden="true"></i>Homepage</span>';
         const ROBOTS_DEFAULT = 'index,follow';
+        const $templateSelect = $('#template');
+        const TEMP_TEMPLATE_CLASS = 'template-option--temporary';
         const pageMediaState = {
             loaded: false,
             loading: false,
@@ -307,6 +309,13 @@ $(function(){
         initPageMediaPicker();
         const ogImagePicker = initOgImagePicker();
 
+        function removeTemporaryTemplateOptions() {
+            if (!$templateSelect.length) {
+                return;
+            }
+            $templateSelect.find('option.' + TEMP_TEMPLATE_CLASS).remove();
+        }
+
         function openPageModal() {
             openModal('pageModal');
         }
@@ -314,6 +323,7 @@ $(function(){
         function closePageModal() {
             closeModal('pageModal');
             $('#cancelEdit').hide();
+            removeTemporaryTemplateOptions();
         }
 
         function getPageRows() {
@@ -1003,7 +1013,16 @@ $(function(){
             $('#publish_at').val(row.attr('data-publish_at') || '');
             $('#unpublish_at').val(row.attr('data-unpublish_at') || '');
             const tmpl = row.data('template') ? row.data('template') : 'page.php';
-            $('#template').val(tmpl);
+            if ($templateSelect.length) {
+                if (tmpl && !$templateSelect.find('option[value="' + tmpl + '"]').length) {
+                    $('<option>', {
+                        value: tmpl,
+                        text: tmpl,
+                        class: TEMP_TEMPLATE_CLASS
+                    }).appendTo($templateSelect);
+                }
+                $templateSelect.val(tmpl);
+            }
             $('#meta_title').val(row.data('meta_title'));
             $('#meta_description').val(row.data('meta_description'));
             $('#canonical_url').val(row.data('canonical_url'));
@@ -1051,6 +1070,7 @@ $(function(){
             $('#robots').val(ROBOTS_DEFAULT);
             $('#publish_at').val('');
             $('#unpublish_at').val('');
+            removeTemporaryTemplateOptions();
             openPageModal();
             slugEdited = false;
         });
