@@ -2,6 +2,7 @@
 // File: modules/forms/view.php
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/data.php';
+require_once __DIR__ . '/../../includes/settings.php';
 require_login();
 
 $formsFile = __DIR__ . '/../../data/forms.json';
@@ -52,6 +53,14 @@ $recentSubmissions = 0;
 $activeForms = [];
 $latestSubmission = 0;
 $thirtyDaysAgo = time() - (30 * 24 * 60 * 60);
+
+$siteSettings = get_site_settings();
+$defaultFromName = isset($siteSettings['site_name']) && $siteSettings['site_name'] !== ''
+    ? (string) $siteSettings['site_name']
+    : 'Website';
+$defaultFromEmail = isset($siteSettings['admin_email']) ? (string) $siteSettings['admin_email'] : '';
+$defaultSubject = 'Thanks for contacting ' . $defaultFromName;
+$defaultTitle = 'Thank you for reaching out';
 
 foreach ($submissions as $submission) {
     if (isset($submission['form_id'])) {
@@ -175,7 +184,11 @@ $lastSubmissionLabel = $latestSubmission > 0
                     <h2 id="formBuilderTitle">Add form</h2>
                     <p class="forms-drawer-description" id="formBuilderDescription">Drag inputs from the palette to build your ideal flow, then fine-tune settings on the right.</p>
                 </header>
-                <form id="formBuilderForm" class="forms-builder-form">
+                <form id="formBuilderForm" class="forms-builder-form"
+                      data-default-from-name="<?php echo htmlspecialchars($defaultFromName, ENT_QUOTES); ?>"
+                      data-default-from-email="<?php echo htmlspecialchars($defaultFromEmail, ENT_QUOTES); ?>"
+                      data-default-subject="<?php echo htmlspecialchars($defaultSubject, ENT_QUOTES); ?>"
+                      data-default-title="<?php echo htmlspecialchars($defaultTitle, ENT_QUOTES); ?>">
                     <input type="hidden" name="id" id="formId">
                     <div class="form-group">
                         <label class="form-label" for="formName">Form name</label>
@@ -206,6 +219,59 @@ $lastSubmissionLabel = $latestSubmission > 0
                             </div>
                         </div>
                     </div>
+                    <section class="forms-confirmation-settings" aria-labelledby="confirmationEmailHeading">
+                        <div class="forms-confirmation-header">
+                            <span class="forms-confirmation-eyebrow">Follow-up</span>
+                            <h3 class="forms-confirmation-title" id="confirmationEmailHeading">Confirmation email</h3>
+                            <p class="forms-confirmation-description">Send a branded confirmation email after someone submits this form. The message pulls in your site logo, tagline, and social links automatically.</p>
+                        </div>
+                        <div class="forms-confirmation-body">
+                            <div class="form-group forms-confirmation-toggle">
+                                <div class="settings-toggle-group" role="group" aria-label="Confirmation email preference">
+                                    <label class="settings-toggle">
+                                        <input type="checkbox" id="confirmationEmailEnabled">
+                                        <div>
+                                            <span class="settings-toggle__title">Enable confirmation email</span>
+                                            <p class="settings-toggle__description">Turn this on to automatically email people after they submit the form.</p>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                            <div id="confirmationEmailDetails" class="forms-confirmation-details" hidden>
+                                <div class="forms-confirmation-grid">
+                                    <div class="form-group">
+                                        <label class="form-label" for="confirmationEmailField">Recipient email field</label>
+                                        <select class="form-input" id="confirmationEmailField">
+                                            <option value="">Add an email field to enable confirmation emails</option>
+                                        </select>
+                                        <p class="form-hint" id="confirmationEmailFieldHint">Choose which form field holds the visitor's email address.</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="confirmationEmailFromName">From name</label>
+                                        <input type="text" class="form-input" id="confirmationEmailFromName" placeholder="<?php echo htmlspecialchars($defaultFromName, ENT_QUOTES); ?>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="confirmationEmailFromEmail">From email</label>
+                                        <input type="email" class="form-input" id="confirmationEmailFromEmail" placeholder="<?php echo htmlspecialchars($defaultFromEmail, ENT_QUOTES); ?>">
+                                        <p class="form-hint">This address appears as the sender. Use a mailbox that can receive replies.</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="confirmationEmailSubject">Subject line</label>
+                                        <input type="text" class="form-input" id="confirmationEmailSubject" placeholder="<?php echo htmlspecialchars($defaultSubject, ENT_QUOTES); ?>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="confirmationEmailTitle">Email title</label>
+                                        <input type="text" class="form-input" id="confirmationEmailTitle" placeholder="<?php echo htmlspecialchars($defaultTitle, ENT_QUOTES); ?>">
+                                    </div>
+                                    <div class="form-group forms-confirmation-description-field">
+                                        <label class="form-label" for="confirmationEmailDescription">Intro message</label>
+                                        <textarea class="form-input" id="confirmationEmailDescription" rows="4" placeholder="Thank you for reaching out—here's what happens next."></textarea>
+                                        <p class="form-hint">Use this space to confirm next steps or share helpful resources. Line breaks are preserved.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
                     <div class="form-actions forms-builder-actions">
                         <button type="submit" class="a11y-btn a11y-btn--primary">Save form</button>
                         <button type="button" class="a11y-btn a11y-btn--ghost" id="cancelFormEdit">Cancel</button>

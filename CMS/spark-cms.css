@@ -10022,6 +10022,79 @@
     gap: 12px;
 }
 
+.forms-confirmation-settings {
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 24px;
+    background: #ffffff;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.forms-confirmation-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.forms-confirmation-eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #6366f1;
+}
+
+.forms-confirmation-title {
+    margin: 0;
+    font-size: 20px;
+    line-height: 1.4;
+    color: #0f172a;
+}
+
+.forms-confirmation-description {
+    margin: 0;
+    color: #475569;
+    font-size: 15px;
+}
+
+.forms-confirmation-body {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.forms-confirmation-toggle .settings-toggle-group {
+    margin: 0;
+}
+
+.forms-confirmation-details {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 20px;
+}
+
+.forms-confirmation-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.forms-confirmation-description-field {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 768px) {
+    .forms-confirmation-settings {
+        padding: 20px;
+    }
+
+    .forms-confirmation-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 #fieldPalette {
     width: 240px;
     background: #f8fafc;
