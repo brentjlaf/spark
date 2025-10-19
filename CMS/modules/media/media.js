@@ -580,7 +580,7 @@ $(function(){
             }
         });
 
-        const result = { error: '', warning: '' };
+        const result = { error: '', warning: '', oversizedImages: oversized.image.slice() };
 
         if(oversized.video.length){
             const messages = [
@@ -592,74 +592,130 @@ $(function(){
             }
             result.error = messages.join('\n\n');
         } else if(oversized.image.length){
-            result.warning = 'Images over 3 MB will be optimized during upload so that their final size is 3 MB or smaller. Large images: ' + oversized.image.join(', ');
+            result.warning = 'Images over 3 MB: ' + oversized.image.join(', ');
         }
 
         return result;
     }
 
-    function uploadFiles(files){
-        if(!currentFolder || !files.length) return;
+    function showImageOptimizationPrompt(imageNames){
+        const safeNames = Array.isArray(imageNames) && imageNames.length
+            ? imageNames.map(name => escapeHtml(name || 'Untitled image'))
+            : [];
+        const listItems = safeNames.map(name => '<li>' + name + '</li>').join('');
+        const details = safeNames.length
+            ? '<ul class="modal-list">' + listItems + '</ul>'
+            : '';
+        const bodyHtml = `
+            <p>The following images are larger than 3 MB:</p>
+            ${details}
+            <p>Would you like to optimize them so the uploaded files are 3 MB or smaller, or keep the original file sizes?</p>
+        `;
+        return new Promise(resolve => {
+            const html = `
+                <div class="modal-content">
+                    <div class="modal-header"><h2>Large images detected</h2></div>
+                    <div class="modal-body">${bodyHtml}</div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary cancel">Cancel</button>
+                        <button class="btn btn-primary optimize">Optimize &amp; Upload</button>
+                        <button class="btn btn-secondary upload-original">Upload Original</button>
+                    </div>
+                </div>`;
+            const $modal = $('<div class="modal active"></div>').append(html).appendTo('body');
+            const cleanup = (result) => {
+                $modal.remove();
+                resolve(result);
+            };
+            $modal.find('.cancel').on('click', () => cleanup('cancel'));
+            $modal.find('.optimize').on('click', () => cleanup('optimize'));
+            $modal.find('.upload-original').on('click', () => cleanup('original'));
+            $modal.on('click', function(event){
+                if(event.target === this){
+                    cleanup('cancel');
+                }
+            });
+        });
+    }
+
+    function uploadFiles(fileList){
+        if(!currentFolder) return;
+        const files = Array.isArray(fileList) ? fileList : Array.from(fileList || []);
+        if(!files.length) return;
         const validationResult = validateUploadFiles(files);
         if(validationResult.error){
             alertModal(validationResult.error);
             $('#fileInput').val('');
             return;
-        } else if(validationResult.warning){
-            alertModal(validationResult.warning);
         }
-        const fd = new FormData();
-        Array.from(files).forEach(f => fd.append('files[]', f));
-        fd.append('folder', currentFolder);
-        fd.append('tags','');
-        startUploadUI();
-        $.ajax({
-            url: 'modules/media/upload_media.php',
-            method: 'POST',
-            data: fd,
-            processData: false,
-            contentType: false,
-            dataType: 'json',
-            xhr: function(){
-                const xhr = new window.XMLHttpRequest();
-                xhr.upload.addEventListener('progress', function(e){
-                    if(e.lengthComputable){
-                        const percent = (e.loaded / e.total) * 100;
-                        updateUploadProgress(percent);
-                    }
-                });
-                return xhr;
-            }
-        }).done(function(res){
-            const response = res || {};
-            if(response.status === 'success'){
-                updateUploadProgress(100);
-                loadImages();
-                loadFolders();
-            }
-            const errors = Array.isArray(response.errors) ? response.errors : [];
-            if(errors.length){
-                alertModal(errors.join('\n'));
-            } else if(response.status !== 'success'){
-                const message = response.message || 'Error uploading files.';
-                alertModal(message);
-            }
-        }).fail(function(jqXHR){
-            let message = 'Error uploading files.';
-            if(jqXHR.responseJSON){
-                const json = jqXHR.responseJSON;
-                if(Array.isArray(json.errors) && json.errors.length){
-                    message = json.errors.join('\n');
-                }else if(json.message){
-                    message = json.message;
+        const proceedWithUpload = (optimizeImages = true) => {
+            const fd = new FormData();
+            files.forEach(f => fd.append('files[]', f));
+            fd.append('folder', currentFolder);
+            fd.append('tags','');
+            fd.append('optimize_images', optimizeImages ? '1' : '0');
+            startUploadUI();
+            $.ajax({
+                url: 'modules/media/upload_media.php',
+                method: 'POST',
+                data: fd,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                xhr: function(){
+                    const xhr = new window.XMLHttpRequest();
+                    xhr.upload.addEventListener('progress', function(e){
+                        if(e.lengthComputable){
+                            const percent = (e.loaded / e.total) * 100;
+                            updateUploadProgress(percent);
+                        }
+                    });
+                    return xhr;
                 }
-            }else if(jqXHR.responseText){
-                message = jqXHR.responseText;
-            }
-            alertModal(message);
-        }).always(function(){
-            resetUploadUI();
-        });
+            }).done(function(res){
+                const response = res || {};
+                if(response.status === 'success'){
+                    updateUploadProgress(100);
+                    loadImages();
+                    loadFolders();
+                }
+                const errors = Array.isArray(response.errors) ? response.errors : [];
+                if(errors.length){
+                    alertModal(errors.join('\n'));
+                } else if(response.status !== 'success'){
+                    const message = response.message || 'Error uploading files.';
+                    alertModal(message);
+                }
+            }).fail(function(jqXHR){
+                let message = 'Error uploading files.';
+                if(jqXHR.responseJSON){
+                    const json = jqXHR.responseJSON;
+                    if(Array.isArray(json.errors) && json.errors.length){
+                        message = json.errors.join('\n');
+                    }else if(json.message){
+                        message = json.message;
+                    }
+                }else if(jqXHR.responseText){
+                    message = jqXHR.responseText;
+                }
+                alertModal(message);
+            }).always(function(){
+                resetUploadUI();
+            });
+        };
+
+        if(Array.isArray(validationResult.oversizedImages) && validationResult.oversizedImages.length){
+            showImageOptimizationPrompt(validationResult.oversizedImages).then(choice => {
+                if(choice === 'cancel'){
+                    $('#fileInput').val('');
+                    return;
+                }
+                proceedWithUpload(choice !== 'original');
+            });
+            return;
+        }
+
+        proceedWithUpload(true);
     }
 
     function getCreateFolderMessageElement(){
