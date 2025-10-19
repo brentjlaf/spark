@@ -31,6 +31,7 @@ foreach ($upcoming as $event) {
         'id' => $id,
         'title' => $event['title'] ?? 'Untitled event',
         'start' => $event['start'] ?? '',
+        'end' => $event['end'] ?? '',
         'tickets_sold' => (int) ($metrics['tickets_sold'] ?? 0),
         'revenue' => (float) ($metrics['revenue'] ?? 0),
     ];
