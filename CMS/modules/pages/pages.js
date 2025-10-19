@@ -508,8 +508,21 @@ $(function(){
             rows.sort(function(a, b){
                 const $a = $(a);
                 const $b = $(b);
+                const aIsHomepage = $a.data('homepage') == 1;
+                const bIsHomepage = $b.data('homepage') == 1;
+
+                if (aIsHomepage && !bIsHomepage) {
+                    return -1;
+                }
+                if (!aIsHomepage && bIsHomepage) {
+                    return 1;
+                }
+
                 const result = comparator($a, $b);
-                return sortState.direction === 'asc' ? result : -result;
+                if (sortState.direction === 'asc') {
+                    return result;
+                }
+                return -result;
             });
             rows.forEach(function(row){
                 $tbody.append(row);
