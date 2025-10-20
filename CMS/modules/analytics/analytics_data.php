@@ -3,26 +3,41 @@
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/data.php';
 require_once __DIR__ . '/../../includes/analytics.php';
+require_once __DIR__ . '/../../includes/analytics_provider.php';
 require_login();
 
-$pagesFile = __DIR__ . '/../../data/pages.json';
-$pages = read_json_file($pagesFile);
+$dataset = load_analytics_dataset();
+$entries = isset($dataset['entries']) && is_array($dataset['entries'])
+    ? $dataset['entries']
+    : [];
+$meta = isset($dataset['meta']) && is_array($dataset['meta']) ? $dataset['meta'] : [];
+$source = isset($dataset['source']) ? (string) $dataset['source'] : 'local';
 
-$data = [];
-foreach ($pages as $p) {
-    $slug = $p['slug'] ?? '';
-    $views = $p['views'] ?? 0;
-    $data[] = [
-        'title' => $p['title'],
-        'slug' => $slug,
-        'views' => $views,
-        'previousViews' => analytics_previous_views($slug, $views),
-    ];
+$lastUpdatedTimestamp = isset($meta['last_updated']) ? (int) $meta['last_updated'] : time();
+$lastUpdatedDisplay = $lastUpdatedTimestamp > 0
+    ? date('M j, Y g:i a', $lastUpdatedTimestamp)
+    : null;
+$sourceLabel = isset($meta['source_label'])
+    ? (string) $meta['source_label']
+    : ($source === 'google' ? 'Google Analytics' : 'CMS sample data');
+$lastUpdatedText = $lastUpdatedDisplay
+    ? 'Data refreshed ' . $lastUpdatedDisplay
+    : 'Data refreshed moments ago';
+$metaLabel = $lastUpdatedText . ' • Source: ' . $sourceLabel;
+$lastUpdatedIso = isset($meta['last_updated_iso']) ? (string) $meta['last_updated_iso'] : '';
+if ($lastUpdatedIso === '' && $lastUpdatedTimestamp > 0) {
+    $lastUpdatedIso = date(DATE_ATOM, $lastUpdatedTimestamp);
 }
 
-usort($data, function ($a, $b) {
-    return ($b['views'] ?? 0) <=> ($a['views'] ?? 0);
-});
+$response = [
+    'entries' => $entries,
+    'source' => $source,
+    'meta' => array_merge($meta, [
+        'label' => $metaLabel,
+        'source_label' => $sourceLabel,
+        'last_updated_iso' => $lastUpdatedIso,
+    ]),
+];
 
 header('Content-Type: application/json');
-echo json_encode($data);
+echo json_encode($response);

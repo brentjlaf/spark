@@ -2,6 +2,7 @@
 // File: export.php
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/data.php';
+require_once __DIR__ . '/../../includes/analytics_provider.php';
 
 require_login();
 
@@ -13,28 +14,10 @@ if (!in_array($filter, $allowedFilters, true)) {
     $filter = 'all';
 }
 
-$pagesFile = __DIR__ . '/../../data/pages.json';
-$pages = read_json_file($pagesFile);
-
-$entries = [];
-foreach ($pages as $page) {
-    $title = isset($page['title']) ? (string) $page['title'] : 'Untitled';
-    $slug = isset($page['slug']) ? (string) $page['slug'] : '';
-    $views = isset($page['views']) ? (int) $page['views'] : 0;
-    if ($views < 0) {
-        $views = 0;
-    }
-
-    $entries[] = [
-        'title' => $title,
-        'slug' => $slug,
-        'views' => $views,
-    ];
-}
-
-usort($entries, static function ($a, $b) {
-    return ($b['views'] ?? 0) <=> ($a['views'] ?? 0);
-});
+$dataset = load_analytics_dataset();
+$entries = isset($dataset['entries']) && is_array($dataset['entries'])
+    ? $dataset['entries']
+    : [];
 
 $totalViews = 0;
 $totalPages = count($entries);

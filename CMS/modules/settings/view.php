@@ -302,7 +302,7 @@
                                     <div class="form-group">
                                         <label class="form-label" for="googleAnalytics">Google Analytics ID</label>
                                         <input type="text" class="form-input" id="googleAnalytics" name="googleAnalytics" placeholder="G-XXXXXXX-XX or UA-XXXXXXXX-X">
-                                        <div class="form-help">Your Google Analytics measurement ID.</div>
+                                        <div class="form-help">Enter your Google Analytics measurement or property ID. Place a service account JSON at <code>CMS/data/google-analytics-service-account.json</code> (or use <code>GOOGLE_APPLICATION_CREDENTIALS</code>) so the dashboard can pull live data. For GA4 measurement IDs, add a property mapping in <code>CMS/data/google-analytics-streams.json</code> if needed.</div>
                                     </div>
                                     <div class="form-group">
                                         <label class="form-label" for="facebookPixel">Facebook Pixel ID</label>
