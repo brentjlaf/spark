@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($category === 'images' && $optimizeImages) {
-            optimize_image($dest, 3 * 1024 * 1024);
+            optimize_image($dest, 15 * 1024 * 1024);
             clearstatcache(true, $dest);
             $optimizedSize = @filesize($dest);
             if ($optimizedSize !== false) {
@@ -147,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-function optimize_image(string $path, int $maxSizeBytes = 3145728): void {
+function optimize_image(string $path, int $maxSizeBytes = 15728640): void {
     if (!file_exists($path)) {
         return;
     }
