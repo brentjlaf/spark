@@ -18,8 +18,8 @@ $(function(){
     let draggedMediaFolder = null;
     const usageCache = {};
 
-    const MAX_IMAGE_SIZE_BYTES = 3 * 1024 * 1024;
-    const MAX_VIDEO_SIZE_BYTES = 10 * 1024 * 1024;
+    const MAX_IMAGE_SIZE_BYTES = 15 * 1024 * 1024;
+    const MAX_VIDEO_SIZE_BYTES = 30 * 1024 * 1024;
     const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'heic', 'heif'];
     const VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'wmv', 'flv', 'm4v'];
 
@@ -584,15 +584,15 @@ $(function(){
 
         if(oversized.video.length){
             const messages = [
-                'Some files are too large to upload. Images will be optimized during upload so their final size is 3 MB or smaller. Videos must be 10 MB or smaller; please optimize oversized videos before trying to upload them again.',
-                'Videos over 10 MB: ' + oversized.video.join(', ') + '. Please optimize these videos before uploading again.'
+                'Some files are too large to upload. Images will be optimized during upload so their final size is 15 MB or smaller. Videos must be 30 MB or smaller; please optimize oversized videos before trying to upload them again.',
+                'Videos over 30 MB: ' + oversized.video.join(', ') + '. Please optimize these videos before uploading again.'
             ];
             if(oversized.image.length){
-                messages.push('Images over 3 MB: ' + oversized.image.join(', '));
+                messages.push('Images over 15 MB: ' + oversized.image.join(', '));
             }
             result.error = messages.join('\n\n');
         } else if(oversized.image.length){
-            result.warning = 'Images over 3 MB: ' + oversized.image.join(', ');
+            result.warning = 'Images over 15 MB: ' + oversized.image.join(', ');
         }
 
         return result;
@@ -607,9 +607,9 @@ $(function(){
             ? '<ul class="modal-list">' + listItems + '</ul>'
             : '';
         const bodyHtml = `
-            <p>The following images are larger than 3 MB:</p>
+            <p>The following images are larger than 15 MB:</p>
             ${details}
-            <p>Would you like to optimize them so the uploaded files are 3 MB or smaller, or keep the original file sizes?</p>
+            <p>Would you like to optimize them so the uploaded files are 15 MB or smaller, or keep the original file sizes?</p>
         `;
         return new Promise(resolve => {
             const html = `
