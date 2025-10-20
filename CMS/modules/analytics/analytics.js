@@ -1412,9 +1412,27 @@ $(function(){
         }
         setButtonLoading($refreshBtn, true);
         $.getJSON('modules/analytics/analytics_data.php')
-            .done(function(data){
-                setData(data || []);
-                updateLastUpdatedDisplay(new Date());
+            .done(function(response){
+                let entries = [];
+                let meta = null;
+                if (Array.isArray(response)) {
+                    entries = response;
+                } else if (response && typeof response === 'object') {
+                    if (Array.isArray(response.entries)) {
+                        entries = response.entries;
+                    }
+                    if (response.meta && typeof response.meta === 'object') {
+                        meta = response.meta;
+                    }
+                }
+                setData(entries || []);
+                if (meta) {
+                    const label = meta.label || meta.lastUpdatedLabel || '';
+                    const iso = meta.last_updated_iso || meta.lastUpdatedIso || '';
+                    updateLastUpdatedDisplay(label, iso);
+                } else {
+                    updateLastUpdatedDisplay(new Date());
+                }
             })
             .fail(function(){
                 window.alert('Unable to refresh analytics data right now. Please try again later.');
@@ -1427,7 +1445,9 @@ $(function(){
     const initialEntries = window.analyticsInitialEntries || [];
     const initialMeta = window.analyticsInitialMeta || {};
     setData(initialEntries);
-    updateLastUpdatedDisplay(initialMeta.lastUpdated, initialMeta.lastUpdatedIso);
+    const initialLabel = initialMeta.label || initialMeta.lastUpdated || '';
+    const initialIso = initialMeta.lastUpdatedIso || initialMeta.last_updated_iso || '';
+    updateLastUpdatedDisplay(initialLabel, initialIso);
 
     $filterButtons.on('click', function(){
         const filter = $(this).data('analyticsFilter');

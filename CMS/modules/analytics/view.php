@@ -3,62 +3,66 @@
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/data.php';
 require_once __DIR__ . '/../../includes/analytics.php';
+require_once __DIR__ . '/../../includes/analytics_provider.php';
 require_login();
 
-$pagesFile = __DIR__ . '/../../data/pages.json';
-$pages = read_json_file($pagesFile);
+$dataset = load_analytics_dataset();
+$entries = isset($dataset['entries']) && is_array($dataset['entries']) ? $dataset['entries'] : [];
+$source = isset($dataset['source']) ? (string) $dataset['source'] : 'local';
+$meta = isset($dataset['meta']) && is_array($dataset['meta']) ? $dataset['meta'] : [];
+
+$lastUpdatedTimestamp = isset($meta['last_updated']) ? (int) $meta['last_updated'] : time();
+$lastUpdatedDisplay = $lastUpdatedTimestamp > 0
+    ? date('M j, Y g:i a', $lastUpdatedTimestamp)
+    : null;
 
 $totalViews = 0;
-$lastUpdatedTimestamp = 0;
-foreach ($pages as $p) {
-    $totalViews += (int) ($p['views'] ?? 0);
-    $modified = isset($p['last_modified']) ? (int) $p['last_modified'] : 0;
-    if ($modified > $lastUpdatedTimestamp) {
-        $lastUpdatedTimestamp = $modified;
-    }
-}
-
-$totalPages = count($pages);
-$averageViews = $totalPages > 0 ? $totalViews / $totalPages : 0;
-
-$sortedPages = $pages;
-usort($sortedPages, function ($a, $b) {
-    return ($b['views'] ?? 0) <=> ($a['views'] ?? 0);
-});
-
-$topPages = array_slice($sortedPages, 0, 3);
-$lowViewPages = array_slice(array_reverse($sortedPages), 0, 3);
-$zeroViewPages = array_values(array_filter($pages, static function ($page) {
-    return (int) ($page['views'] ?? 0) === 0;
-}));
-$zeroViewCount = count($zeroViewPages);
-
-$initialEntries = [];
 $previousTotalViews = 0;
+$zeroViewCount = 0;
 $previousZeroViewCount = 0;
-foreach ($sortedPages as $page) {
-    $views = (int) ($page['views'] ?? 0);
-    $slug = isset($page['slug']) ? (string) $page['slug'] : '';
-    $previousViews = analytics_previous_views($slug, $views);
 
-    $initialEntries[] = [
-        'title' => isset($page['title']) ? (string) $page['title'] : 'Untitled',
-        'slug' => $slug,
-        'views' => $views,
-        'previousViews' => $previousViews,
-    ];
+foreach ($entries as $entry) {
+    $views = isset($entry['views']) ? (int) $entry['views'] : 0;
+    $previousViews = isset($entry['previousViews']) ? (int) $entry['previousViews'] : $views;
 
+    $totalViews += $views;
     $previousTotalViews += $previousViews;
+
+    if ($views === 0) {
+        $zeroViewCount++;
+    }
     if ($previousViews === 0) {
         $previousZeroViewCount++;
     }
 }
 
-$lastUpdatedDisplay = $lastUpdatedTimestamp > 0
-    ? date('M j, Y g:i a', $lastUpdatedTimestamp)
-    : null;
-
+$totalPages = count($entries);
+$averageViews = $totalPages > 0 ? $totalViews / $totalPages : 0;
 $previousAverageViews = $totalPages > 0 ? $previousTotalViews / $totalPages : 0;
+
+$sortedEntries = $entries;
+usort($sortedEntries, 'sort_analytics_entries');
+
+$topPages = array_slice($sortedEntries, 0, 3);
+$lowViewPages = array_slice(array_reverse($sortedEntries), 0, 3);
+$zeroViewPages = array_values(array_filter($sortedEntries, static function ($entry) {
+    return (int) ($entry['views'] ?? 0) === 0;
+}));
+
+$initialEntries = array_values($sortedEntries);
+
+$sourceLabel = isset($meta['source_label'])
+    ? (string) $meta['source_label']
+    : ($source === 'google' ? 'Google Analytics' : 'CMS sample data');
+$lastUpdatedText = $lastUpdatedDisplay
+    ? 'Data refreshed ' . $lastUpdatedDisplay
+    : 'Data refreshed moments ago';
+$heroMetaText = $lastUpdatedText . ' • Source: ' . $sourceLabel;
+
+$lastUpdatedIso = isset($meta['last_updated_iso']) ? (string) $meta['last_updated_iso'] : '';
+if ($lastUpdatedIso === '' && $lastUpdatedTimestamp > 0) {
+    $lastUpdatedIso = date(DATE_ATOM, $lastUpdatedTimestamp);
+}
 
 $summaryComparisons = [
     'totalViews' => [
@@ -98,10 +102,8 @@ $summaryComparisons = [
                         <i class="fa-solid fa-download" aria-hidden="true"></i>
                         <span class="analytics-btn__text">Export CSV</span>
                     </button>
-                    <span class="a11y-hero-meta analytics-hero-meta" id="analyticsLastUpdated" data-timestamp="<?php echo $lastUpdatedTimestamp > 0 ? htmlspecialchars(date(DATE_ATOM, $lastUpdatedTimestamp), ENT_QUOTES) : ''; ?>">
-                        <?php echo $lastUpdatedDisplay
-                            ? 'Data refreshed ' . htmlspecialchars($lastUpdatedDisplay, ENT_QUOTES)
-                            : 'Data refreshed moments ago'; ?>
+                    <span class="a11y-hero-meta analytics-hero-meta" id="analyticsLastUpdated" data-timestamp="<?php echo htmlspecialchars($lastUpdatedIso, ENT_QUOTES); ?>">
+                        <?php echo htmlspecialchars($heroMetaText, ENT_QUOTES); ?>
                     </span>
                 </div>
             </div>
@@ -171,7 +173,12 @@ $summaryComparisons = [
                             <li>
                                 <div>
                                     <span class="analytics-insight-item-title"><?php echo htmlspecialchars($page['title'] ?? 'Untitled', ENT_QUOTES); ?></span>
-                                    <span class="analytics-insight-item-slug"><?php echo htmlspecialchars($page['slug'] ?? '', ENT_QUOTES); ?></span>
+                                    <?php
+                                        $topSlug = isset($page['slug']) && $page['slug'] !== ''
+                                            ? '/' . ltrim((string) $page['slug'], '/')
+                                            : '/';
+                                    ?>
+                                    <span class="analytics-insight-item-slug"><?php echo htmlspecialchars($topSlug, ENT_QUOTES); ?></span>
                                 </div>
                                 <span class="analytics-insight-metric"><?php echo number_format((int) ($page['views'] ?? 0)); ?> views</span>
                             </li>
@@ -199,7 +206,12 @@ $summaryComparisons = [
                             <li>
                                 <div>
                                     <span class="analytics-insight-item-title"><?php echo htmlspecialchars($page['title'] ?? 'Untitled', ENT_QUOTES); ?></span>
-                                    <span class="analytics-insight-item-slug"><?php echo htmlspecialchars($page['slug'] ?? '', ENT_QUOTES); ?></span>
+                                    <?php
+                                        $lowSlug = isset($page['slug']) && $page['slug'] !== ''
+                                            ? '/' . ltrim((string) $page['slug'], '/')
+                                            : '/';
+                                    ?>
+                                    <span class="analytics-insight-item-slug"><?php echo htmlspecialchars($lowSlug, ENT_QUOTES); ?></span>
                                 </div>
                                 <span class="analytics-insight-metric"><?php echo number_format((int) ($page['views'] ?? 0)); ?> views</span>
                             </li>
@@ -338,8 +350,13 @@ $summaryComparisons = [
 <script>
     window.analyticsInitialEntries = <?php echo json_encode($initialEntries, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
     window.analyticsInitialMeta = <?php echo json_encode([
-        'lastUpdated' => $lastUpdatedDisplay ? 'Data refreshed ' . $lastUpdatedDisplay : 'Data refreshed moments ago',
-        'lastUpdatedIso' => $lastUpdatedTimestamp > 0 ? date(DATE_ATOM, $lastUpdatedTimestamp) : null,
+        'lastUpdated' => $heroMetaText,
+        'lastUpdatedIso' => $lastUpdatedIso ?: null,
+        'source' => $source,
+        'sourceLabel' => $sourceLabel,
+        'measurementId' => $meta['measurement_id'] ?? null,
+        'propertyId' => $meta['property_id'] ?? null,
         'summary' => $summaryComparisons,
+        'label' => $heroMetaText,
     ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
 </script>
