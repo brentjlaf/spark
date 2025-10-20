@@ -354,6 +354,16 @@ section.container-fluid {
     border: 0;
 }
 
+.video-figure {
+    margin: 0;
+}
+
+.video-caption {
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--gray-6);
+}
+
 /* Card Block */
 .card-block {
     border: 1px solid var(--gray-3);
