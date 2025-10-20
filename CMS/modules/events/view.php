@@ -503,6 +503,10 @@ $initialPayload = [
                                     <?php endforeach; ?>
                                 </select>
                             </label>
+                            <button type="button" class="a11y-btn a11y-btn--ghost events-form-builder-trigger" data-events-open="form-builder">
+                                <i class="fa-solid fa-pen-ruler" aria-hidden="true"></i>
+                                <span>Build new form</span>
+                            </button>
                             <p class="events-form-help">Choose which form to use for attendee registrations. Leave empty to manage signups elsewhere.</p>
                         </section>
 
@@ -530,6 +534,38 @@ $initialPayload = [
                 <footer class="events-form-actions">
                     <button type="button" class="a11y-btn a11y-btn--ghost" data-events-close>Cancel</button>
                     <button type="submit" class="a11y-btn a11y-btn--primary">Save event</button>
+                </footer>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="events-modal-backdrop" data-events-modal="form-builder">
+    <div class="events-modal events-form-builder-modal" role="dialog" aria-modal="true" aria-labelledby="eventsFormBuilderTitle">
+        <header class="events-modal-header">
+            <h2 class="events-modal-title" id="eventsFormBuilderTitle">Create registration form</h2>
+            <button type="button" class="events-modal-close" data-events-close>&times;<span class="sr-only">Close</span></button>
+        </header>
+        <div class="events-modal-body">
+            <form data-events-form="form-builder">
+                <input type="hidden" name="id" value="">
+                <div class="events-builder-body">
+                    <label class="events-form-field">
+                        <span>Form name</span>
+                        <input type="text" name="name" data-events-builder-form-name required>
+                    </label>
+                    <div class="events-builder-alert" data-events-builder-alert role="alert" hidden></div>
+                    <p class="events-form-help">Add fields to capture attendee details. Field names are used as submission keys.</p>
+                    <div class="events-builder-fields" data-events-builder-fields></div>
+                    <div class="events-builder-empty" data-events-builder-empty hidden>No fields yet. Add your first field to get started.</div>
+                    <button type="button" class="a11y-btn a11y-btn--secondary events-builder-add" data-events-builder-add>
+                        <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                        <span>Add field</span>
+                    </button>
+                </div>
+                <footer class="events-builder-footer">
+                    <button type="button" class="a11y-btn a11y-btn--ghost" data-events-close>Cancel</button>
+                    <button type="submit" class="a11y-btn a11y-btn--primary" data-events-builder-submit>Save form</button>
                 </footer>
             </form>
         </div>

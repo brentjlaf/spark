@@ -92,6 +92,15 @@
         categoriesSubmit: document.querySelector('[data-events-category-submit]'),
         categoriesReset: document.querySelector('[data-events-category-reset]'),
         toast: document.querySelector('[data-events-toast]'),
+        formBuilder: {
+            modal: document.querySelector('[data-events-modal="form-builder"]'),
+            form: document.querySelector('[data-events-form="form-builder"]'),
+            fields: document.querySelector('[data-events-builder-fields]'),
+            empty: document.querySelector('[data-events-builder-empty]'),
+            addButton: document.querySelector('[data-events-builder-add]'),
+            alert: document.querySelector('[data-events-builder-alert]'),
+            submit: document.querySelector('[data-events-builder-submit]'),
+        },
     };
 
     const state = {
@@ -129,6 +138,9 @@
         },
         orderEditor: {
             detail: null,
+        },
+        formBuilder: {
+            targetSelect: null,
         },
     };
 
@@ -844,6 +856,437 @@
 
     function escapeAttribute(value) {
         return escapeHtml(value);
+    }
+
+    function slugifyFieldName(value) {
+        return String(value || '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '_')
+            .replace(/^_+|_+$/g, '')
+            .slice(0, 60);
+    }
+
+    function generateUniqueFieldName(base, currentInput) {
+        const sanitizedBase = slugifyFieldName(base) || 'field';
+        const container = selectors.formBuilder.fields;
+        if (!container) {
+            return sanitizedBase;
+        }
+        const existing = new Set();
+        container.querySelectorAll('[data-events-builder-name]').forEach((input) => {
+            if (input === currentInput) {
+                return;
+            }
+            const value = String(input.value || '').trim();
+            if (value !== '') {
+                existing.add(value);
+            }
+        });
+        if (!existing.has(sanitizedBase)) {
+            return sanitizedBase;
+        }
+        let index = 2;
+        let candidate = `${sanitizedBase}_${index}`;
+        while (existing.has(candidate)) {
+            index += 1;
+            candidate = `${sanitizedBase}_${index}`;
+        }
+        return candidate;
+    }
+
+    function shouldShowBuilderOptions(type) {
+        const normalized = String(type || '').toLowerCase();
+        return ['select', 'radio', 'checkbox'].includes(normalized);
+    }
+
+    function showBuilderAlert(message, tone = 'error') {
+        const alert = selectors.formBuilder.alert;
+        if (!alert) {
+            return;
+        }
+        alert.textContent = message;
+        alert.classList.remove('events-builder-alert--error', 'events-builder-alert--success');
+        alert.classList.add(tone === 'success' ? 'events-builder-alert--success' : 'events-builder-alert--error');
+        alert.hidden = false;
+    }
+
+    function hideBuilderAlert() {
+        const alert = selectors.formBuilder.alert;
+        if (!alert) {
+            return;
+        }
+        alert.classList.remove('events-builder-alert--error', 'events-builder-alert--success');
+        alert.hidden = true;
+        alert.textContent = '';
+    }
+
+    function updateBuilderEmptyState() {
+        const container = selectors.formBuilder.fields;
+        const emptyState = selectors.formBuilder.empty;
+        if (!container || !emptyState) {
+            return;
+        }
+        const hasFields = container.querySelector('[data-events-builder-field]');
+        emptyState.hidden = Boolean(hasFields);
+    }
+
+    function setBuilderSaving(isSaving) {
+        const submit = selectors.formBuilder.submit;
+        if (submit) {
+            if (isSaving) {
+                if (!submit.dataset.originalLabel) {
+                    submit.dataset.originalLabel = submit.textContent || 'Save form';
+                }
+                submit.textContent = 'Saving…';
+                submit.disabled = true;
+            } else {
+                submit.disabled = false;
+                submit.textContent = submit.dataset.originalLabel || 'Save form';
+            }
+        }
+        const addButton = selectors.formBuilder.addButton;
+        if (addButton) {
+            addButton.disabled = Boolean(isSaving);
+        }
+    }
+
+    function resetFormBuilder() {
+        const builder = selectors.formBuilder;
+        if (!builder.form || !builder.fields) {
+            return;
+        }
+        builder.form.reset();
+        builder.fields.innerHTML = '';
+        hideBuilderAlert();
+        setBuilderSaving(false);
+        addBuilderField();
+        updateBuilderEmptyState();
+    }
+
+    function addBuilderField(field = {}) {
+        const container = selectors.formBuilder.fields;
+        if (!container) {
+            return;
+        }
+        hideBuilderAlert();
+        const wrapper = document.createElement('div');
+        wrapper.className = 'events-builder-field';
+        wrapper.dataset.eventsBuilderField = '';
+        wrapper.innerHTML = `
+            <div class="events-builder-field-row">
+                <label>
+                    <span>Field label</span>
+                    <input type="text" data-events-builder-label required>
+                </label>
+                <label>
+                    <span>Field name</span>
+                    <input type="text" data-events-builder-name>
+                </label>
+                <label>
+                    <span>Field type</span>
+                    <select data-events-builder-type>
+                        <option value="text">Text</option>
+                        <option value="email">Email</option>
+                        <option value="number">Number</option>
+                        <option value="textarea">Paragraph</option>
+                        <option value="select">Dropdown</option>
+                        <option value="radio">Multiple choice</option>
+                        <option value="checkbox">Checkbox</option>
+                    </select>
+                </label>
+                <label class="events-builder-inline">
+                    <input type="checkbox" data-events-builder-required>
+                    <span>Required</span>
+                </label>
+            </div>
+            <button type="button" class="events-builder-remove" data-events-builder-remove>
+                <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+                <span class="sr-only">Remove field</span>
+            </button>
+            <label class="events-builder-options" data-events-builder-options hidden>
+                <span>Options (one per line)</span>
+                <textarea data-events-builder-options-input rows="3" placeholder="Add each option on a new line"></textarea>
+            </label>
+        `;
+        container.appendChild(wrapper);
+        const labelInput = wrapper.querySelector('[data-events-builder-label]');
+        const nameInput = wrapper.querySelector('[data-events-builder-name]');
+        const typeSelect = wrapper.querySelector('[data-events-builder-type]');
+        const requiredInput = wrapper.querySelector('[data-events-builder-required]');
+        const optionsWrapper = wrapper.querySelector('[data-events-builder-options]');
+        const optionsInput = wrapper.querySelector('[data-events-builder-options-input]');
+        const removeBtn = wrapper.querySelector('[data-events-builder-remove]');
+        const initialType = String(field.type || 'text').toLowerCase();
+        if (labelInput) {
+            labelInput.value = field.label || '';
+        }
+        if (typeSelect) {
+            typeSelect.value = initialType;
+            if (typeSelect.value !== initialType) {
+                typeSelect.value = 'text';
+            }
+        }
+        if (requiredInput) {
+            requiredInput.checked = Boolean(field.required);
+        }
+        if (optionsInput && typeof field.options === 'string') {
+            optionsInput.value = field.options;
+        }
+        const applyGeneratedName = () => {
+            if (!nameInput || nameInput.dataset.manual === 'true') {
+                return;
+            }
+            const base = slugifyFieldName(labelInput?.value || '');
+            const unique = generateUniqueFieldName(base || 'field', nameInput);
+            nameInput.value = unique;
+        };
+        if (nameInput) {
+            if (field.name) {
+                const sanitized = generateUniqueFieldName(field.name, nameInput);
+                nameInput.value = sanitized;
+                nameInput.dataset.manual = 'true';
+            } else {
+                applyGeneratedName();
+            }
+            nameInput.addEventListener('input', () => {
+                if (!nameInput) {
+                    return;
+                }
+                const sanitized = slugifyFieldName(nameInput.value);
+                if (sanitized === '') {
+                    nameInput.value = '';
+                    delete nameInput.dataset.manual;
+                    applyGeneratedName();
+                    return;
+                }
+                const unique = generateUniqueFieldName(sanitized, nameInput);
+                nameInput.value = unique;
+                nameInput.dataset.manual = 'true';
+            });
+        }
+        if (labelInput) {
+            labelInput.addEventListener('input', () => {
+                if (nameInput?.dataset.manual === 'true') {
+                    return;
+                }
+                applyGeneratedName();
+            });
+        }
+        if (typeSelect && optionsWrapper) {
+            const updateOptionsVisibility = () => {
+                optionsWrapper.hidden = !shouldShowBuilderOptions(typeSelect.value);
+            };
+            typeSelect.addEventListener('change', updateOptionsVisibility);
+            updateOptionsVisibility();
+        }
+        if (removeBtn) {
+            removeBtn.addEventListener('click', () => {
+                wrapper.remove();
+                updateBuilderEmptyState();
+                hideBuilderAlert();
+            });
+        }
+        if (labelInput && !field.label) {
+            labelInput.focus();
+        }
+        updateBuilderEmptyState();
+    }
+
+    function gatherBuilderFields() {
+        const container = selectors.formBuilder.fields;
+        if (!container) {
+            return [];
+        }
+        const fields = [];
+        const fieldElements = container.querySelectorAll('[data-events-builder-field]');
+        fieldElements.forEach((fieldElement) => {
+            const labelInput = fieldElement.querySelector('[data-events-builder-label]');
+            const nameInput = fieldElement.querySelector('[data-events-builder-name]');
+            const typeSelect = fieldElement.querySelector('[data-events-builder-type]');
+            const optionsWrapper = fieldElement.querySelector('[data-events-builder-options]');
+            const optionsInput = fieldElement.querySelector('[data-events-builder-options-input]');
+            const requiredInput = fieldElement.querySelector('[data-events-builder-required]');
+            const label = String(labelInput?.value || '').trim();
+            const name = slugifyFieldName(nameInput?.value || '');
+            if (label === '' || name === '') {
+                throw { type: 'validation', message: 'Each field needs a label and field name.', element: labelInput || nameInput };
+            }
+            const type = String(typeSelect?.value || 'text').toLowerCase();
+            const fieldData = { type, label, name };
+            if (requiredInput) {
+                fieldData.required = requiredInput.checked;
+            }
+            if (optionsWrapper && !optionsWrapper.hidden && optionsInput) {
+                const options = optionsInput.value
+                    .split(/\r?\n/)
+                    .map((line) => line.trim())
+                    .filter(Boolean)
+                    .join(', ');
+                if (options) {
+                    fieldData.options = options;
+                }
+            }
+            fields.push(fieldData);
+        });
+        return fields;
+    }
+
+    function handleFormBuilderSubmit(event) {
+        event.preventDefault();
+        const builder = selectors.formBuilder;
+        if (!builder.form) {
+            return;
+        }
+        hideBuilderAlert();
+        const nameInput = builder.form.querySelector('[data-events-builder-form-name]');
+        const formName = String(nameInput?.value || '').trim();
+        if (formName === '') {
+            showBuilderAlert('Form name is required.');
+            nameInput?.focus();
+            return;
+        }
+        const container = builder.fields;
+        if (!container || !container.querySelector('[data-events-builder-field]')) {
+            showBuilderAlert('Add at least one field to build your registration form.');
+            return;
+        }
+        let fields;
+        try {
+            fields = gatherBuilderFields();
+        } catch (error) {
+            if (error && error.type === 'validation') {
+                showBuilderAlert(error.message);
+                if (error.element && typeof error.element.focus === 'function') {
+                    error.element.focus();
+                }
+            } else {
+                showBuilderAlert('Unable to process the form fields. Please review and try again.');
+            }
+            return;
+        }
+        if (fields.length === 0) {
+            showBuilderAlert('Add at least one field to build your registration form.');
+            return;
+        }
+        const payload = new FormData();
+        const id = builder.form.querySelector('[name="id"]')?.value || '';
+        if (id) {
+            payload.append('id', id);
+        }
+        payload.append('name', formName);
+        payload.append('fields', JSON.stringify(fields));
+        payload.append('confirmation_email', JSON.stringify({ enabled: false }));
+        setBuilderSaving(true);
+        fetch('modules/forms/save_form.php', { method: 'POST', body: payload, credentials: 'same-origin' })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Request failed');
+                }
+                return response.text();
+            })
+            .then((text) => {
+                if (typeof text !== 'string' || text.toLowerCase().indexOf('ok') === -1) {
+                    throw new Error('Unexpected response');
+                }
+                const targetSelect = state.formBuilder.targetSelect;
+                closeModal(selectors.formBuilder.modal);
+                state.formBuilder.targetSelect = targetSelect;
+                showToast('Form saved successfully.');
+                return refreshForms({ target: targetSelect, selectName: formName }).catch(() => {
+                    showToast('Form saved but the list could not be refreshed.', 'error');
+                });
+            })
+            .catch(() => {
+                showBuilderAlert('Unable to save the form. Please try again.');
+            })
+            .finally(() => {
+                setBuilderSaving(false);
+                state.formBuilder.targetSelect = null;
+            });
+    }
+
+    function openFormBuilder(trigger) {
+        const builder = selectors.formBuilder;
+        if (!builder.modal) {
+            return;
+        }
+        const selectFromTrigger = trigger
+            ? trigger.closest('.events-form-card')?.querySelector('[data-events-event-form]')
+            : null;
+        state.formBuilder.targetSelect = selectFromTrigger || selectors.modal?.querySelector('[data-events-event-form]') || null;
+        resetFormBuilder();
+        openModal(builder.modal);
+        builder.form?.querySelector('[data-events-builder-form-name]')?.focus();
+    }
+
+    function initFormBuilder() {
+        const builder = selectors.formBuilder;
+        if (!builder.modal || !builder.form || !builder.fields) {
+            return;
+        }
+        if (builder.addButton) {
+            builder.addButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                addBuilderField();
+            });
+        }
+        builder.form.addEventListener('submit', handleFormBuilderSubmit);
+        builder.form.addEventListener('input', () => {
+            hideBuilderAlert();
+        });
+    }
+
+    function refreshForms(preferences = {}) {
+        return fetch('modules/forms/list_forms.php', { credentials: 'same-origin' })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Request failed');
+                }
+                return response.json();
+            })
+            .then((forms) => {
+                const normalized = Array.isArray(forms)
+                    ? forms.map((form) => normalizeFormOption(form)).filter((form) => form !== null)
+                    : [];
+                state.forms = normalized;
+                const targetSelect =
+                    preferences.target ||
+                    state.formBuilder.targetSelect ||
+                    selectors.modal?.querySelector('[data-events-event-form]') ||
+                    null;
+                let selectedId = '';
+                if (preferences.selectId) {
+                    selectedId = preferences.selectId;
+                } else if (preferences.selectName) {
+                    const matchByName = normalized.find((form) => form.name === preferences.selectName);
+                    selectedId = matchByName ? matchByName.id : '';
+                } else if (targetSelect) {
+                    selectedId = targetSelect.value;
+                }
+                if (targetSelect) {
+                    renderEventFormOptions(targetSelect, selectedId);
+                    if (preferences.selectName) {
+                        const match = normalized.find((form) => form.name === preferences.selectName);
+                        if (match) {
+                            targetSelect.value = match.id;
+                        }
+                    }
+                }
+                state.events.forEach((event, id) => {
+                    if (event && typeof event === 'object') {
+                        event.form_name = getFormName(event.form_id);
+                        state.events.set(id, event);
+                    }
+                });
+                state.eventRows = state.eventRows.map((row) => {
+                    if (!row || typeof row !== 'object') {
+                        return row;
+                    }
+                    return { ...row, form_name: getFormName(row.form_id) };
+                });
+                renderEventsTable();
+                return normalized;
+            });
     }
 
     function sortCategories(list) {
@@ -2741,6 +3184,10 @@
             resetOrderEditor();
             return;
         }
+        if (modal?.dataset?.eventsModal === 'form-builder') {
+            resetFormBuilder();
+            return;
+        }
         const form = modal.querySelector('form');
         if (form) {
             form.reset();
@@ -2762,6 +3209,9 @@
                 if (!backdrop) {
                     return;
                 }
+                if (backdrop.dataset?.eventsModal === 'form-builder') {
+                    state.formBuilder.targetSelect = null;
+                }
                 if (backdrop === selectors.categoriesModal) {
                     closeCategoryModal();
                 } else {
@@ -2775,6 +3225,8 @@
                 closeModal(selectors.confirmModal);
                 closeModal(selectors.mediaModal);
                 closeModal(selectors.orderEditor.modal);
+                state.formBuilder.targetSelect = null;
+                closeModal(selectors.formBuilder.modal);
                 closeCategoryModal();
             }
         });
@@ -3375,6 +3827,7 @@
         handleEventForm();
         handleOrderForm();
         handleCategoryForm();
+        initFormBuilder();
         initMediaPicker();
         attachEventListeners();
         populateEventSelect(selectors.orders.filterEvent);
@@ -3396,6 +3849,8 @@
             openEventModal(null);
         } else if (type === 'categories') {
             openCategoriesModal();
+        } else if (type === 'form-builder') {
+            openFormBuilder(trigger);
         }
     });
 
