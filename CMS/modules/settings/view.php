@@ -37,6 +37,10 @@
                         <div class="a11y-overview-value" id="settingsOverviewVisibility">—</div>
                         <div class="a11y-overview-label">Visibility</div>
                     </div>
+                    <div class="a11y-overview-card">
+                        <div class="a11y-overview-value" id="settingsOverviewPayments">Stripe off</div>
+                        <div class="a11y-overview-label">Payments</div>
+                    </div>
                 </div>
             </header>
 
@@ -53,6 +57,10 @@
                     <button type="button" class="a11y-btn a11y-btn--secondary settings-tab" role="tab" aria-selected="false" aria-controls="settings-tab-analytics" id="settings-tab-analytics-tab" data-tab-target="settings-tab-analytics" tabindex="-1">
                         <i class="fas fa-chart-line" aria-hidden="true"></i>
                         <span>Analytics</span>
+                    </button>
+                    <button type="button" class="a11y-btn a11y-btn--secondary settings-tab" role="tab" aria-selected="false" aria-controls="settings-tab-payments" id="settings-tab-payments-tab" data-tab-target="settings-tab-payments" tabindex="-1">
+                        <i class="fas fa-credit-card" aria-hidden="true"></i>
+                        <span>Payments</span>
                     </button>
                 </nav>
 
@@ -308,6 +316,57 @@
                                         <label class="form-label" for="facebookPixel">Facebook Pixel ID</label>
                                         <input type="text" class="form-input" id="facebookPixel" name="facebookPixel" placeholder="1234567890123456">
                                         <div class="form-help">Your Facebook Pixel ID for conversion tracking.</div>
+                                    </div>
+                                </div>
+                            </details>
+                        </article>
+                    </section>
+
+                    <section id="settings-tab-payments" class="settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-payments-tab" hidden>
+                        <article class="a11y-detail-card">
+                            <h2>Payment Gateways</h2>
+                            <p class="settings-card-description">Connect Stripe to accept payments securely across your experiences.</p>
+
+                            <details class="settings-accordion" open>
+                                <summary>Stripe</summary>
+                                <div class="settings-accordion__body">
+                                    <div class="settings-toggle-group" role="group" aria-label="Stripe settings">
+                                        <label class="settings-toggle">
+                                            <input type="checkbox" id="stripeEnabled" name="stripe_enabled">
+                                            <div>
+                                                <span class="settings-toggle__title">Enable Stripe payments</span>
+                                                <p class="settings-toggle__description">Activate Stripe to process checkouts and on-site transactions.</p>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    <div id="stripeConfigFields" class="stripe-config">
+                                        <div class="form-group">
+                                            <label class="form-label" for="stripeMode">Stripe Mode</label>
+                                            <select class="form-select" id="stripeMode" name="stripe_mode">
+                                                <option value="test">Test</option>
+                                                <option value="live">Live</option>
+                                            </select>
+                                            <div class="form-help">Use Test while configuring your integration, then switch to Live when ready.</div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label class="form-label" for="stripePublishableKey">Publishable Key</label>
+                                            <input type="text" class="form-input" id="stripePublishableKey" name="stripe_publishable_key" autocomplete="off" spellcheck="false">
+                                            <div class="form-help">Required when Stripe is enabled. Starts with <code>pk_test_</code> or <code>pk_live_</code>.</div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label class="form-label" for="stripeSecretKey">Secret Key</label>
+                                            <input type="text" class="form-input" id="stripeSecretKey" name="stripe_secret_key" autocomplete="off" spellcheck="false">
+                                            <div class="form-help">Required when Stripe is enabled. Starts with <code>sk_test_</code> or <code>sk_live_</code>.</div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label class="form-label" for="stripeWebhookSecret">Webhook Signing Secret</label>
+                                            <input type="text" class="form-input" id="stripeWebhookSecret" name="stripe_webhook_secret" autocomplete="off" spellcheck="false">
+                                            <div class="form-help">Optional but recommended when using webhooks. Starts with <code>whsec_</code>.</div>
+                                        </div>
                                     </div>
                                 </div>
                             </details>

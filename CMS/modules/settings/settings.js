@@ -20,6 +20,12 @@ $(function(){
     const $socialPreviewTitle = $('#socialPreviewTitle');
     const $socialPreviewDescription = $('#socialPreviewDescription');
     const $socialPreviewDomain = $('#socialPreviewDomain');
+    const $stripeEnabled = $('#stripeEnabled');
+    const $stripeMode = $('#stripeMode');
+    const $stripePublishableKey = $('#stripePublishableKey');
+    const $stripeSecretKey = $('#stripeSecretKey');
+    const $stripeWebhookSecret = $('#stripeWebhookSecret');
+    const $stripeConfigFields = $('#stripeConfigFields');
 
     const integrationValidators = [
         {
@@ -36,6 +42,25 @@ $(function(){
             selector: '#facebookPixel',
             pattern: /^\d{15,16}$/,
             message: 'Enter a valid Facebook Pixel ID using 15-16 digits.'
+        },
+        {
+            selector: '#stripePublishableKey',
+            pattern: /^pk_(test|live)_[0-9a-zA-Z]{16,}$/,
+            message: 'Enter a valid Stripe publishable key (e.g., pk_test_XXXX).',
+            requiredWhen: () => $stripeEnabled.is(':checked'),
+            requiredMessage: 'Stripe publishable key is required when Stripe is enabled.'
+        },
+        {
+            selector: '#stripeSecretKey',
+            pattern: /^sk_(test|live)_[0-9a-zA-Z]{16,}$/,
+            message: 'Enter a valid Stripe secret key (e.g., sk_test_XXXX).',
+            requiredWhen: () => $stripeEnabled.is(':checked'),
+            requiredMessage: 'Stripe secret key is required when Stripe is enabled.'
+        },
+        {
+            selector: '#stripeWebhookSecret',
+            pattern: /^whsec_[0-9a-zA-Z]{8,}$/,
+            message: 'Enter a valid Stripe webhook signing secret (e.g., whsec_XXXX).'
         }
     ];
 
@@ -172,16 +197,31 @@ $(function(){
         let firstInvalidField = null;
         let hasError = false;
 
-        integrationValidators.forEach(({selector, pattern, message}) => {
+        integrationValidators.forEach((validator) => {
+            const { selector, pattern, message, requiredWhen, requiredMessage } = validator;
             const $field = $(selector);
-            const value = ($field.val() || '').trim();
-            if(!value){
-                clearFieldError($field);
+            if(!$field.length){
                 return;
             }
 
-            if(!pattern.test(value)){
-                showFieldError($field, message);
+            const value = ($field.val() || '').trim();
+            const isRequired = typeof requiredWhen === 'function' ? Boolean(requiredWhen()) : false;
+
+            if(!value){
+                clearFieldError($field);
+                if(isRequired){
+                    const errorMessage = requiredMessage || message || 'This field is required.';
+                    showFieldError($field, errorMessage);
+                    if(!firstInvalidField){
+                        firstInvalidField = $field;
+                    }
+                    hasError = true;
+                }
+                return;
+            }
+
+            if(pattern && !pattern.test(value)){
+                showFieldError($field, message || 'Enter a valid value.');
                 if(!firstInvalidField){
                     firstInvalidField = $field;
                 }
@@ -263,6 +303,12 @@ $(function(){
         details.push(sitemapOn ? 'Sitemap on' : 'Sitemap off');
         details.push(indexingOn ? 'Indexing allowed' : 'Indexing blocked');
         $('#settingsOverviewVisibility').text(visibility).attr('title', details.join(' • '));
+
+        const stripeEnabled = $stripeEnabled.is(':checked');
+        const stripeMode = ($stripeMode.val() || 'test') === 'live' ? 'Live' : 'Test';
+        const paymentsText = stripeEnabled ? `Stripe (${stripeMode})` : 'Stripe off';
+        const paymentsTitle = stripeEnabled ? `Stripe ${stripeMode.toLowerCase()} mode enabled` : 'Stripe disabled';
+        $('#settingsOverviewPayments').text(paymentsText).attr('title', paymentsTitle);
     }
 
     function setSocialPreviewImage(src){
@@ -295,6 +341,20 @@ $(function(){
         togglePreview($preview, src);
     }
 
+    function updateStripeConfigState(){
+        if(!$stripeConfigFields.length){
+            return;
+        }
+        const enabled = $stripeEnabled.is(':checked');
+        $stripeConfigFields.toggleClass('is-disabled', !enabled)
+            .attr('aria-disabled', enabled ? 'false' : 'true');
+        if(enabled){
+            $stripeConfigFields.removeAttr('aria-hidden');
+        } else {
+            $stripeConfigFields.attr('aria-hidden', 'true');
+        }
+    }
+
     function bindClearToggle($checkbox, $preview, $label){
         $checkbox.on('change', function(){
             if(this.checked){
@@ -312,6 +372,12 @@ $(function(){
     bindClearToggle($clearLogo, $logoPreview, $logoFileLabel);
     bindClearToggle($clearFavicon, $faviconPreview, $faviconFileLabel);
     bindClearToggle($clearOgImage, $ogPreview, $ogImageFileLabel);
+
+    updateStripeConfigState();
+    $stripeEnabled.on('change', function(){
+        updateStripeConfigState();
+        updateOverview();
+    });
 
     function getDefaultOgTitle(settings){
         const siteName = (settings.site_name || '').trim() || 'SparkCMS';
@@ -392,6 +458,14 @@ $(function(){
             $('#ogDescription').val(ogDescriptionValue || getDefaultOgDescription(data));
             setPreviewState($ogPreview, $clearOgImage, openGraph.image || '', extractFileName(openGraph.image), 'stored');
 
+            const payments = data.payments || {};
+            const stripe = payments.stripe || {};
+            $stripeEnabled.prop('checked', stripe.enabled === true);
+            $stripeMode.val(stripe.mode === 'live' ? 'live' : 'test');
+            $stripePublishableKey.val(stripe.publishable_key || '');
+            $stripeSecretKey.val(stripe.secret_key || '');
+            $stripeWebhookSecret.val(stripe.webhook_secret || '');
+
             $('#logoFile').val('');
             $('#faviconFile').val('');
             $('#ogImageFile').val('');
@@ -405,6 +479,7 @@ $(function(){
             updateSocialPreviewText();
 
             clearIntegrationErrors();
+            updateStripeConfigState();
             updateHeroMeta(data.last_updated || '');
             updateOverview();
         });
