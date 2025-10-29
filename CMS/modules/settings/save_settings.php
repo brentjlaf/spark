@@ -24,6 +24,17 @@ $settings['facebookPixel'] = sanitize_text($_POST['facebookPixel'] ?? ($settings
 $settings['generateSitemap'] = isset($_POST['generateSitemap']);
 $settings['allowIndexing'] = isset($_POST['allowIndexing']);
 
+$payments = is_array($settings['payments'] ?? null) ? $settings['payments'] : [];
+$stripeSettings = is_array($payments['stripe'] ?? null) ? $payments['stripe'] : [];
+$stripeSettings['enabled'] = isset($_POST['stripe_enabled']);
+$stripeMode = sanitize_text($_POST['stripe_mode'] ?? ($stripeSettings['mode'] ?? 'test'));
+$stripeSettings['mode'] = $stripeMode === 'live' ? 'live' : 'test';
+$stripeSettings['publishable_key'] = sanitize_text($_POST['stripe_publishable_key'] ?? ($stripeSettings['publishable_key'] ?? ''));
+$stripeSettings['secret_key'] = sanitize_text($_POST['stripe_secret_key'] ?? ($stripeSettings['secret_key'] ?? ''));
+$stripeSettings['webhook_secret'] = sanitize_text($_POST['stripe_webhook_secret'] ?? ($stripeSettings['webhook_secret'] ?? ''));
+$payments['stripe'] = $stripeSettings;
+$settings['payments'] = $payments;
+
 function delete_upload_file($relativePath, $uploadsRoot, $baseDir)
 {
     if (!is_string($relativePath) || $relativePath === '') {
