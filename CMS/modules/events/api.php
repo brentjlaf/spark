@@ -32,6 +32,9 @@ switch ($action) {
     case 'delete_event':
         handle_delete_event($events);
         break;
+    case 'duplicate_event':
+        handle_duplicate_event($events, $categories);
+        break;
     case 'end_event':
         handle_end_event($events);
         break;
@@ -246,6 +249,78 @@ function handle_delete_event(array $events): void
     }
 
     respond_json(['success' => true]);
+}
+
+function handle_duplicate_event(array $events, array $categories): void
+{
+    $payload = parse_json_body();
+    if (empty($payload)) {
+        $payload = $_POST;
+    }
+
+    $id = isset($payload['id']) ? trim((string) $payload['id']) : '';
+    if ($id === '') {
+        $id = isset($_GET['id']) ? trim((string) $_GET['id']) : '';
+    }
+
+    if ($id === '') {
+        respond_json(['error' => 'Missing event id.'], 400);
+    }
+
+    $original = events_find_event($events, $id);
+    if ($original === null) {
+        respond_json(['error' => 'Event not found.'], 404);
+    }
+
+    $baseTitle = trim((string) ($original['title'] ?? 'Untitled Event'));
+    if ($baseTitle === '') {
+        $baseTitle = 'Untitled Event';
+    }
+
+    $existingTitles = [];
+    foreach ($events as $event) {
+        $title = strtolower(trim((string) ($event['title'] ?? '')));
+        if ($title !== '') {
+            $existingTitles[$title] = true;
+        }
+    }
+
+    $copyTitle = $baseTitle . ' (Copy)';
+    $suffix = 2;
+    while (isset($existingTitles[strtolower($copyTitle)])) {
+        $copyTitle = sprintf('%s (Copy %d)', $baseTitle, $suffix);
+        $suffix++;
+    }
+
+    $duplicate = $original;
+    $duplicate['id'] = null;
+    $duplicate['title'] = $copyTitle;
+    $duplicate['status'] = 'draft';
+    $duplicate['publish_at'] = '';
+    $duplicate['unpublish_at'] = '';
+    unset($duplicate['created_at'], $duplicate['updated_at'], $duplicate['published_at']);
+
+    if (isset($duplicate['tickets']) && is_array($duplicate['tickets'])) {
+        foreach ($duplicate['tickets'] as $index => $ticket) {
+            if (!is_array($ticket)) {
+                continue;
+            }
+            unset($duplicate['tickets'][$index]['id']);
+        }
+    }
+
+    $normalized = events_normalize_event($duplicate, $categories);
+
+    $events[] = $normalized;
+
+    if (!events_write_events($events)) {
+        respond_json(['error' => 'Unable to duplicate event.'], 500);
+    }
+
+    respond_json([
+        'success' => true,
+        'event' => $normalized,
+    ]);
 }
 
 function handle_end_event(array $events): void
