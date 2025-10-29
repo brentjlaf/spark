@@ -2030,6 +2030,9 @@
                 <button type="button" class="events-action" data-events-action="edit" data-id="${row.id}">
                     <i class="fa-solid fa-pen"></i><span class="sr-only">Edit</span>
                 </button>
+                <button type="button" class="events-action" data-events-action="duplicate" data-id="${row.id}">
+                    <i class="fa-solid fa-copy"></i><span class="sr-only">Duplicate</span>
+                </button>
                 <button type="button" class="events-action" data-events-action="sales" data-id="${row.id}">
                     <i class="fa-solid fa-chart-column"></i><span class="sr-only">View sales</span>
                 </button>
@@ -3661,6 +3664,22 @@
             switch (action.dataset.eventsAction) {
                 case 'edit':
                     openEventModal(id);
+                    break;
+                case 'duplicate':
+                    fetchJSON('duplicate_event', { method: 'POST', body: { id } })
+                        .then((response) => {
+                            const event = response?.event;
+                            if (!event?.id) {
+                                throw new Error('Invalid response');
+                            }
+                            storeEvent(event);
+                            showToast('Event duplicated.');
+                            refreshAll();
+                            openEventModal(event.id);
+                        })
+                        .catch(() => {
+                            showToast('Unable to duplicate event.', 'error');
+                        });
                     break;
                 case 'sales':
                     selectors.tabs.activate?.('orders');
