@@ -4,8 +4,9 @@
     <dl class="sparkDialog _tpl-box">
         <dt>Embed URL</dt>
         <dd>
-            <input type="text" name="custom_src" value="https://www.youtube.com/embed/dQw4w9WgXcQ" class="form-control">
-            <small class="form-text text-muted">Paste an embed URL from YouTube, Vimeo, or another video provider.</small>
+            <input type="text" name="custom_src" id="custom_src" value="https://www.youtube.com/embed/dQw4w9WgXcQ" class="form-control">
+            <button type="button" class="btn btn-secondary" onclick="openMediaPicker('custom_src')"><i class="fa-solid fa-film btn-icon" aria-hidden="true"></i><span class="btn-label">Browse</span></button>
+            <small class="form-text text-muted">Paste an embed URL from YouTube, Vimeo, or choose a video from the media library.</small>
         </dd>
     </dl>
     <dl class="sparkDialog _tpl-box">
