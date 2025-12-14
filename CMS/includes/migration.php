@@ -106,6 +106,18 @@ function cms_import_sql_file(PDO $pdo, string $sqlFile): void
     }
 }
 
+function cms_drop_entity_tables(PDO $pdo): void
+{
+    $tables = array_map(static fn ($schema) => $schema['table'], cms_entity_schemas());
+    $tables[] = 'cms_page_drafts';
+
+    $pdo->exec('SET FOREIGN_KEY_CHECKS=0;');
+    foreach ($tables as $table) {
+        $pdo->exec("DROP TABLE IF EXISTS `{$table}`");
+    }
+    $pdo->exec('SET FOREIGN_KEY_CHECKS=1;');
+}
+
 function cms_run_json_migration(PDO $pdo, string $dataDir): string
 {
     $backupDir = rtrim($dataDir, DIRECTORY_SEPARATOR) . '/backup-' . date('Ymd_His');
