@@ -272,12 +272,70 @@ function sparkcms_hydrate_blog_lists($html, $scriptBase) {
     return $dom->saveHTML();
 }
 
+function sparkcms_build_placeholder_content($scriptBase, $siteName)
+{
+    $escapedSite = htmlspecialchars($siteName ?: 'Your Site', ENT_QUOTES, 'UTF-8');
+    $homeUrl = ($scriptBase === '' || $scriptBase === '/') ? '/' : rtrim($scriptBase, '/') . '/';
+    $contactUrl = rtrim($homeUrl, '/') . '/contact-us';
+
+    return <<<HTML
+<section class="placeholder-hero text-center py-5 bg-light">
+    <div class="container">
+        <p class="text-primary text-uppercase fw-semibold mb-2">Content coming soon</p>
+        <h1 class="display-5 fw-bold mb-3">We're building this page</h1>
+        <p class="lead text-muted mb-4">Add blocks in the CMS to replace this placeholder with tailored content for {$escapedSite}.</p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+            <a class="btn btn-primary" href="{$homeUrl}">Return home</a>
+            <a class="btn btn-outline-secondary" href="{$contactUrl}">Contact us</a>
+        </div>
+    </div>
+</section>
+<section class="placeholder-grid py-5">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <span class="badge bg-primary-subtle text-primary mb-2">Highlights</span>
+                        <h3 class="h5">Share your story</h3>
+                        <p class="text-muted mb-0">Introduce visitors to what makes {$escapedSite} special with a welcome message and eye-catching imagery.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <span class="badge bg-primary-subtle text-primary mb-2">Guidance</span>
+                        <h3 class="h5">Outline key actions</h3>
+                        <p class="text-muted mb-0">Use calls to action so people can learn more, get support, or explore your services.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <span class="badge bg-primary-subtle text-primary mb-2">Next steps</span>
+                        <h3 class="h5">Add your own blocks</h3>
+                        <p class="text-muted mb-0">Drag in text, images, and forms from the block palette to replace this placeholder layout.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+HTML;
+}
+
 function render_theme_page($templateFile, $page, $scriptBase) {
     global $settings, $menus, $logged_in, $blogPosts, $blogPost;
     $themeBase = $scriptBase . '/theme';
     ob_start();
     include $templateFile;
     $html = ob_get_clean();
+    $content = trim($page['content'] ?? '');
+    if ($content === '') {
+        $page['content'] = sparkcms_build_placeholder_content($scriptBase, $settings['site_name'] ?? '');
+    }
     $html = preg_replace('/<div class="drop-area"><\/div>/', $page['content'], $html);
     if (!$logged_in) {
         $html = preg_replace('#<templateSetting[^>]*>.*?</templateSetting>#si', '', $html);
