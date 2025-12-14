@@ -32,7 +32,7 @@
       return blogPostsPromise;
     }
     var base = normalizeBasePath();
-    var url = base + '/CMS/data/blog_posts.json';
+    var url = base + '/CMS/public_data.php?action=blog_posts';
     blogPostsPromise = fetch(url, { credentials: 'same-origin', cache: 'no-store' })
       .then(function (response) {
         if (!response.ok) {
@@ -61,7 +61,7 @@
       return commerceDataPromise;
     }
     var base = normalizeBasePath();
-    var url = base + '/CMS/data/commerce.json';
+    var url = base + '/CMS/public_data.php?action=commerce';
     commerceDataPromise = fetch(url, { credentials: 'same-origin', cache: 'no-store' })
       .then(function (response) {
         if (!response.ok) {
@@ -173,8 +173,8 @@
       return mapDataPromise;
     }
     var base = normalizeBasePath();
-    var locationsUrl = base + '/CMS/data/map_locations.json';
-    var categoriesUrl = base + '/CMS/data/map_categories.json';
+    var locationsUrl = base + '/CMS/public_data.php?action=map_locations';
+    var categoriesUrl = base + '/CMS/public_data.php?action=map_categories';
     mapDataPromise = Promise.all([
       fetch(locationsUrl, { credentials: 'same-origin', cache: 'no-store' })
         .then(function (response) {
@@ -1144,7 +1144,7 @@
       return eventsPromise;
     }
     var base = normalizeBasePath();
-    var url = base + '/CMS/data/events.json';
+    var url = base + '/CMS/public_data.php?action=events';
     eventsPromise = fetch(url, { credentials: 'same-origin', cache: 'no-store' })
       .then(function (response) {
         if (!response.ok) {
@@ -1177,7 +1177,7 @@
       return eventCategoriesPromise;
     }
     var base = normalizeBasePath();
-    var url = base + '/CMS/data/event_categories.json';
+    var url = base + '/CMS/public_data.php?action=event_categories';
     eventCategoriesPromise = fetch(url, { credentials: 'same-origin', cache: 'no-store' })
       .then(function (response) {
         if (!response.ok) {
