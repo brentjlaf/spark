@@ -14,7 +14,9 @@ Spark CMS is a lightweight content management system written in PHP. It aims to 
    git clone <repo-url>
    ```
 2. Ensure the `CMS/data` and `uploads` directories are writable by the web server.
-3. Point your web server's document root to the project directory. If using the PHP development server you can run:
+3. Visit `installer.php` in your browser and provide your MySQL host, database, username, and password. The installer writes
+   `CMS/data/.env.php` and migrates the bundled JSON data into MySQL.
+4. Point your web server's document root to the project directory. If using the PHP development server you can run:
    ```bash
    php -S localhost:8000 router.php
    ```

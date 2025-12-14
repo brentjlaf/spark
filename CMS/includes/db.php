@@ -1,5 +1,6 @@
 <?php
 // Centralized PDO database connection helper
+require_once __DIR__ . '/env_loader.php';
 
 /**
  * Get a shared PDO connection configured for UTF-8, exceptions, and prepared statements.
@@ -17,6 +18,8 @@ function get_db_connection(): PDO
     if ($pdo instanceof PDO) {
         return $pdo;
     }
+
+    load_env_from_file();
 
     $host = getenv('DB_HOST') ?: 'localhost';
     $name = getenv('DB_NAME') ?: 'spark_cms';
