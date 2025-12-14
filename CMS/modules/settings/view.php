@@ -75,22 +75,23 @@
                                 <div class="settings-accordion__body">
                                     <div class="form-group">
                                         <label class="form-label" for="site_name">Site Name</label>
-                                        <input type="text" class="form-input" name="site_name" id="site_name" autocomplete="organization">
+                                        <input type="text" class="form-input" name="site_name" id="site_name" autocomplete="organization" placeholder="Acme Inc.">
                                     </div>
                                     <div class="form-group">
                                         <label class="form-label" for="tagline">Tagline</label>
-                                        <input type="text" class="form-input" name="tagline" id="tagline" autocomplete="off">
+                                        <input type="text" class="form-input" name="tagline" id="tagline" autocomplete="off" placeholder="Elevating ideas with every launch.">
                                     </div>
                                     <div class="form-group">
                                         <label class="form-label" for="admin_email">Admin Email</label>
-                                        <input type="email" class="form-input" name="admin_email" id="admin_email" autocomplete="email">
+                                        <input type="email" class="form-input" name="admin_email" id="admin_email" autocomplete="email" placeholder="admin@yourdomain.com">
                                     </div>
                                     <div class="form-group">
                                         <label class="form-label" for="timezone">Timezone</label>
                                         <select class="form-select" id="timezone" name="timezone">
+                                            <option value="" disabled selected>Select a timezone</option>
                                             <option value="America/New_York">Eastern Time (ET)</option>
                                             <option value="America/Chicago">Central Time (CT)</option>
-                                            <option value="America/Denver" selected>Mountain Time (MT)</option>
+                                            <option value="America/Denver">Mountain Time (MT)</option>
                                             <option value="America/Los_Angeles">Pacific Time (PT)</option>
                                             <option value="UTC">UTC</option>
                                         </select>
