@@ -197,12 +197,21 @@ function write_table_from_array(array $schema, $data): bool
         $data = $normalized;
     }
 
+    // Avoid duplicate column names when the schema maps the primary key as a column.
+    $schemaColumns = [];
+    foreach ($schema['columns'] as $columnName => $sourceKey) {
+        if ($columnName === $schema['primary'] || $columnName === $schema['json_column']) {
+            continue;
+        }
+        $schemaColumns[$columnName] = $sourceKey;
+    }
+
     try {
         $pdo = get_db_connection();
         $pdo->beginTransaction();
         $pdo->exec("TRUNCATE TABLE `{$schema['table']}`");
 
-        $insertColumns = array_merge([$schema['primary'], $schema['json_column']], array_values($schema['columns']));
+        $insertColumns = array_merge([$schema['primary'], $schema['json_column']], array_keys($schemaColumns));
         $placeholders = rtrim(str_repeat('?,', count($insertColumns)), ',');
         $sql = "INSERT INTO `{$schema['table']}` (`" . implode('`,`', $insertColumns) . "`) VALUES ({$placeholders})";
         $stmt = $pdo->prepare($sql);
@@ -217,7 +226,7 @@ function write_table_from_array(array $schema, $data): bool
             $nextId = is_numeric($primaryValue) ? max($nextId + 1, (int)$primaryValue + 1) : $nextId + 1;
             $payload = json_encode($row, JSON_UNESCAPED_SLASHES);
             $values = [$primaryValue, $payload];
-            foreach ($schema['columns'] as $columnKey => $sourceKey) {
+            foreach ($schemaColumns as $columnKey => $sourceKey) {
                 $values[] = $row[$sourceKey] ?? null;
             }
             $stmt->execute($values);
