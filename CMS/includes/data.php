@@ -93,12 +93,15 @@ function read_json_file($file) {
  */
 function write_json_file($file, $data) {
     $schema = cms_schema_for_json($file);
-    if ($schema) {
+    if ($schema && is_database_configured()) {
         $pdo = get_db_connection();
         if (!cms_table_exists($pdo, $schema['table'])) {
             cms_ensure_table($pdo, $schema, is_array($data) ? $data : []);
         }
-        return write_table_from_array($schema, $data);
+        $persisted = write_table_from_array($schema, $data);
+        if ($persisted) {
+            return true;
+        }
     }
     return file_put_contents($file, json_encode($data, JSON_PRETTY_PRINT)) !== false;
 }
