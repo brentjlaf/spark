@@ -5,6 +5,67 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/schema.php';
 
 /**
+ * Ensure the mapped database table exists for the provided schema.
+ *
+ * Tables are created on-demand so admin actions always persist to the database
+ * even if the installer or seed script has not been executed.
+ */
+function ensure_schema_table(array $schema): void
+{
+    static $ensured = [];
+    $table = $schema['table'] ?? '';
+    if ($table === '' || isset($ensured[$table])) {
+        return;
+    }
+
+    try {
+        $pdo = get_db_connection();
+        $exists = $pdo->prepare('SHOW TABLES LIKE ?');
+        $exists->execute([$table]);
+        if ($exists->fetchColumn()) {
+            $ensured[$table] = true;
+            return;
+        }
+
+        $primary = $schema['primary'] ?? 'id';
+        $jsonColumn = $schema['json_column'] ?? 'payload';
+        $columns = is_array($schema['columns'] ?? null) ? $schema['columns'] : [];
+        $indexes = is_array($schema['indexes'] ?? null) ? $schema['indexes'] : [];
+
+        // Prefer numeric auto-increment IDs for core content tables; fall back to varchar for flexible IDs.
+        $numericIdTables = ['cms_pages', 'cms_menus', 'cms_blog_posts', 'cms_forms', 'cms_users', 'cms_speed_snapshots'];
+        $isNumericId = $primary === 'id' && in_array($table, $numericIdTables, true);
+        $primaryType = $isNumericId ? 'INT' : 'VARCHAR(191)';
+        $primaryExtras = $isNumericId ? 'AUTO_INCREMENT' : '';
+
+        $columnDefs = ["`{$primary}` {$primaryType} {$primaryExtras} PRIMARY KEY", "`{$jsonColumn}` JSON NOT NULL"];
+
+        foreach ($columns as $columnName => $sourceKey) {
+            if ($columnName === $primary || $columnName === $jsonColumn) {
+                continue;
+            }
+            $columnDefs[] = "`{$columnName}` VARCHAR(255) NULL";
+        }
+
+        foreach ($indexes as $indexColumn) {
+            if ($indexColumn === $primary) {
+                continue;
+            }
+            if (!isset($columns[$indexColumn])) {
+                $columnDefs[] = "`{$indexColumn}` VARCHAR(255) NULL";
+            }
+            $columnDefs[] = "INDEX `idx_{$table}_{$indexColumn}` (`{$indexColumn}`)";
+        }
+
+        $createSql = "CREATE TABLE `{$table}` (" . implode(',', $columnDefs) . ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+        $pdo->exec($createSql);
+        $ensured[$table] = true;
+    } catch (Throwable $e) {
+        // Table creation should not block requests; failures will be surfaced when queries run.
+    }
+}
+
+/**
  * Read and decode a JSON file or mapped database table.
  *
  * @param string $file Path to the JSON file
@@ -56,6 +117,7 @@ function get_cached_json($file) {
  */
 function read_table_as_array(array $schema): array
 {
+    ensure_schema_table($schema);
     try {
         $rows = db_fetch_all("SELECT `{$schema['primary']}`, `{$schema['json_column']}` FROM `{$schema['table']}` ORDER BY `{$schema['primary']}`");
         $decoded = [];
@@ -84,6 +146,8 @@ function write_table_from_array(array $schema, $data): bool
     if (!is_array($data)) {
         return false;
     }
+
+    ensure_schema_table($schema);
 
     if ($schema['primary'] === 'setting_key' && array_values($data) !== $data) {
         $normalized = [];
