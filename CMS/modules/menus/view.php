@@ -10,7 +10,7 @@ if (!is_array($menus)) {
     $menus = [];
 }
 
-$lastUpdatedTimestamp = is_file($menusFile) ? filemtime($menusFile) : null;
+$lastUpdatedTimestamp = get_storage_last_modified($menusFile);
 $lastUpdatedIso = $lastUpdatedTimestamp ? date(DATE_ATOM, $lastUpdatedTimestamp) : '';
 $lastUpdatedDisplay = $lastUpdatedTimestamp ? date('M j, Y g:i A', $lastUpdatedTimestamp) : 'Not available';
 

@@ -11,7 +11,7 @@ if (!is_array($menus)) {
     $menus = [];
 }
 
-$lastUpdatedTimestamp = is_file($menusFile) ? filemtime($menusFile) : null;
+$lastUpdatedTimestamp = get_storage_last_modified($menusFile);
 
 $response = [
     'menus' => $menus,
