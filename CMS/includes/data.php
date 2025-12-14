@@ -13,10 +13,7 @@ require_once __DIR__ . '/schema.php';
 function read_json_file($file) {
     $schema = cms_schema_for_json($file);
     if ($schema) {
-        $fromDb = read_table_as_array($schema);
-        if (!empty($fromDb)) {
-            return $fromDb;
-        }
+        return read_table_as_array($schema);
     }
     if (!file_exists($file)) {
         return [];
@@ -130,5 +127,49 @@ function write_table_from_array(array $schema, $data): bool
         }
         return false;
     }
+}
+
+function ensure_drafts_table(): void
+{
+    static $ensured = false;
+    if ($ensured) {
+        return;
+    }
+
+    $pdo = get_db_connection();
+    $sql = "CREATE TABLE IF NOT EXISTS `cms_page_drafts` (
+        `page_id` INT PRIMARY KEY,
+        `content` LONGTEXT NOT NULL,
+        `updated_at` INT NOT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+    $pdo->exec($sql);
+    $ensured = true;
+}
+
+function load_page_draft(int $pageId): array
+{
+    ensure_drafts_table();
+    $rows = db_fetch_all('SELECT content, updated_at FROM cms_page_drafts WHERE page_id = ?', [$pageId]);
+    if (!$rows) {
+        return ['content' => '', 'timestamp' => 0];
+    }
+
+    return ['content' => $rows[0]['content'], 'timestamp' => (int) $rows[0]['updated_at']];
+}
+
+function save_page_draft(int $pageId, string $content, int $timestamp): bool
+{
+    ensure_drafts_table();
+    return db_execute(
+        'INSERT INTO cms_page_drafts (page_id, content, updated_at) VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE content = VALUES(content), updated_at = VALUES(updated_at)',
+        [$pageId, $content, $timestamp]
+    );
+}
+
+function delete_page_draft(int $pageId): void
+{
+    ensure_drafts_table();
+    db_execute('DELETE FROM cms_page_drafts WHERE page_id = ?', [$pageId]);
 }
 ?>

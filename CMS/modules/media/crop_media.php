@@ -77,7 +77,7 @@ if ($newVersion) {
     $media[$index] = $entry;
 }
 
-file_put_contents($mediaFile, json_encode($media, JSON_PRETTY_PRINT));
+write_json_file($mediaFile, $media);
 
 echo json_encode(['status' => 'success']);
 

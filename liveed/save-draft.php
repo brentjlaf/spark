@@ -1,6 +1,7 @@
 <?php
 // File: save-draft.php
 require_once __DIR__ . '/../CMS/includes/auth.php';
+require_once __DIR__ . '/../CMS/includes/data.php';
 require_login();
 
 $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
@@ -13,12 +14,10 @@ if(!$id){
     exit;
 }
 
-$dir = __DIR__ . '/../CMS/data/drafts';
-if(!is_dir($dir)){
-    mkdir($dir, 0755, true);
+if (!save_page_draft($id, $content, $timestamp)) {
+    http_response_code(500);
+    echo 'Unable to save draft';
+    exit;
 }
-$file = $dir . '/page-' . $id . '.json';
-$data = ['content'=>$content,'timestamp'=>$timestamp];
-file_put_contents($file, json_encode($data, JSON_PRETTY_PRINT));
 
 echo 'OK';

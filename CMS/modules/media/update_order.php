@@ -17,6 +17,6 @@ foreach ($media as &$item) {
     }
 }
 usort($media, function($a,$b){ return ($a['order'] ?? 0) <=> ($b['order'] ?? 0); });
-file_put_contents($mediaFile, json_encode($media, JSON_PRETTY_PRINT));
+write_json_file($mediaFile, $media);
 
 echo json_encode(['status' => 'success']);

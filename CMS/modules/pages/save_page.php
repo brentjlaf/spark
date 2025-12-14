@@ -246,9 +246,9 @@ $historyData['__system__'][] = [
     'page_title' => 'CMS Backend',
 ];
 $historyData['__system__'] = array_slice($historyData['__system__'], -50);
-file_put_contents($historyFile, json_encode($historyData, JSON_PRETTY_PRINT));
+write_json_file($historyFile, $historyData);
 
-file_put_contents($pagesFile, json_encode($pages, JSON_PRETTY_PRINT));
+write_json_file($pagesFile, $pages);
 // Regenerate sitemap whenever pages are modified
 // Capture the output from the sitemap generator so we don't surface raw
 // JSON responses in the page editor.

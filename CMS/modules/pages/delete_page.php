@@ -15,7 +15,7 @@ foreach ($pages as $p) {
     if ($p['id'] == $id) { $deletedPage = $p; break; }
 }
 $pages = array_filter($pages, function($p) use ($id) { return $p['id'] != $id; });
-file_put_contents($pagesFile, json_encode(array_values($pages), JSON_PRETTY_PRINT));
+write_json_file($pagesFile, array_values($pages));
 
 // Remove the deleted page from any menus
 $menusFile = __DIR__ . '/../../data/menus.json';
@@ -63,7 +63,7 @@ if (file_exists($menusFile)) {
     unset($menu);
 
     if ($menusUpdated) {
-        file_put_contents($menusFile, json_encode($menus, JSON_PRETTY_PRINT));
+        write_json_file($menusFile, $menus);
     }
 }
 
@@ -115,6 +115,6 @@ $historyData['__system__'][] = [
     'page_title' => 'CMS Backend',
 ];
 $historyData['__system__'] = array_slice($historyData['__system__'], -50);
-file_put_contents($historyFile, json_encode($historyData, JSON_PRETTY_PRINT));
+write_json_file($historyFile, $historyData);
 
 echo 'OK';

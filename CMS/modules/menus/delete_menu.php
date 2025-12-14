@@ -9,6 +9,6 @@ $menusFile = __DIR__ . '/../../data/menus.json';
 $menus = read_json_file($menusFile);
 $id = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT) ?: 0;
 $menus = array_filter($menus, function($m) use ($id) { return $m['id'] != $id; });
-file_put_contents($menusFile, json_encode(array_values($menus), JSON_PRETTY_PRINT));
+write_json_file($menusFile, array_values($menus));
 echo 'OK';
 ?>
