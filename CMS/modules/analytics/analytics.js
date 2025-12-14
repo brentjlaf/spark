@@ -462,20 +462,6 @@ $(function(){
         $lastUpdated.text(label);
     }
 
-    function createDeterministicRandom(seed){
-        let value = seed >>> 0;
-        if (value === 0) {
-            value = 0x9e3779b9;
-        }
-        return function(){
-            value += 0x6D2B79F5;
-            let t = value;
-            t = Math.imul(t ^ (t >>> 15), t | 1);
-            t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-        };
-    }
-
     function getTrendMetrics(){
         if (state.trends.activeSlug) {
             const entry = findEntryBySlug(state.trends.activeSlug);
@@ -501,46 +487,6 @@ $(function(){
             previousViews: Number(totalSummary && totalSummary.previous ? totalSummary.previous : 0),
             totalPages: Number(totalPagesSummary && totalPagesSummary.current ? totalPagesSummary.current : state.entries.length || 0),
         };
-    }
-
-    function getSeedForRange(rangeKey){
-        const metrics = getTrendMetrics();
-        const current = Math.max(0, Math.round(metrics.currentViews || 0));
-        const previous = Math.max(0, Math.round(metrics.previousViews || 0));
-        const pageCount = Math.max(1, Math.round(metrics.totalPages || 1));
-        let seed = current + previous + pageCount * 97 + rangeKey.length * 131;
-        const identifier = String(metrics.identifier || 'context') + rangeKey;
-        for (let index = 0; index < identifier.length; index++) {
-            seed = (seed * 31 + identifier.charCodeAt(index)) >>> 0;
-        }
-        if (seed === 0) {
-            seed = 0x1234567;
-        }
-        return seed >>> 0;
-    }
-
-    function getBaseValueForRange(rangeKey){
-        const metrics = getTrendMetrics();
-        const totalViews = Math.max(0, Number(metrics.currentViews || 0));
-        const previousViews = Math.max(0, Number(metrics.previousViews || 0));
-        const blendedMonthly = totalViews > 0 && previousViews > 0
-            ? (totalViews + previousViews) / 2
-            : (totalViews || previousViews);
-        const safeMonthly = blendedMonthly || 0;
-        const dailyAverage = safeMonthly / 30;
-        if (rangeKey === 'day') {
-            return dailyAverage / 24;
-        }
-        if (rangeKey === 'week') {
-            return dailyAverage;
-        }
-        if (rangeKey === 'month') {
-            return dailyAverage;
-        }
-        if (rangeKey === 'year') {
-            return safeMonthly;
-        }
-        return dailyAverage;
     }
 
     function generateTrendLabels(rangeKey, points){
@@ -579,31 +525,28 @@ $(function(){
 
     function generateTrendSeries(rangeKey, points){
         const safePoints = Math.max(0, points | 0);
-        const baseValue = Math.max(0, Number(getBaseValueForRange(rangeKey)) || 0);
         if (safePoints === 0) {
             return [];
         }
-        if (baseValue === 0) {
+
+        const metrics = getTrendMetrics();
+        const currentTotal = Math.max(0, Number(metrics.currentViews || 0));
+        const previousTotal = Math.max(0, Number(metrics.previousViews || 0));
+
+        if (currentTotal === 0 && previousTotal === 0) {
             return new Array(safePoints).fill(0);
         }
-        const random = createDeterministicRandom(getSeedForRange(rangeKey));
-        const trendDirection = (random() * 2 - 1) * 0.35;
+
+        const startAverage = (previousTotal > 0 ? previousTotal : currentTotal) / safePoints;
+        const endAverage = currentTotal / safePoints;
         const values = [];
+
         for (let index = 0; index < safePoints; index++) {
-            const progress = safePoints <= 1 ? 0 : index / (safePoints - 1);
-            let seasonal = 0;
-            if (rangeKey === 'day') {
-                seasonal = Math.sin(progress * Math.PI * 2) * 0.18;
-            } else if (rangeKey === 'week' || rangeKey === 'month') {
-                seasonal = Math.sin(progress * Math.PI * 2) * 0.12;
-            } else if (rangeKey === 'year') {
-                seasonal = Math.sin(progress * Math.PI * 2) * 0.25;
-            }
-            const variance = (random() * 0.4) - 0.2;
-            const drift = trendDirection * progress;
-            const value = Math.max(0, Math.round(baseValue * Math.max(0.1, 1 + variance + seasonal + drift)));
-            values.push(value);
+            const progress = safePoints <= 1 ? 1 : index / (safePoints - 1);
+            const interpolated = startAverage + (endAverage - startAverage) * progress;
+            values.push(Math.max(0, Math.round(interpolated)));
         }
+
         return values;
     }
 
