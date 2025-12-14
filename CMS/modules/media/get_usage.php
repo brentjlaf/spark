@@ -55,120 +55,82 @@ $needles = array_values(array_unique(array_filter($needles)));
 $root = dirname(__DIR__, 2);
 $dataDir = $root . '/data';
 $usage = [];
-$scanned = [];
 
-$pagesFile = $dataDir . '/pages.json';
-if (is_file($pagesFile)) {
-    $scanned[] = realpath($pagesFile);
-    $pages = read_json_file($pagesFile);
-    $usage = array_merge($usage, collect_usage($pages, $needles, 'Page', function(array $page): array {
-        $name = $page['title'] ?? ($page['slug'] ?? ('Page #' . ($page['id'] ?? '?')));
-        $details = [];
-        if (!empty($page['slug'])) {
-            $details[] = 'Slug: ' . $page['slug'];
+$sources = [
+    [
+        'file' => $dataDir . '/pages.json',
+        'type' => 'Page',
+        'describe' => function(array $page): array {
+            $name = $page['title'] ?? ($page['slug'] ?? ('Page #' . ($page['id'] ?? '?')));
+            $details = [];
+            if (!empty($page['slug'])) {
+                $details[] = 'Slug: ' . $page['slug'];
+            }
+            if (isset($page['id'])) {
+                $details[] = 'ID: ' . $page['id'];
+            }
+            return [
+                'name' => $name,
+                'detail' => implode(' • ', $details)
+            ];
         }
-        if (isset($page['id'])) {
-            $details[] = 'ID: ' . $page['id'];
+    ],
+    [
+        'file' => $dataDir . '/blog_posts.json',
+        'type' => 'Blog Post',
+        'describe' => function(array $post): array {
+            $name = $post['title'] ?? ($post['slug'] ?? ('Post #' . ($post['id'] ?? '?')));
+            $details = [];
+            if (!empty($post['slug'])) {
+                $details[] = 'Slug: ' . $post['slug'];
+            }
+            if (!empty($post['status'])) {
+                $details[] = 'Status: ' . ucfirst((string)$post['status']);
+            }
+            return [
+                'name' => $name,
+                'detail' => implode(' • ', $details)
+            ];
         }
-        return [
-            'name' => $name,
-            'detail' => implode(' • ', $details)
-        ];
-    }));
-}
+    ],
+    [
+        'file' => $dataDir . '/events.json',
+        'type' => 'Event',
+        'describe' => function(array $event): array {
+            $name = $event['title'] ?? ($event['id'] ?? 'Event');
+            $details = [];
+            if (!empty($event['id'])) {
+                $details[] = 'ID: ' . $event['id'];
+            }
+            if (!empty($event['status'])) {
+                $details[] = 'Status: ' . ucfirst((string)$event['status']);
+            }
+            return [
+                'name' => $name,
+                'detail' => implode(' • ', $details)
+            ];
+        }
+    ],
+];
 
-$postsFile = $dataDir . '/blog_posts.json';
-if (is_file($postsFile)) {
-    $scanned[] = realpath($postsFile);
-    $posts = read_json_file($postsFile);
-    $usage = array_merge($usage, collect_usage($posts, $needles, 'Blog Post', function(array $post): array {
-        $name = $post['title'] ?? ($post['slug'] ?? ('Post #' . ($post['id'] ?? '?')));
-        $details = [];
-        if (!empty($post['slug'])) {
-            $details[] = 'Slug: ' . $post['slug'];
-        }
-        if (!empty($post['status'])) {
-            $details[] = 'Status: ' . ucfirst((string)$post['status']);
-        }
-        return [
-            'name' => $name,
-            'detail' => implode(' • ', $details)
-        ];
-    }));
-}
-
-$eventsFile = $dataDir . '/events.json';
-if (is_file($eventsFile)) {
-    $scanned[] = realpath($eventsFile);
-    $events = read_json_file($eventsFile);
-    $usage = array_merge($usage, collect_usage($events, $needles, 'Event', function(array $event): array {
-        $name = $event['title'] ?? ($event['id'] ?? 'Event');
-        $details = [];
-        if (!empty($event['id'])) {
-            $details[] = 'ID: ' . $event['id'];
-        }
-        if (!empty($event['status'])) {
-            $details[] = 'Status: ' . ucfirst((string)$event['status']);
-        }
-        return [
-            'name' => $name,
-            'detail' => implode(' • ', $details)
-        ];
-    }));
+foreach ($sources as $source) {
+    $records = read_json_file($source['file']);
+    $usage = array_merge(
+        $usage,
+        collect_usage($records, $needles, $source['type'], $source['describe'])
+    );
 }
 
 $settingsFile = $dataDir . '/settings.json';
-if (is_file($settingsFile)) {
-    $scanned[] = realpath($settingsFile);
-    $settings = read_json_file($settingsFile);
-    $matches = gather_matches($settings, $needles);
-    if (!empty($matches)) {
-        $fields = format_fields($matches);
-        $usage[] = [
-            'type' => 'Settings',
-            'name' => 'Site Settings',
-            'details' => !empty($fields) ? 'Fields: ' . implode(', ', $fields) : null
-        ];
-    }
-}
-
-$draftDir = $dataDir . '/drafts';
-if (is_dir($draftDir)) {
-    foreach (glob($draftDir . '/*.json') as $draftFile) {
-        $real = realpath($draftFile);
-        if ($real !== false) {
-            $scanned[] = $real;
-        }
-        $draftData = read_json_file($draftFile);
-        $matches = gather_matches($draftData, $needles);
-        if (!empty($matches)) {
-            $fields = format_fields($matches);
-            $usage[] = [
-                'type' => 'Draft',
-                'name' => basename($draftFile),
-                'details' => !empty($fields) ? 'Fields: ' . implode(', ', $fields) : null
-            ];
-        }
-    }
-}
-
-if (is_dir($dataDir)) {
-    foreach (glob($dataDir . '/*.json') as $file) {
-        $real = realpath($file);
-        if ($real !== false && in_array($real, $scanned, true)) {
-            continue;
-        }
-        $data = read_json_file($file);
-        $matches = gather_matches($data, $needles);
-        if (!empty($matches)) {
-            $fields = format_fields($matches);
-            $usage[] = [
-                'type' => 'Data File',
-                'name' => basename($file),
-                'details' => !empty($fields) ? 'Fields: ' . implode(', ', $fields) : null
-            ];
-        }
-    }
+$settings = read_json_file($settingsFile);
+$matches = gather_matches($settings, $needles);
+if (!empty($matches)) {
+    $fields = format_fields($matches);
+    $usage[] = [
+        'type' => 'Settings',
+        'name' => 'Site Settings',
+        'details' => !empty($fields) ? 'Fields: ' . implode(', ', $fields) : null
+    ];
 }
 
 usort($usage, function(array $a, array $b) {
