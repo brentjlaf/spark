@@ -104,6 +104,41 @@ function write_json_file($file, $data) {
 }
 
 /**
+ * Determine the last modification time for a JSON-backed entity, preferring
+ * database metadata when the JSON file is mapped to a table.
+ */
+function get_storage_last_modified(string $file): ?int
+{
+    $schema = cms_schema_for_json($file);
+    if ($schema) {
+        try {
+            $pdo = get_db_connection();
+            $stmt = $pdo->prepare('SHOW TABLE STATUS LIKE ?');
+            $stmt->execute([$schema['table']]);
+            $status = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($status) {
+                if (!empty($status['Update_time'])) {
+                    return strtotime($status['Update_time']);
+                }
+                if (!empty($status['Create_time'])) {
+                    return strtotime($status['Create_time']);
+                }
+            }
+        } catch (Throwable $e) {
+            // Ignore and fall back to file timestamps when available.
+        }
+    }
+
+    if (is_file($file)) {
+        $modified = filemtime($file);
+        return $modified === false ? null : $modified;
+    }
+
+    return null;
+}
+
+/**
  * Load and decode a JSON file while caching the result within the request.
  *
  * @param string $file Path to the JSON file

@@ -5,9 +5,9 @@ require_once __DIR__ . '/../../includes/data.php';
 require_once __DIR__ . '/../../includes/sanitize.php';
 require_once __DIR__ . '/../../includes/page_schedule.php';
 $pagesFile = __DIR__ . '/../../data/pages.json';
-$pages = [];
-if (file_exists($pagesFile)) {
-    $pages = read_json_file($pagesFile);
+$pages = read_json_file($pagesFile);
+if (!is_array($pages)) {
+    $pages = [];
 }
 
 foreach ($pages as &$pageRef) {
