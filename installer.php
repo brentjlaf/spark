@@ -67,6 +67,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             putenv("DB_CHARSET={$charset}");
 
             try {
+                if ($installed) {
+                    cms_drop_entity_tables($pdo);
+                }
+
                 cms_import_sql_file($pdo, $sqlFile);
 
                 foreach (cms_entity_schemas() as $schema) {
@@ -109,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <h1>Spark CMS Installer</h1>
     <p>Enter your database details to configure Spark CMS. This will create a local environment file and import schema and sample data from the packaged MySQL seed file.</p>
     <?php if ($installed && !$successMessage): ?>
-        <div class="notice">Existing installation detected. Submitting the form will overwrite <code>CMS/data/.env.php</code> and re-run the database import.</div>
+        <div class="notice">Existing installation detected. Submitting the form will overwrite <code>CMS/data/.env.php</code>, drop existing Spark CMS tables, and re-import the database seed.</div>
     <?php endif; ?>
     <?php if (!empty($errors)): ?>
         <div class="error">
