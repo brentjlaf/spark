@@ -74,7 +74,7 @@ function ensure_schema_table(array $schema): void
  */
 function read_json_file($file) {
     $schema = cms_schema_for_json($file);
-    if ($schema) {
+    if ($schema && is_database_configured()) {
         return read_table_as_array($schema);
     }
     if (!file_exists($file)) {
