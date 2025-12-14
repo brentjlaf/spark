@@ -132,6 +132,10 @@ function cms_run_json_migration(PDO $pdo, string $dataDir): string
 
 function cms_infer_primary_type(array $records, string $primary): string
 {
+    if ($primary === 'id' || str_ends_with($primary, '_id')) {
+        return 'int';
+    }
+
     foreach ($records as $record) {
         if (isset($record[$primary]) && is_numeric($record[$primary])) {
             return 'int';
