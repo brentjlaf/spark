@@ -26,8 +26,8 @@ function analytics_previous_views($slug, $views)
     $modifier = (($hash % 41) - 20) / 100; // Range of -0.20 to +0.20
 
     if ($currentViews === 0) {
-        // Provide a small historical baseline so zero-view pages can show declines.
-        return (int) round(($hash % 5) * 5);
+        // Keep initial installs analytics-free when no traffic has been recorded yet.
+        return 0;
     }
 
     $previous = (int) round($currentViews * (1 + $modifier));
