@@ -3,6 +3,7 @@ require_once __DIR__ . '/CMS/includes/migration.php';
 
 $envPath = __DIR__ . '/CMS/data/.env.php';
 $dataDir = realpath(__DIR__ . '/CMS/data');
+$sqlFile = __DIR__ . '/CMS/data/spark_seed.sql';
 
 $installed = is_file($envPath);
 $errors = [];
@@ -42,6 +43,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'CMS data directory could not be located.';
     }
 
+    if (empty($errors) && !is_file($sqlFile)) {
+        $errors[] = 'MySQL seed file could not be found in CMS/data.';
+    }
+
     if (empty($errors)) {
         $envContents = "<?php\nreturn [\n" .
             "    'DB_HOST' => '" . addslashes($dbHost) . "',\n" .
@@ -61,10 +66,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             putenv("DB_CHARSET={$charset}");
 
             try {
-                $backupDir = cms_run_json_migration($pdo, $dataDir);
-                $successMessage = "Installation complete! Backups saved to {$backupDir}. You can now log in at <a href=\"CMS/login.php\">CMS/login.php</a>.";
+                cms_import_sql_file($pdo, $sqlFile);
+                $successMessage = "Installation complete! Database populated from spark_seed.sql. You can now log in at <a href=\"CMS/login.php\">CMS/login.php</a>.";
             } catch (Throwable $e) {
-                $errors[] = 'Database migration failed: ' . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8');
+                $errors[] = 'Database import failed: ' . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8');
             }
         }
     }
@@ -92,9 +97,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 <div class="container">
     <h1>Spark CMS Installer</h1>
-    <p>Enter your database details to configure Spark CMS. This will create a local environment file and migrate existing JSON data into MySQL.</p>
+    <p>Enter your database details to configure Spark CMS. This will create a local environment file and import schema and sample data from the packaged MySQL seed file.</p>
     <?php if ($installed && !$successMessage): ?>
-        <div class="notice">Existing installation detected. Submitting the form will overwrite <code>CMS/data/.env.php</code> and re-run the migration.</div>
+        <div class="notice">Existing installation detected. Submitting the form will overwrite <code>CMS/data/.env.php</code> and re-run the database import.</div>
     <?php endif; ?>
     <?php if (!empty($errors)): ?>
         <div class="error">
