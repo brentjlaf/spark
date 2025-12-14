@@ -104,19 +104,18 @@ DROP TABLE IF EXISTS `cms_settings`;
 CREATE TABLE `cms_settings` (
 `setting_key` VARCHAR(191) PRIMARY KEY,
 `payload` JSON NOT NULL,
-`setting_key` VARCHAR(255) NULL,
 INDEX `idx_cms_settings_setting_key` (`setting_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO `cms_settings` (`setting_key`,`payload`,`setting_key`) VALUES
-('site_name','{\"setting_key\":\"site_name\",\"value\":\"SparkCMS\"}','site_name'),
-('tagline','{\"setting_key\":\"tagline\",\"value\":\"Modern Content Management\"}','tagline'),
-('admin_email','{\"setting_key\":\"admin_email\",\"value\":\"admin@example.com\"}','admin_email'),
-('homepage','{\"setting_key\":\"homepage\",\"value\":\"home\"}','homepage'),
-('items_per_page','{\"setting_key\":\"items_per_page\",\"value\":10}','items_per_page'),
-('logo','{\"setting_key\":\"logo\",\"value\":\"/images/logo.png\"}','logo'),
-('canvas_placeholder','{\"setting_key\":\"canvas_placeholder\",\"value\":\"Drag blocks from the palette to start building your page\"}','canvas_placeholder'),
-('social','{\"setting_key\":\"social\",\"value\":{\"facebook\":\"https://facebook.com/mywebsite\",\"twitter\":\"https://twitter.com/mywebsite\",\"instagram\":\"https://instagram.com/mywebsite\"}}','social');
+INSERT INTO `cms_settings` (`setting_key`,`payload`) VALUES
+('site_name','{\"setting_key\":\"site_name\",\"value\":\"SparkCMS\"}'),
+('tagline','{\"setting_key\":\"tagline\",\"value\":\"Modern Content Management\"}'),
+('admin_email','{\"setting_key\":\"admin_email\",\"value\":\"admin@example.com\"}'),
+('homepage','{\"setting_key\":\"homepage\",\"value\":\"home\"}'),
+('items_per_page','{\"setting_key\":\"items_per_page\",\"value\":10}'),
+('logo','{\"setting_key\":\"logo\",\"value\":\"/images/logo.png\"}'),
+('canvas_placeholder','{\"setting_key\":\"canvas_placeholder\",\"value\":\"Drag blocks from the palette to start building your page\"}'),
+('social','{\"setting_key\":\"social\",\"value\":{\"facebook\":\"https://facebook.com/mywebsite\",\"twitter\":\"https://twitter.com/mywebsite\",\"instagram\":\"https://instagram.com/mywebsite\"}}');
 
 DROP TABLE IF EXISTS `cms_forms`;
 
