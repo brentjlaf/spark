@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/CMS/includes/migration.php';
+require_once __DIR__ . '/CMS/includes/data.php';
 
 $envPath = __DIR__ . '/CMS/data/.env.php';
 $dataDir = realpath(__DIR__ . '/CMS/data');
@@ -67,7 +68,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             try {
                 cms_import_sql_file($pdo, $sqlFile);
-                $successMessage = "Installation complete! Database populated from spark_seed.sql. You can now log in at <a href=\"CMS/login.php\">CMS/login.php</a>.";
+
+                foreach (cms_entity_schemas() as $schema) {
+                    cms_ensure_table($pdo, $schema);
+                }
+
+                if (function_exists('ensure_drafts_table')) {
+                    ensure_drafts_table();
+                }
+
+                $successMessage = "Installation complete! Database populated from spark_seed.sql and missing tables ensured. You can now log in at <a href=\"CMS/login.php\">CMS/login.php</a>.";
             } catch (Throwable $e) {
                 $errors[] = 'Database import failed: ' . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8');
             }
