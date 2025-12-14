@@ -3,6 +3,7 @@
 // Utility functions for reading/writing JSON files with simple in-memory caching
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/schema.php';
+require_once __DIR__ . '/migration.php';
 
 /**
  * Read and decode a JSON file or mapped database table.
@@ -32,6 +33,10 @@ function read_json_file($file) {
 function write_json_file($file, $data) {
     $schema = cms_schema_for_json($file);
     if ($schema) {
+        $pdo = get_db_connection();
+        if (!cms_table_exists($pdo, $schema['table'])) {
+            cms_ensure_table($pdo, $schema, is_array($data) ? $data : []);
+        }
         return write_table_from_array($schema, $data);
     }
     return file_put_contents($file, json_encode($data, JSON_PRETTY_PRINT)) !== false;
@@ -125,6 +130,17 @@ function write_table_from_array(array $schema, $data): bool
         if (isset($pdo) && $pdo->inTransaction()) {
             $pdo->rollBack();
         }
+        return false;
+    }
+}
+
+function cms_table_exists(PDO $pdo, string $table): bool
+{
+    try {
+        $stmt = $pdo->prepare('SHOW TABLES LIKE ?');
+        $stmt->execute([$table]);
+        return (bool) $stmt->fetchColumn();
+    } catch (Throwable $e) {
         return false;
     }
 }
