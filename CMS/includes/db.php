@@ -2,6 +2,16 @@
 // Centralized PDO database connection helper
 require_once __DIR__ . '/env_loader.php';
 
+function is_database_configured(): bool
+{
+    $envPath = __DIR__ . '/../data/.env.php';
+    return is_file($envPath)
+        || getenv('DB_HOST') !== false
+        || getenv('DB_NAME') !== false
+        || getenv('DB_USER') !== false
+        || getenv('DB_PASS') !== false;
+}
+
 function render_installation_required(string $reason, ?Throwable $exception = null): void
 {
     $installerUrl = '/installer.php';
@@ -65,11 +75,7 @@ function get_db_connection(): PDO
         return $pdo;
     }
 
-    $envPath = __DIR__ . '/../data/.env.php';
-    $hasEnvVars = getenv('DB_HOST') !== false || getenv('DB_NAME') !== false || getenv('DB_USER') !== false || getenv('DB_PASS') !== false;
-    $hasConfigFile = is_file($envPath);
-
-    if (!$hasConfigFile && !$hasEnvVars) {
+    if (!is_database_configured()) {
         render_installation_required('Configuration file CMS/data/.env.php is missing.');
     }
 
