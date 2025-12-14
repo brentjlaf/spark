@@ -81,6 +81,6 @@ if ($id) {
     $menus[] = ['id' => $id, 'name' => $name, 'items' => $items];
 }
 
-file_put_contents($menusFile, json_encode($menus, JSON_PRETTY_PRINT));
+write_json_file($menusFile, $menus);
 echo 'OK';
 ?>

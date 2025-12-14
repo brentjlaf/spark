@@ -41,7 +41,7 @@ foreach ($pages as &$page) {
 unset($page);
 
 if ($updatedCount > 0) {
-    if (file_put_contents($pagesFile, json_encode($pages, JSON_PRETTY_PRINT)) === false) {
+    if (!write_json_file($pagesFile, $pages)) {
         http_response_code(500);
         echo json_encode([
             'success' => false,

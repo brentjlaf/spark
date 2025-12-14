@@ -74,7 +74,7 @@ if ($id) {
     $forms[] = ['id' => $id, 'name' => $name, 'fields' => $fields, 'confirmation_email' => $confirmation];
 }
 
-file_put_contents($formsFile, json_encode($forms, JSON_PRETTY_PRINT));
+write_json_file($formsFile, $forms);
 
 echo 'OK';
 ?>

@@ -26,7 +26,7 @@ foreach ($media as $item) {
         $new[] = $item;
     }
 }
-file_put_contents($mediaFile, json_encode(array_values($new), JSON_PRETTY_PRINT));
+write_json_file($mediaFile, array_values($new));
 
 echo json_encode(['status' => 'success']);
 

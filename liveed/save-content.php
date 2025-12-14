@@ -70,15 +70,12 @@ $historyData['__system__'][] = [
 ];
 $historyData['__system__'] = array_slice($historyData['__system__'], -50);
 
-file_put_contents($historyFile, json_encode($historyData, JSON_PRETTY_PRINT));
+write_json_file($historyFile, $historyData);
 
-file_put_contents($pagesFile, json_encode($pages, JSON_PRETTY_PRINT));
+write_json_file($pagesFile, $pages);
 require_once __DIR__ . '/../CMS/modules/sitemap/generate.php';
 
 // remove saved draft if exists
-$draftFile = __DIR__ . '/../CMS/data/drafts/page-' . $id . '.json';
-if (is_file($draftFile)) {
-    unlink($draftFile);
-}
+delete_page_draft($id);
 
 echo 'OK';

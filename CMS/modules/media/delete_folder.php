@@ -39,7 +39,7 @@ foreach ($media as $m) {
         $new[] = $m;
     }
 }
-file_put_contents($mediaFile, json_encode(array_values($new), JSON_PRETTY_PRINT));
+write_json_file($mediaFile, array_values($new));
 
 // remove directory recursively
 $iterator = new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS);

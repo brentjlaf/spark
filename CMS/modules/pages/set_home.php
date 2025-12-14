@@ -16,7 +16,7 @@ if ($slug === '') {
 $settingsFile = get_settings_file_path();
 $settings = read_json_file($settingsFile);
 $settings['homepage'] = $slug;
-file_put_contents($settingsFile, json_encode($settings, JSON_PRETTY_PRINT));
+write_json_file($settingsFile, $settings);
 set_site_settings_cache($settings);
 
 echo 'OK';

@@ -57,6 +57,6 @@ if ($id) {
     ];
 }
 
-file_put_contents($usersFile, json_encode($users, JSON_PRETTY_PRINT));
+write_json_file($usersFile, $users);
 echo 'OK';
 ?>

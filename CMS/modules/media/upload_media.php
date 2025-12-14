@@ -123,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!empty($newEntries)) {
         $media = array_merge($media, $newEntries);
-        file_put_contents($mediaFile, json_encode($media, JSON_PRETTY_PRINT));
+        write_json_file($mediaFile, $media);
     }
 
     $response = [

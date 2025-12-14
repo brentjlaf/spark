@@ -13,7 +13,7 @@ $forms = array_values(array_filter($forms, function($f) use ($id) {
     return $f['id'] != $id;
 }));
 
-file_put_contents($formsFile, json_encode($forms, JSON_PRETTY_PRINT));
+write_json_file($formsFile, $forms);
 
 echo 'OK';
 ?>
