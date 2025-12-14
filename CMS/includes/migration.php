@@ -86,6 +86,26 @@ function cms_import_records(PDO $pdo, array $schema, array $records): void
     $pdo->commit();
 }
 
+function cms_import_sql_file(PDO $pdo, string $sqlFile): void
+{
+    if (!is_readable($sqlFile)) {
+        throw new InvalidArgumentException("SQL file not readable: {$sqlFile}");
+    }
+
+    $sql = file_get_contents($sqlFile);
+    if ($sql === false) {
+        throw new RuntimeException("Failed to read SQL file: {$sqlFile}");
+    }
+
+    $statements = array_filter(array_map('trim', preg_split('/;\s*(?:\r?\n|$)/', $sql)));
+    foreach ($statements as $statement) {
+        if ($statement === '') {
+            continue;
+        }
+        $pdo->exec($statement);
+    }
+}
+
 function cms_run_json_migration(PDO $pdo, string $dataDir): string
 {
     $backupDir = rtrim($dataDir, DIRECTORY_SEPARATOR) . '/backup-' . date('Ymd_His');
