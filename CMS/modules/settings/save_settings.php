@@ -9,6 +9,8 @@ require_login();
 header('Content-Type: application/json');
 
 $settingsFile = get_settings_file_path();
+ensure_settings_table();
+
 $settings = read_json_file($settingsFile);
 if (!is_array($settings)) {
     $settings = [];
@@ -283,7 +285,15 @@ if ($previousOgImage && $previousOgImage !== $newOgImage) {
 $settings['open_graph'] = $openGraph;
 $settings['last_updated'] = date('c');
 
-write_json_file($settingsFile, $settings);
+if (!write_json_file($settingsFile, $settings)) {
+    http_response_code(500);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Failed to save settings. Please try again.',
+    ]);
+    exit;
+}
+
 set_site_settings_cache($settings);
 
 echo json_encode([
