@@ -177,19 +177,38 @@ $(function(){
         });
     }
 
+    function sanitizeToastMessage(value, fallback = ''){
+        const raw = (value === null || value === undefined) ? '' : String(value);
+        const container = document.createElement('div');
+        container.innerHTML = raw;
+        const text = (container.textContent || container.innerText || '').trim();
+        if(text){
+            return text;
+        }
+        return fallback || '';
+    }
+
     function notifySuccess(message){
+        const text = sanitizeToastMessage(message);
+        if(!text){
+            return;
+        }
         if(window.AdminNotifications && typeof window.AdminNotifications.showSuccessToast === 'function'){
-            window.AdminNotifications.showSuccessToast(message);
+            window.AdminNotifications.showSuccessToast(text);
         } else {
-            alertModal(message);
+            alertModal(text);
         }
     }
 
     function notifyError(message){
+        const text = sanitizeToastMessage(message);
+        if(!text){
+            return;
+        }
         if(window.AdminNotifications && typeof window.AdminNotifications.showErrorToast === 'function'){
-            window.AdminNotifications.showErrorToast(message);
+            window.AdminNotifications.showErrorToast(text);
         } else {
-            alertModal(message);
+            alertModal(text);
         }
     }
 

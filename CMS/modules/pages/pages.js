@@ -29,34 +29,57 @@ $(function(){
         }
         $('#cancelEdit').hide();
 
+        function sanitizeToastMessage(value, fallback = ''){
+            const raw = (value === null || value === undefined) ? '' : String(value);
+            const container = document.createElement('div');
+            container.innerHTML = raw;
+            const text = (container.textContent || container.innerText || '').trim();
+            if(text){
+                return text;
+            }
+            return fallback || '';
+        }
+
         function toastSuccess(message){
+            const text = sanitizeToastMessage(message);
+            if(!text){
+                return;
+            }
             if(window.AdminNotifications && typeof window.AdminNotifications.showSuccessToast === 'function'){
-                window.AdminNotifications.showSuccessToast(message);
+                window.AdminNotifications.showSuccessToast(text);
             } else {
-                alertModal(message);
+                alertModal(text);
             }
         }
 
         function toastError(message){
+            const text = sanitizeToastMessage(message);
+            if(!text){
+                return;
+            }
             if(window.AdminNotifications && typeof window.AdminNotifications.showErrorToast === 'function'){
-                window.AdminNotifications.showErrorToast(message);
+                window.AdminNotifications.showErrorToast(text);
             } else {
-                alertModal(message);
+                alertModal(text);
             }
         }
 
         function rememberToast(type, message){
+            const text = sanitizeToastMessage(message);
+            if(!text){
+                return;
+            }
             if(window.AdminNotifications && typeof window.AdminNotifications.rememberToast === 'function'){
-                window.AdminNotifications.rememberToast(type, message);
+                window.AdminNotifications.rememberToast(type, text);
             }
         }
 
         function extractErrorMessage(xhr, fallback){
             if(xhr && xhr.responseJSON && xhr.responseJSON.message){
-                return xhr.responseJSON.message;
+                return sanitizeToastMessage(xhr.responseJSON.message, fallback);
             }
             if(xhr && typeof xhr.responseText === 'string' && xhr.responseText.trim().length){
-                return xhr.responseText;
+                return sanitizeToastMessage(xhr.responseText, fallback);
             }
             return fallback;
         }

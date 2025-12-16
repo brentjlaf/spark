@@ -1698,12 +1698,26 @@
         return { setValue };
     }
 
+    function normalizeToastMessage(value) {
+        if (value === null || value === undefined) {
+            return '';
+        }
+        const container = document.createElement('div');
+        container.innerHTML = String(value);
+        const text = (container.textContent || container.innerText || '').trim();
+        return text;
+    }
+
     function showToast(message, type = 'success') {
         if (!selectors.toast) {
             return;
         }
+        const text = normalizeToastMessage(message);
+        if (!text) {
+            return;
+        }
         selectors.toast.dataset.type = type;
-        selectors.toast.querySelector('[data-events-toast-message]').textContent = message;
+        selectors.toast.querySelector('[data-events-toast-message]').textContent = text;
         selectors.toast.hidden = false;
         selectors.toast.classList.add('is-visible');
         setTimeout(() => {
