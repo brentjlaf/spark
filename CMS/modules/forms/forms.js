@@ -56,6 +56,7 @@ $(function(){
         checkbox: 'Checkbox',
         radio: 'Radio',
         file: 'File upload',
+        recaptcha: 'reCAPTCHA',
         submit: 'Submit button'
     };
 
@@ -70,6 +71,7 @@ $(function(){
         checkbox: 'Checkbox',
         radio: 'Radio choice',
         file: 'File upload',
+        recaptcha: 'reCAPTCHA verification',
         submit: 'Submit'
     };
 
@@ -861,6 +863,9 @@ $(function(){
                     html = '<div class="form-group"><label><input type="'+type+'"'+nameAttr+required+'> '+labelHtml+'</label></div>';
                 }
                 break;
+            case 'recaptcha':
+                html = '<div class="form-group"><label>'+labelHtml+'</label><div class="field-recaptcha-placeholder"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> reCAPTCHA widget will render here.</div></div>';
+                break;
             case 'submit':
                 html = '<div class="form-group"><button type="submit">'+(labelValue ? escapeHtml(labelValue) : 'Submit')+'</button></div>';
                 break;
@@ -1111,7 +1116,7 @@ $(function(){
         body.append(nameGroup);
 
         let requiredInput = null;
-        if(type !== 'submit'){
+        if(type !== 'submit' && type !== 'recaptcha'){
             const requiredGroup = $('<div class="form-group"></div>');
             requiredGroup.append('<label><input type="checkbox" class="field-required"> Required</label>');
             body.append(requiredGroup);
@@ -1137,7 +1142,13 @@ $(function(){
             labelInput.val(initialLabel);
         }
 
-        if(field.name){
+        if(type === 'recaptcha'){
+            const recaptchaName = field.name ? String(field.name) : 'recaptcha_token';
+            nameInput.val(recaptchaName);
+            nameInput.prop('readonly', true).attr('aria-readonly', 'true');
+            setManualNameFlag(nameInput, true);
+            nameGroup.append('<p class="field-help">Name is fixed for reCAPTCHA validation tokens.</p>');
+        } else if(field.name){
             nameInput.val(String(field.name));
             setManualNameFlag(nameInput, true);
         } else {

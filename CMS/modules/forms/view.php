@@ -210,6 +210,7 @@ $lastSubmissionLabel = $latestSubmission > 0
                             <div class="palette-item" data-type="checkbox" role="button" tabindex="0">Checkbox</div>
                             <div class="palette-item" data-type="radio" role="button" tabindex="0">Radio</div>
                             <div class="palette-item" data-type="file" role="button" tabindex="0">File upload</div>
+                            <div class="palette-item" data-type="recaptcha" role="button" tabindex="0">reCAPTCHA</div>
                             <div class="palette-item" data-type="submit" role="button" tabindex="0">Submit button</div>
                         </div>
                         <div class="builder-columns">

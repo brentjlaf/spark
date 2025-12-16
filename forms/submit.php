@@ -180,6 +180,9 @@ foreach ($fields as $index => $field) {
                 }
             }
             break;
+        case 'recaptcha':
+            // reCAPTCHA is handled on the client; token storage is not persisted.
+            break;
         case 'file':
             $file = $_FILES[$normalizedName] ?? null;
             if ($file && isset($file['error']) && $file['error'] !== UPLOAD_ERR_NO_FILE) {
