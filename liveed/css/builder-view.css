@@ -46,7 +46,7 @@
   background: linear-gradient(135deg, #2563eb, #1e40af);
 }
 .save-status {
-  color: #64748b;
+  color: #e2e8f0;
   font-size: 11px;
   margin-left: 8px;
 }
@@ -54,7 +54,7 @@
   padding: 8px 10px;
   border: none;
   background: rgba(30, 41, 59, 0.6);
-  color: #64748b;
+  color: #e2e8f0;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -70,7 +70,7 @@
 }
 .blocks-title {
   padding: 16px 16px 8px;
-  color: #94a3b8;
+  color: #cdd5df;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
@@ -145,7 +145,7 @@
   border: none;
   border-radius: 8px;
   background: rgba(30, 41, 59, 0.8);
-  color: #94a3b8;
+  color: #f1f5f9;
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -171,7 +171,7 @@
   align-items: center;
 }
 .footer-link {
-  color: #64748b;
+  color: #e2e8f0;
   text-decoration: none;
   font-size: 11px;
   font-weight: 600;
@@ -183,7 +183,7 @@
 }
 .footer-link:hover {
   background: rgba(59, 130, 246, 0.15);
-  color: #3b82f6;
+  color: #bfdbfe;
 }
 .version-badge {
   background: rgba(34, 197, 94, 0.15);
@@ -195,7 +195,7 @@
   letter-spacing: 0.5px;
 }
 .last-saved-time {
-  color: #64748b;
+  color: #e2e8f0;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
