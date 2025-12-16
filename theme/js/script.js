@@ -115,6 +115,18 @@
       return wrapper;
     }
 
+    if (type === 'recaptcha') {
+      var recaptchaLabel = document.createElement('span');
+      recaptchaLabel.className = 'form-label d-block';
+      recaptchaLabel.textContent = labelText || 'reCAPTCHA';
+      var recaptchaPlaceholder = document.createElement('div');
+      recaptchaPlaceholder.className = 'spark-recaptcha-placeholder alert alert-secondary mb-0';
+      recaptchaPlaceholder.textContent = 'reCAPTCHA widget will render here during publishing.';
+      wrapper.appendChild(recaptchaLabel);
+      wrapper.appendChild(recaptchaPlaceholder);
+      return wrapper;
+    }
+
     function appendFeedback(target, blockDisplay) {
       var feedback = document.createElement('div');
       feedback.className = 'invalid-feedback' + (blockDisplay ? ' d-block' : '');
