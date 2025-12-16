@@ -5,6 +5,16 @@
     var STORAGE_KEY = 'sparkcms.admin.toast';
     var DEFAULT_DURATION = 6000;
 
+    function normalizeMessage(value) {
+        if (value === null || value === undefined) {
+            return '';
+        }
+        var container = document.createElement('div');
+        container.innerHTML = String(value);
+        var text = container.textContent || container.innerText || '';
+        return text.trim();
+    }
+
     function ensureContainer() {
         var container = document.getElementById('admin-toast-container');
         if (!container) {
@@ -49,7 +59,7 @@
 
         var text = document.createElement('div');
         text.className = 'admin-toast__message';
-        text.textContent = message;
+        text.textContent = normalizeMessage(message);
         toast.appendChild(text);
 
         var close = document.createElement('button');
@@ -66,11 +76,12 @@
     }
 
     function showToast(message, options) {
-        if (!message) {
+        var normalizedMessage = normalizeMessage(message);
+        if (!normalizedMessage) {
             return null;
         }
         var container = ensureContainer();
-        var toast = buildToast(String(message), options);
+        var toast = buildToast(normalizedMessage, options);
         container.appendChild(toast);
 
         // Allow the element to render before animating
@@ -99,11 +110,12 @@
     }
 
     function storeToast(type, message) {
-        if (!message) {
+        var normalizedMessage = normalizeMessage(message);
+        if (!normalizedMessage) {
             return;
         }
         try {
-            var payload = JSON.stringify({ type: type || 'info', message: String(message) });
+            var payload = JSON.stringify({ type: type || 'info', message: normalizedMessage });
             window.sessionStorage.setItem(STORAGE_KEY, payload);
         } catch (error) {
             // Ignore storage errors (e.g., disabled cookies)
