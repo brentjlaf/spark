@@ -45,6 +45,26 @@ $(function(){
         fromEmail: ($form.attr('data-default-from-email') || '').trim()
     };
 
+    function markFieldPending($field, pending){
+        if(!$field || !$field.length){
+            return;
+        }
+        if(pending){
+            $field.attr('data-pending-config', 'true').addClass('field-pending');
+        } else {
+            $field.removeAttr('data-pending-config').removeClass('field-pending');
+        }
+    }
+
+    function markFieldConfigured($field){
+        if(!$field || !$field.length){
+            return;
+        }
+        if($field.attr('data-pending-config') === 'true'){
+            markFieldPending($field, false);
+        }
+    }
+
     const FIELD_TYPE_LABELS = {
         text: 'Text input',
         email: 'Email',
@@ -1176,6 +1196,9 @@ $(function(){
             }
             updatePreview($li);
             refreshConfirmationEmailFieldOptions($confirmationField.val());
+            markFieldConfigured($li);
+        }).on('blur', function(){
+            markFieldConfigured($li);
         });
 
         labelInput.on('blur', function(){
@@ -1207,16 +1230,27 @@ $(function(){
                 updatePreview($li);
                 refreshConfirmationEmailFieldOptions($confirmationField.val());
             }
+            markFieldConfigured($li);
         });
 
-        body.on('input change', 'input, textarea', function(){ updatePreview($li); });
+        body.on('input change', 'input, textarea', function(){
+            updatePreview($li);
+            markFieldConfigured($li);
+        });
 
-        $li.on('click', function(){ selectField($li); });
+        $li.on('click', function(){
+            selectField($li);
+        });
 
         updatePreview($li);
         $formPreview.append($li);
         if(!suppressSelect){
             selectField($li);
+        }
+        if(isNew){
+            markFieldPending($li, true);
+        } else {
+            markFieldPending($li, false);
         }
         hideBuilderAlert();
         refreshConfirmationEmailFieldOptions($confirmationField.val());
@@ -1404,6 +1438,7 @@ $(function(){
 
         let missingLabels = 0;
         let missingNames = 0;
+        let pendingSetup = 0;
         const nameCounts = {};
         $items.removeClass('field-error');
 
@@ -1411,6 +1446,10 @@ $(function(){
             const $li = $(this);
             const labelVal = ($li.find('.field-label').val() || '').trim();
             const nameVal = ($li.find('.field-name').val() || '').trim();
+            if($li.attr('data-pending-config') === 'true'){
+                pendingSetup++;
+                $li.addClass('field-error');
+            }
             if(!labelVal){
                 missingLabels++;
                 $li.addClass('field-error');
@@ -1438,6 +1477,11 @@ $(function(){
         }
 
         const errors = [];
+        if(pendingSetup){
+            errors.push(pendingSetup === 1
+                ? 'Finish configuring the new field you just added before saving.'
+                : 'Finish configuring the new fields you just added before saving.');
+        }
         if(missingLabels){
             errors.push(missingLabels === 1 ? 'One field is missing a label.' : missingLabels + ' fields are missing labels.');
         }
