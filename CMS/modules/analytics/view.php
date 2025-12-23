@@ -10,6 +10,7 @@ $dataset = load_analytics_dataset();
 $entries = isset($dataset['entries']) && is_array($dataset['entries']) ? $dataset['entries'] : [];
 $source = isset($dataset['source']) ? (string) $dataset['source'] : 'local';
 $meta = isset($dataset['meta']) && is_array($dataset['meta']) ? $dataset['meta'] : [];
+$trends = isset($dataset['trends']) && is_array($dataset['trends']) ? $dataset['trends'] : [];
 
 $lastUpdatedTimestamp = isset($meta['last_updated']) ? (int) $meta['last_updated'] : time();
 $lastUpdatedDisplay = $lastUpdatedTimestamp > 0
@@ -358,5 +359,6 @@ $summaryComparisons = [
         'propertyId' => $meta['property_id'] ?? null,
         'summary' => $summaryComparisons,
         'label' => $heroMetaText,
+        'trends' => $trends,
     ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
 </script>

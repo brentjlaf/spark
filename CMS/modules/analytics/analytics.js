@@ -24,6 +24,7 @@ $(function(){
             activeRange: 'day',
             activeSlug: null,
             datasets: {},
+            provided: null,
         }
     };
 
@@ -550,13 +551,123 @@ $(function(){
         return values;
     }
 
+    function normalizeTrendSeries(series, rangeKey){
+        if (!Array.isArray(series)) {
+            return null;
+        }
+        const points = trendRanges[rangeKey] ? trendRanges[rangeKey].points : series.length;
+        const normalized = [];
+        for (let i = 0; i < points; i++) {
+            const value = Number(series[i] != null ? series[i] : 0);
+            if (Number.isFinite(value) && value > 0) {
+                normalized.push(Math.round(value));
+            } else {
+                normalized.push(0);
+            }
+        }
+        return normalized;
+    }
+
+    function normalizeTrendLabels(labels, rangeKey){
+        if (!Array.isArray(labels)) {
+            return null;
+        }
+        const points = trendRanges[rangeKey] ? trendRanges[rangeKey].points : labels.length;
+        return labels.slice(0, points).map(function(label){
+            return label == null ? '' : String(label);
+        });
+    }
+
+    function setProvidedTrends(rawTrends){
+        state.trends.provided = null;
+        if (!rawTrends || typeof rawTrends !== 'object') {
+            return;
+        }
+        const normalized = { site: {}, pages: {}, labels: {} };
+
+        Object.keys(trendRanges).forEach(function(rangeKey){
+            const siteSeries = normalizeTrendSeries(rawTrends.site && rawTrends.site[rangeKey], rangeKey);
+            if (siteSeries) {
+                normalized.site[rangeKey] = siteSeries;
+            }
+            const labels = normalizeTrendLabels(rawTrends.labels && rawTrends.labels[rangeKey], rangeKey);
+            if (labels && labels.length) {
+                normalized.labels[rangeKey] = labels;
+            }
+        });
+
+        if (rawTrends.pages && typeof rawTrends.pages === 'object') {
+            Object.keys(rawTrends.pages).forEach(function(slug){
+                const source = rawTrends.pages[slug];
+                if (!source || typeof source !== 'object') {
+                    return;
+                }
+                const pageSeries = {};
+                Object.keys(trendRanges).forEach(function(rangeKey){
+                    const series = normalizeTrendSeries(source[rangeKey], rangeKey);
+                    if (series) {
+                        pageSeries[rangeKey] = series;
+                    }
+                });
+                if (Object.keys(pageSeries).length) {
+                    const key = slug == null ? '' : String(slug);
+                    normalized.pages[key] = pageSeries;
+                }
+            });
+        }
+
+        if (Object.keys(normalized.site).length || Object.keys(normalized.pages).length) {
+            state.trends.provided = normalized;
+        }
+    }
+
+    function getProvidedTrend(rangeKey){
+        if (!state.trends.provided) {
+            return null;
+        }
+        const labels = state.trends.provided.labels && state.trends.provided.labels[rangeKey]
+            ? state.trends.provided.labels[rangeKey]
+            : null;
+        if (state.trends.activeSlug != null) {
+            const pageSeries = state.trends.provided.pages[state.trends.activeSlug];
+            if (pageSeries && Array.isArray(pageSeries[rangeKey])) {
+                return { labels: labels, data: pageSeries[rangeKey] };
+            }
+        }
+        if (state.trends.provided.site && Array.isArray(state.trends.provided.site[rangeKey])) {
+            return { labels: labels, data: state.trends.provided.site[rangeKey] };
+        }
+        return null;
+    }
+
+    function buildTrendDataset(rangeKey){
+        const provided = getProvidedTrend(rangeKey);
+        if (provided && Array.isArray(provided.data)) {
+            const data = provided.data.slice();
+            const hasLabels = provided.labels && provided.labels.length;
+            const baseLabels = hasLabels
+                ? provided.labels.slice(0, data.length)
+                : generateTrendLabels(rangeKey, data.length || (trendRanges[rangeKey] ? trendRanges[rangeKey].points : 0));
+            if (baseLabels.length < data.length) {
+                const fallbackLabels = generateTrendLabels(rangeKey, data.length);
+                for (let i = 0; i < data.length; i++) {
+                    if (!baseLabels[i]) {
+                        baseLabels[i] = fallbackLabels[i] || '';
+                    }
+                }
+            }
+            return { labels: baseLabels, data: data };
+        }
+        const config = trendRanges[rangeKey];
+        const labels = generateTrendLabels(rangeKey, config.points);
+        const data = generateTrendSeries(rangeKey, config.points);
+        return { labels: labels, data: data };
+    }
+
     function regenerateTrendData(){
         const datasets = {};
         Object.keys(trendRanges).forEach(function(rangeKey){
-            const config = trendRanges[rangeKey];
-            const labels = generateTrendLabels(rangeKey, config.points);
-            const data = generateTrendSeries(rangeKey, config.points);
-            datasets[rangeKey] = { labels: labels, data: data };
+            datasets[rangeKey] = buildTrendDataset(rangeKey);
         });
         state.trends.datasets = datasets;
     }
@@ -1323,11 +1434,12 @@ $(function(){
         });
     }
 
-    function setData(rawEntries){
+    function setData(rawEntries, meta){
         const derived = deriveState(rawEntries);
         state.entries = derived.entries;
         state.summary = derived.summary;
         state.counts = derived.counts;
+        setProvidedTrends(meta && meta.trends);
         buildOpportunityPageOptions();
         regenerateTrendData();
         updateSummary();
@@ -1368,7 +1480,7 @@ $(function(){
                         meta = response.meta;
                     }
                 }
-                setData(entries || []);
+                setData(entries || [], meta);
                 if (meta) {
                     const label = meta.label || meta.lastUpdatedLabel || '';
                     const iso = meta.last_updated_iso || meta.lastUpdatedIso || '';
@@ -1387,7 +1499,7 @@ $(function(){
 
     const initialEntries = window.analyticsInitialEntries || [];
     const initialMeta = window.analyticsInitialMeta || {};
-    setData(initialEntries);
+    setData(initialEntries, initialMeta);
     const initialLabel = initialMeta.label || initialMeta.lastUpdated || '';
     const initialIso = initialMeta.lastUpdatedIso || initialMeta.last_updated_iso || '';
     updateLastUpdatedDisplay(initialLabel, initialIso);

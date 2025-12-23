@@ -11,6 +11,7 @@ $entries = isset($dataset['entries']) && is_array($dataset['entries'])
     ? $dataset['entries']
     : [];
 $meta = isset($dataset['meta']) && is_array($dataset['meta']) ? $dataset['meta'] : [];
+$trends = isset($dataset['trends']) && is_array($dataset['trends']) ? $dataset['trends'] : [];
 $source = isset($dataset['source']) ? (string) $dataset['source'] : 'local';
 
 $lastUpdatedTimestamp = isset($meta['last_updated']) ? (int) $meta['last_updated'] : time();
@@ -36,6 +37,7 @@ $response = [
         'label' => $metaLabel,
         'source_label' => $sourceLabel,
         'last_updated_iso' => $lastUpdatedIso,
+        'trends' => $trends,
     ]),
 ];
 
