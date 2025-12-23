@@ -286,6 +286,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const viewToggle = document.getElementById('viewModeToggle');
   const paletteHeader = palette ? palette.querySelector('.builder-header') : null;
 
+  const setHelperVisibility = (isOpen) => {
+    if (!canvas) return;
+    const placeholder = canvas.querySelector('.canvas-placeholder');
+    if (!placeholder) return;
+    const helper = placeholder.querySelector('.placeholder-helper');
+    const toggle = placeholder.querySelector('[data-helper-toggle]');
+    if (!helper || !toggle) return;
+    helper.classList.toggle('open', isOpen);
+    helper.hidden = !isOpen;
+    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  };
+
   builderDraftKey = 'builderDraft-' + window.builderPageId;
   lastSavedTimestamp = window.builderLastModified || 0;
   const draft = localStorage.getItem(builderDraftKey);
@@ -541,7 +553,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const placeholder = canvas.querySelector('.canvas-placeholder');
     if (!placeholder) return;
     const hasBlocks = canvas.querySelector('.block-wrapper');
-    placeholder.style.display = hasBlocks ? 'none' : '';
+    placeholder.hidden = !!hasBlocks;
+    if (hasBlocks) setHelperVisibility(false);
   }
 
   updateCanvasPlaceholder();
@@ -550,6 +563,18 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('canvasUpdated', scheduleSave);
 
   canvas.addEventListener('click', (e) => {
+    const helperToggle = e.target.closest('[data-helper-toggle]');
+    if (helperToggle) {
+      e.preventDefault();
+      const placeholder = canvas.querySelector('.canvas-placeholder');
+      const helperPanel = placeholder
+        ? placeholder.querySelector('.placeholder-helper')
+        : null;
+      const shouldOpen = helperPanel ? !helperPanel.classList.contains('open') : true;
+      setHelperVisibility(shouldOpen);
+      return;
+    }
+
     if (builderEl.classList.contains('view-mode')) return;
     const block = e.target.closest('.block-wrapper');
     if (!block) return;

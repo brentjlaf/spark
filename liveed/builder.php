@@ -37,7 +37,38 @@ $themeHtml = ob_get_clean();
 $placeholderText = !empty($settings['canvas_placeholder'])
     ? htmlspecialchars($settings['canvas_placeholder'])
     : 'Drag blocks from the palette to start building your page';
-$canvasContent = $page['content'] ?: '<div class="canvas-placeholder">' . $placeholderText . '</div>';
+$canvasPlaceholder = '
+<div class="canvas-placeholder" role="status">
+  <div class="placeholder-inner">
+    <div class="placeholder-body">
+      <div class="placeholder-intro">
+        <i class="fa-regular fa-hand-point-up" aria-hidden="true"></i>
+        <div class="intro-text">' . $placeholderText . '</div>
+      </div>
+      <ol class="placeholder-steps">
+        <li><strong>Step 1:</strong> Drag blocks from the palette onto this canvas.</li>
+        <li><strong>Step 2:</strong> Click the pencil icon on a block to edit its content.</li>
+        <li><strong>Step 3:</strong> Use <kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd> to undo or redo changes.</li>
+      </ol>
+    </div>
+    <button type="button" class="placeholder-helper-toggle" data-helper-toggle aria-expanded="false">
+      <i class="fa-regular fa-circle-play" aria-hidden="true"></i>
+      <span>Watch how</span>
+    </button>
+    <div class="placeholder-helper" hidden>
+      <div class="helper-heading">
+        <i class="fa-solid fa-bolt" aria-hidden="true"></i>
+        Quick tips
+      </div>
+      <ul class="helper-list">
+        <li>Drop a layout block first, then add text or media inside it.</li>
+        <li>Hover any block to reveal the pencil, drag, duplicate, or delete controls.</li>
+        <li>Undo/redo anytime with <kbd>Ctrl</kbd>+<kbd>Z</kbd> and <kbd>Ctrl</kbd>+<kbd>Y</kbd>.</li>
+      </ul>
+    </div>
+  </div>
+</div>';
+$canvasContent = $page['content'] ?: $canvasPlaceholder;
 $themeHtml = preg_replace('/<div class="drop-area"><\\/div>/', '<div id="canvas" class="canvas">' . $canvasContent . '</div>', $themeHtml);
 
 $cssFiles = [
