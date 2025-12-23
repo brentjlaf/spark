@@ -93,12 +93,6 @@ INDEX `idx_cms_users_username` (`username`),
 INDEX `idx_cms_users_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO `cms_users` (`id`,`payload`,`username`,`role`,`status`,`created_at`,`last_login`,`password`) VALUES
-('1','{\"id\":1,\"username\":\"admin\",\"password\":\"$2y$12$bZQja9BxSl9mw6MRCs0Um.vXqOfr67DAVqDJ3gs2yu8J1FOx1/Sdm\",\"role\":\"admin\",\"status\":\"active\",\"created_at\":0,\"last_login\":null}','admin','admin','active','0',NULL,'$2y$12$bZQja9BxSl9mw6MRCs0Um.vXqOfr67DAVqDJ3gs2yu8J1FOx1/Sdm'),
-('2','{\"id\":2,\"username\":\"Alice\",\"password\":\"$2y$12$bZQja9BxSl9mw6MRCs0Um.vXqOfr67DAVqDJ3gs2yu8J1FOx1/Sdm\",\"role\":\"editor\",\"status\":\"active\",\"created_at\":0,\"last_login\":null}','Alice','editor','active','0',NULL,'$2y$12$bZQja9BxSl9mw6MRCs0Um.vXqOfr67DAVqDJ3gs2yu8J1FOx1/Sdm'),
-('3','{\"id\":3,\"username\":\"Bob\",\"password\":\"$2y$12$bZQja9BxSl9mw6MRCs0Um.vXqOfr67DAVqDJ3gs2yu8J1FOx1/Sdm\",\"role\":\"editor\",\"status\":\"active\",\"created_at\":0,\"last_login\":null}','Bob','editor','active','0',NULL,'$2y$12$bZQja9BxSl9mw6MRCs0Um.vXqOfr67DAVqDJ3gs2yu8J1FOx1/Sdm'),
-('6','{\"id\":6,\"username\":\"aibotbob\",\"password\":\"$2y$12$eZr9T/Ok9bnxoRm8b0ZUxeSLF7mVXMHXg6N5pFecjgL60tCTNwpoC\",\"role\":\"admin\",\"status\":\"active\",\"created_at\":0,\"last_login\":null}','aibotbob','admin','active','0',NULL,'$2y$12$eZr9T/Ok9bnxoRm8b0ZUxeSLF7mVXMHXg6N5pFecjgL60tCTNwpoC');
-
 DROP TABLE IF EXISTS `cms_settings`;
 
 CREATE TABLE `cms_settings` (

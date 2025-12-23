@@ -28,12 +28,35 @@ if ($username === '') {
     exit;
 }
 
+$currentPassword = null;
+
+if ($id) {
+    foreach ($users as $u) {
+        if ($u['id'] == $id) {
+            $currentPassword = $u['password'] ?? null;
+            break;
+        }
+    }
+    if (using_database_for_users() && $currentPassword === null) {
+        $existing = find_user($username);
+        $currentPassword = $existing['password'] ?? null;
+    }
+}
+
+if (!$id && $password === '') {
+    http_response_code(400);
+    echo 'Password required for new users';
+    exit;
+}
+
 if ($id) {
     foreach ($users as &$u) {
         if ($u['id'] == $id) {
             $u['username'] = $username;
             if ($password !== '') {
                 $u['password'] = password_hash($password, PASSWORD_DEFAULT);
+            } elseif ($currentPassword !== null) {
+                $u['password'] = $currentPassword;
             }
             $u['role'] = $role;
             $u['status'] = $status;
@@ -49,7 +72,7 @@ if ($id) {
     $users[] = [
         'id' => $id,
         'username' => $username,
-        'password' => password_hash($password !== '' ? $password : 'password', PASSWORD_DEFAULT),
+        'password' => password_hash($password !== '' ? $password : generate_secure_password(), PASSWORD_DEFAULT),
         'role' => $role,
         'status' => $status,
         'created_at' => time(),

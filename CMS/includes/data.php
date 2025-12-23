@@ -162,12 +162,34 @@ function read_table_as_array(array $schema): array
 {
     ensure_schema_table($schema);
     try {
-        $rows = db_fetch_all("SELECT `{$schema['primary']}`, `{$schema['json_column']}` FROM `{$schema['table']}` ORDER BY `{$schema['primary']}`");
+        $selectColumns = [$schema['primary'], $schema['json_column']];
+        if (!empty($schema['columns']) && is_array($schema['columns'])) {
+            foreach (array_keys($schema['columns']) as $columnName) {
+                if (!in_array($columnName, $selectColumns, true)) {
+                    $selectColumns[] = $columnName;
+                }
+            }
+        }
+
+        $quoted = array_map(fn($col) => "`{$col}`", $selectColumns);
+        $rows = db_fetch_all("SELECT " . implode(',', $quoted) . " FROM `{$schema['table']}` ORDER BY `{$schema['primary']}`");
         $decoded = [];
         foreach ($rows as $row) {
             $payload = json_decode($row[$schema['json_column']], true) ?: [];
             if (!isset($payload[$schema['primary']])) {
                 $payload[$schema['primary']] = $row[$schema['primary']];
+            }
+
+            if (!empty($schema['columns']) && is_array($schema['columns'])) {
+                foreach ($schema['columns'] as $columnName => $sourceKey) {
+                    if (array_key_exists($sourceKey, $payload)) {
+                        continue;
+                    }
+
+                    if (array_key_exists($columnName, $row)) {
+                        $payload[$sourceKey] = $row[$columnName];
+                    }
+                }
             }
             if ($schema['primary'] === 'setting_key') {
                 $decoded[$row[$schema['primary']]] = $payload['value'] ?? $payload;
@@ -227,7 +249,7 @@ function write_table_from_array(array $schema, $data): bool
             }
             $primaryValue = $row[$schema['primary']] ?? $nextId;
             $nextId = is_numeric($primaryValue) ? max($nextId + 1, (int)$primaryValue + 1) : $nextId + 1;
-            $payload = json_encode($row, JSON_UNESCAPED_SLASHES);
+            $payload = json_encode(scrub_payload_for_json($schema, $row), JSON_UNESCAPED_SLASHES);
             $values = [$primaryValue, $payload];
             foreach ($schemaColumns as $columnKey => $sourceKey) {
                 $values[] = $row[$sourceKey] ?? null;
@@ -243,6 +265,17 @@ function write_table_from_array(array $schema, $data): bool
         }
         return false;
     }
+}
+
+function scrub_payload_for_json(array $schema, array $row): array
+{
+    if (($schema['table'] ?? '') === 'cms_users') {
+        $scrubbed = $row;
+        unset($scrubbed['password']);
+        return $scrubbed;
+    }
+
+    return $row;
 }
 
 function cms_table_exists(PDO $pdo, string $table): bool
