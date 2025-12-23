@@ -3,7 +3,7 @@ $(function(){
     const $form = $('#settingsForm');
     const $dashboard = $('#settingsDashboard');
     const $lastSaved = $('#settingsLastSaved');
-    const $saveButton = $('#saveSettingsButton');
+    const $saveButtons = $('[data-save-settings]');
     const $logoPreview = $('#logoPreview');
     const $faviconPreview = $('#faviconPreview');
     const $ogPreview = $('#ogImagePreview');
@@ -610,10 +610,10 @@ $(function(){
             contentType: false,
             dataType: 'json',
             beforeSend: function(){
-                $saveButton.addClass('is-loading').prop('disabled', true);
+                $saveButtons.addClass('is-loading').prop('disabled', true);
             },
             complete: function(){
-                $saveButton.removeClass('is-loading').prop('disabled', false);
+                $saveButtons.removeClass('is-loading').prop('disabled', false);
             },
             success: function(response){
                 if(response && response.status === 'ok'){

@@ -10,7 +10,7 @@
                         <p class="a11y-hero-subtitle settings-hero-subtitle">Fine-tune your brand voice, analytics, and sharing defaults from a single, polished workspace.</p>
                     </div>
                     <div class="a11y-hero-actions settings-hero-actions">
-                        <button type="submit" class="a11y-btn a11y-btn--primary" id="saveSettingsButton">
+                        <button type="submit" class="a11y-btn a11y-btn--primary" id="saveSettingsButton" data-save-settings>
                             <i class="fas fa-save" aria-hidden="true"></i>
                             <span>Save Settings</span>
                         </button>
@@ -375,6 +375,16 @@
                     </section>
                 </div>
             </section>
+
+            <div class="settings-actions-footer">
+                <div class="settings-actions-footer__content">
+                    <span class="settings-actions-footer__helper">Review your changes, then save when you&apos;re ready.</span>
+                    <button type="submit" class="a11y-btn a11y-btn--primary settings-actions-footer__button" data-save-settings>
+                        <i class="fas fa-save" aria-hidden="true"></i>
+                        <span>Save Settings</span>
+                    </button>
+                </div>
+            </div>
         </div>
     </form>
 </div>
