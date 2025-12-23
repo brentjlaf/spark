@@ -66,6 +66,7 @@ function cms_entity_schemas(): array
                 'password' => 'password',
             ],
             'indexes' => ['username', 'status'],
+            'exclude_from_payload' => ['password'],
             'description' => 'CMS users and login metadata.',
         ],
         'settings.json' => [

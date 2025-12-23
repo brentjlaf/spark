@@ -16,6 +16,9 @@ $users = read_json_file($usersFile);
 if (empty($users)) {
     seed_default_admin($usersTable);
     $users = read_json_file($usersFile);
+    if (empty($users)) {
+        render_installation_required('No admin account exists. Set ADMIN_USERNAME and ADMIN_PASSWORD to create the first user.');
+    }
 }
 
 function initialize_users_table(string $table): void
@@ -46,10 +49,17 @@ function seed_default_admin(string $table): void
         if ((int)$exists > 0) {
             return;
         }
+
+        $username = getenv('ADMIN_USERNAME') ?: null;
+        $password = getenv('ADMIN_PASSWORD') ?: null;
+
+        if (!$username || !$password) {
+            render_installation_required('ADMIN_USERNAME and ADMIN_PASSWORD must be set to create the first administrator account.');
+        }
+
         $payload = [
             'id' => 1,
-            'username' => 'admin',
-            'password' => password_hash('password', PASSWORD_DEFAULT),
+            'username' => $username,
             'role' => 'admin',
             'status' => 'active',
             'created_at' => time(),
@@ -63,10 +73,10 @@ function seed_default_admin(string $table): void
             $payload['status'],
             $payload['created_at'],
             $payload['last_login'],
-            $payload['password'],
+            password_hash($password, PASSWORD_DEFAULT),
         ]);
     } catch (Throwable $e) {
-        // ignore
+        render_installation_required('Unable to create the initial administrator account. Please verify your database and environment configuration.', $e);
     }
 }
 
