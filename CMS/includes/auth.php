@@ -105,9 +105,24 @@ function update_user_login(array $user): array
     return $user;
 }
 
+function sparkcms_login_path(): string
+{
+    $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+    if ($scriptName === '' || $scriptName[0] !== '/') {
+        $scriptName = '/' . ltrim($scriptName, '/');
+    }
+
+    $cmsRoot = preg_replace('#/CMS(?:/.*)?$#', '/CMS', $scriptName);
+    if ($cmsRoot === null || $cmsRoot === $scriptName && strpos($scriptName, '/CMS') === false) {
+        $cmsRoot = '/CMS';
+    }
+
+    return rtrim($cmsRoot, '/') . '/login.php';
+}
+
 function require_login() {
     if (!isset($_SESSION['user'])) {
-        header('Location: login.php');
+        header('Location: ' . sparkcms_login_path());
         exit;
     }
 }

@@ -2,4 +2,5 @@
 // File: logout.php
 require_once __DIR__ . '/includes/auth.php';
 session_destroy();
-header('Location: login.php');
+header('Location: ' . sparkcms_login_path());
+exit;
