@@ -284,7 +284,6 @@ document.addEventListener('DOMContentLoaded', () => {
     : null;
   const builderEl = document.querySelector('.builder');
   const viewToggle = document.getElementById('viewModeToggle');
-  const paletteHeader = palette ? palette.querySelector('.builder-header') : null;
 
   builderDraftKey = 'builderDraft-' + window.builderPageId;
   lastSavedTimestamp = window.builderLastModified || 0;
@@ -315,52 +314,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     })
     .catch(() => {});
-
-  // Restore palette position
-  const storedPos = palette ? localStorage.getItem('palettePosition') : null;
-  if (palette && storedPos) {
-    try {
-      const pos = JSON.parse(storedPos);
-      if (pos.left) palette.style.left = pos.left;
-      if (pos.top) palette.style.top = pos.top;
-    } catch (e) {}
-  }
-
-  // Dragging
-  if (palette && paletteHeader) {
-    let dragging = false;
-    let offsetX = 0;
-    let offsetY = 0;
-    const SNAP_THRESHOLD = 30; // pixels from left edge to trigger snapping
-    const onMove = (e) => {
-      if (!dragging) return;
-      palette.style.left = e.clientX - offsetX + 'px';
-      palette.style.top = e.clientY - offsetY + 'px';
-    };
-    const onUp = () => {
-      if (!dragging) return;
-      dragging = false;
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
-      const rect = palette.getBoundingClientRect();
-      if (rect.left < SNAP_THRESHOLD) {
-        palette.style.left = '0px';
-        palette.style.top = '0px';
-      }
-      localStorage.setItem(
-        'palettePosition',
-        JSON.stringify({ left: palette.style.left, top: palette.style.top })
-      );
-    };
-    paletteHeader.addEventListener('mousedown', (e) => {
-      dragging = true;
-      const rect = palette.getBoundingClientRect();
-      offsetX = e.clientX - rect.left;
-      offsetY = e.clientY - rect.top;
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
-    });
-  }
 
   if (viewToggle) {
     viewToggle.addEventListener('click', () => {
