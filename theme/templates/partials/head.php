@@ -1,4 +1,5 @@
 <?php
+$bodyClass = $bodyClass ?? '';
 $faviconSetting = $settings['favicon'] ?? '';
 if (is_string($faviconSetting) && $faviconSetting !== '' && preg_match('#^https?://#i', $faviconSetting)) {
     $favicon = $faviconSetting;
@@ -25,4 +26,4 @@ if (is_string($faviconSetting) && $faviconSetting !== '' && preg_match('#^https?
 
         <?php include __DIR__ . '/tailwind.php'; ?>
     </head>
-    <body>
+    <body<?php echo $bodyClass !== '' ? ' class="' . htmlspecialchars($bodyClass) . '"' : ''; ?>>
