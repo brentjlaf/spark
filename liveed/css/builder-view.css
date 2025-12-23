@@ -24,6 +24,114 @@
   margin-left: 0;
 }
 
+.canvas-placeholder {
+  margin: 24px;
+  padding: 28px;
+  border: 1px dashed #60a5fa;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.08), rgba(59, 130, 246, 0.05));
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  color: #0f172a;
+}
+.placeholder-inner {
+  max-width: 780px;
+  margin: 0 auto;
+  display: grid;
+  gap: 14px;
+}
+.placeholder-body {
+  display: grid;
+  gap: 12px;
+}
+.placeholder-intro {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700;
+  font-size: 16px;
+  color: #0f172a;
+}
+.placeholder-intro i {
+  color: #2563eb;
+  font-size: 18px;
+}
+.placeholder-steps {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  color: #1e293b;
+  font-size: 14px;
+}
+.placeholder-steps kbd,
+.helper-list kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  font-size: 12px;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+}
+.placeholder-helper-toggle {
+  justify-self: start;
+  background: transparent;
+  border: none;
+  color: #1d4ed8;
+  font-weight: 700;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 0;
+}
+.placeholder-helper-toggle i {
+  font-size: 15px;
+}
+.placeholder-helper-toggle:hover {
+  color: #0f172a;
+  text-decoration: underline;
+}
+.placeholder-helper {
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  background: rgba(59, 130, 246, 0.08);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: #0f172a;
+  line-height: 1.4;
+}
+.placeholder-helper.open {
+  animation: helperFade 180ms ease-in;
+}
+.helper-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.helper-heading i {
+  color: #2563eb;
+}
+.helper-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+@keyframes helperFade {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Alignment radio styles */
 .settings-content .align-options label {
   margin-right: 10px;
@@ -202,4 +310,3 @@
   letter-spacing: 0.5px;
 }
 /* --- end palette refresh styles --- */
-
