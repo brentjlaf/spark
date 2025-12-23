@@ -30,10 +30,12 @@ function load_analytics_dataset(): array
                 if (is_array($report) && isset($report['entries']) && is_array($report['entries'])) {
                     $entries = array_map('normalize_analytics_entry', $report['entries']);
                     usort($entries, 'sort_analytics_entries');
+                    $trends = analytics_generate_trends($entries);
 
                     $fetchedAt = isset($report['fetchedAt']) ? (int) $report['fetchedAt'] : time();
                     $cached = [
                         'entries' => $entries,
+                        'trends' => $trends,
                         'source' => 'google',
                         'meta' => [
                             'last_updated' => $fetchedAt,
@@ -92,6 +94,7 @@ function load_local_analytics_dataset(): array
 
     return [
         'entries' => $entries,
+        'trends' => analytics_generate_trends($entries),
         'source' => 'local',
         'meta' => [
             'last_updated' => $lastUpdated,
