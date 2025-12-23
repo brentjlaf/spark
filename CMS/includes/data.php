@@ -212,27 +212,62 @@ function write_table_from_array(array $schema, $data): bool
     try {
         $pdo = get_db_connection();
         $pdo->beginTransaction();
-        $pdo->exec("TRUNCATE TABLE `{$schema['table']}`");
+        $existingKeysStmt = $pdo->prepare("SELECT `{$schema['primary']}` FROM `{$schema['table']}`");
+        $existingKeysStmt->execute();
+        $existingKeys = $existingKeysStmt->fetchAll(PDO::FETCH_COLUMN, 0) ?: [];
+        $existingKeyMap = [];
+        foreach ($existingKeys as $key) {
+            $existingKeyMap[(string) $key] = true;
+        }
+
+        $useNumericIds = $schema['primary'] === 'id' || str_ends_with($schema['primary'], '_id');
+        $nextId = $useNumericIds && $existingKeys
+            ? (int) max(array_map('intval', $existingKeys)) + 1
+            : 1;
 
         $insertColumns = array_merge([$schema['primary'], $schema['json_column']], array_keys($schemaColumns));
         $placeholders = rtrim(str_repeat('?,', count($insertColumns)), ',');
-        $sql = "INSERT INTO `{$schema['table']}` (`" . implode('`,`', $insertColumns) . "`) VALUES ({$placeholders})";
+        $updateColumns = array_merge([$schema['json_column']], array_keys($schemaColumns));
+        $updateAssignments = implode(
+            ', ',
+            array_map(static fn ($col) => "`{$col}` = VALUES(`{$col}`)", $updateColumns)
+        );
+        $sql = "INSERT INTO `{$schema['table']}` (`" . implode('`,`', $insertColumns) . "`) VALUES ({$placeholders})"
+            . " ON DUPLICATE KEY UPDATE {$updateAssignments}";
         $stmt = $pdo->prepare($sql);
 
         $rows = array_values($data);
-        $nextId = 1;
+        $writtenKeyMap = [];
         foreach ($rows as $row) {
             if (!is_array($row)) {
                 continue;
             }
             $primaryValue = $row[$schema['primary']] ?? $nextId;
-            $nextId = is_numeric($primaryValue) ? max($nextId + 1, (int)$primaryValue + 1) : $nextId + 1;
+            $nextId = is_numeric($primaryValue) ? max($nextId + 1, (int) $primaryValue + 1) : $nextId + 1;
             $payload = json_encode($row, JSON_UNESCAPED_SLASHES);
             $values = [$primaryValue, $payload];
             foreach ($schemaColumns as $columnKey => $sourceKey) {
                 $values[] = $row[$sourceKey] ?? null;
             }
             $stmt->execute($values);
+            $writtenKeyMap[(string) $primaryValue] = $primaryValue;
+        }
+
+        if (empty($writtenKeyMap)) {
+            $pdo->exec("DELETE FROM `{$schema['table']}`");
+        } else {
+            $keysToDelete = [];
+            foreach ($existingKeys as $existingKey) {
+                if (!isset($writtenKeyMap[(string) $existingKey])) {
+                    $keysToDelete[] = $existingKey;
+                }
+            }
+            if ($keysToDelete) {
+                $deletePlaceholders = rtrim(str_repeat('?,', count($keysToDelete)), ',');
+                $deleteSql = "DELETE FROM `{$schema['table']}` WHERE `{$schema['primary']}` IN ({$deletePlaceholders})";
+                $deleteStmt = $pdo->prepare($deleteSql);
+                $deleteStmt->execute($keysToDelete);
+            }
         }
 
         $pdo->commit();
