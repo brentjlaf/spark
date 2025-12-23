@@ -5063,6 +5063,29 @@
             gap: 24px;
         }
 
+        .settings-actions-footer {
+            margin-top: 8px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .settings-actions-footer__content {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .settings-actions-footer__helper {
+            color: #475569;
+            font-size: 14px;
+        }
+
+        .settings-actions-footer__button {
+            min-width: 180px;
+        }
+
         .settings-tabs {
             display: flex;
             flex-wrap: wrap;
@@ -13709,7 +13732,6 @@
     justify-content: center;
   }
 }
-
 
 
 
