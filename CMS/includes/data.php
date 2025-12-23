@@ -74,9 +74,16 @@ function ensure_schema_table(array $schema): void
  */
 function read_json_file($file) {
     $schema = cms_schema_for_json($file);
+    $isUserFile = basename($file) === 'users.json';
+
     if ($schema && is_database_configured()) {
         return read_table_as_array($schema);
     }
+
+    if ($isUserFile) {
+        render_installation_required('User accounts require a configured database. Please run the installer to finish setup.');
+    }
+
     if (!file_exists($file)) {
         return [];
     }
@@ -93,6 +100,8 @@ function read_json_file($file) {
  */
 function write_json_file($file, $data) {
     $schema = cms_schema_for_json($file);
+    $isUserFile = basename($file) === 'users.json';
+
     if ($schema && is_database_configured()) {
         $pdo = get_db_connection();
         if (!cms_table_exists($pdo, $schema['table'])) {
@@ -103,6 +112,11 @@ function write_json_file($file, $data) {
             return true;
         }
     }
+
+    if ($isUserFile) {
+        render_installation_required('User accounts must be stored in the database. Please configure your database credentials and rerun this action.');
+    }
+
     return file_put_contents($file, json_encode($data, JSON_PRETTY_PRINT)) !== false;
 }
 
@@ -162,13 +176,23 @@ function read_table_as_array(array $schema): array
 {
     ensure_schema_table($schema);
     try {
-        $rows = db_fetch_all("SELECT `{$schema['primary']}`, `{$schema['json_column']}` FROM `{$schema['table']}` ORDER BY `{$schema['primary']}`");
+        $schemaColumns = array_keys($schema['columns'] ?? []);
+        $selectColumns = array_unique(array_merge([$schema['primary'], $schema['json_column']], $schemaColumns));
+        $quotedColumns = '`' . implode('`,`', $selectColumns) . '`';
+        $rows = db_fetch_all("SELECT {$quotedColumns} FROM `{$schema['table']}` ORDER BY `{$schema['primary']}`");
         $decoded = [];
         foreach ($rows as $row) {
             $payload = json_decode($row[$schema['json_column']], true) ?: [];
             if (!isset($payload[$schema['primary']])) {
                 $payload[$schema['primary']] = $row[$schema['primary']];
             }
+
+            foreach ($schema['columns'] ?? [] as $columnName => $sourceKey) {
+                if (!array_key_exists($sourceKey, $payload) && array_key_exists($columnName, $row)) {
+                    $payload[$sourceKey] = $row[$columnName];
+                }
+            }
+
             if ($schema['primary'] === 'setting_key') {
                 $decoded[$row[$schema['primary']]] = $payload['value'] ?? $payload;
             } else {
@@ -244,7 +268,12 @@ function write_table_from_array(array $schema, $data): bool
             }
             $primaryValue = $row[$schema['primary']] ?? $nextId;
             $nextId = is_numeric($primaryValue) ? max($nextId + 1, (int) $primaryValue + 1) : $nextId + 1;
-            $payload = json_encode($row, JSON_UNESCAPED_SLASHES);
+            $payloadData = $row;
+            $excludedKeys = is_array($schema['exclude_from_payload'] ?? null) ? $schema['exclude_from_payload'] : [];
+            foreach ($excludedKeys as $excludedKey) {
+                unset($payloadData[$excludedKey]);
+            }
+            $payload = json_encode($payloadData, JSON_UNESCAPED_SLASHES);
             $values = [$primaryValue, $payload];
             foreach ($schemaColumns as $columnKey => $sourceKey) {
                 $values[] = $row[$sourceKey] ?? null;

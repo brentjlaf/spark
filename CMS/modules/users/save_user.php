@@ -28,6 +28,13 @@ if ($username === '') {
     exit;
 }
 
+$isNewUser = $id === null;
+if ($isNewUser && $password === '') {
+    http_response_code(400);
+    echo 'Password required for new users';
+    exit;
+}
+
 if ($id) {
     foreach ($users as &$u) {
         if ($u['id'] == $id) {
@@ -49,7 +56,7 @@ if ($id) {
     $users[] = [
         'id' => $id,
         'username' => $username,
-        'password' => password_hash($password !== '' ? $password : 'password', PASSWORD_DEFAULT),
+        'password' => password_hash($password, PASSWORD_DEFAULT),
         'role' => $role,
         'status' => $status,
         'created_at' => time(),
