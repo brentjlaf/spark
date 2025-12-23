@@ -35,7 +35,7 @@ if (is_string($faviconSetting) && $faviconSetting !== '' && preg_match('#^https?
     <script src="modal-utils.js"></script>
     <script src="notifications.js"></script>
     <script src="modules/search/search.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <?php include __DIR__ . '/includes/admin_assets.php'; ?>
     <link rel="stylesheet" href="spark-cms.css">
     <link rel="shortcut icon" href="<?php echo htmlspecialchars($adminFavicon); ?>" />
 
