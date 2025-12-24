@@ -180,9 +180,15 @@ $lastSubmissionLabel = $latestSubmission > 0
                     <i class="fas fa-times" aria-hidden="true"></i>
                 </button>
                 <header class="a11y-detail-modal-header forms-drawer-header">
-                    <span class="forms-drawer-subtitle">Form builder</span>
-                    <h2 id="formBuilderTitle">Add form</h2>
-                    <p class="forms-drawer-description" id="formBuilderDescription">Drag inputs from the palette to build your ideal flow, then fine-tune settings on the right.</p>
+                    <div class="forms-drawer-header-content">
+                        <span class="forms-drawer-subtitle">Form builder</span>
+                        <h2 id="formBuilderTitle">Add form</h2>
+                        <p class="forms-drawer-description" id="formBuilderDescription">Drag inputs from the palette to build your ideal flow, then fine-tune settings on the right.</p>
+                    </div>
+                    <div class="editor-save-state" data-save-state data-state="saved" role="status" aria-live="polite" aria-atomic="true" tabindex="0">
+                        <span class="editor-save-state__dot" aria-hidden="true"></span>
+                        <span class="editor-save-state__text" data-save-state-text>Saved</span>
+                    </div>
                 </header>
                 <form id="formBuilderForm" class="forms-builder-form"
                       data-default-from-name="<?php echo htmlspecialchars($defaultFromName, ENT_QUOTES); ?>"

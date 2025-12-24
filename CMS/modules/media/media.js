@@ -29,6 +29,59 @@ $(function(){
     const defaultSelectFolderMessage = $('#selectFolderState p').text();
     const defaultEmptyFolderHeading = $('#emptyFolderState h3').text();
     const defaultEmptyFolderMessage = $('#emptyFolderState p').text();
+    const $imageInfoSaveState = $('#imageInfoModal [data-save-state]');
+    const $imageEditSaveState = $('#imageEditModal [data-save-state]');
+    const saveStateLabels = {
+        saving: 'Saving…',
+        saved: 'Saved',
+        unsaved: 'Unsaved changes'
+    };
+    let imageInfoIsSaving = false;
+    let imageInfoIsDirty = false;
+    let imageEditIsSaving = false;
+    let imageEditIsDirty = false;
+
+    function setSaveState($element, state){
+        if(!$element || !$element.length){
+            return;
+        }
+        const nextState = saveStateLabels[state] ? state : 'saved';
+        $element.attr('data-state', nextState);
+        $element.find('[data-save-state-text]').text(saveStateLabels[nextState]);
+        if(nextState === 'saving'){
+            $element.attr('aria-busy', 'true');
+        } else {
+            $element.removeAttr('aria-busy');
+        }
+    }
+
+    function resetImageInfoSaveState(){
+        imageInfoIsSaving = false;
+        imageInfoIsDirty = false;
+        setSaveState($imageInfoSaveState, 'saved');
+    }
+
+    function markImageInfoDirty(){
+        if(imageInfoIsSaving){
+            return;
+        }
+        imageInfoIsDirty = true;
+        setSaveState($imageInfoSaveState, 'unsaved');
+    }
+
+    function resetImageEditSaveState(){
+        imageEditIsSaving = false;
+        imageEditIsDirty = false;
+        setSaveState($imageEditSaveState, 'saved');
+    }
+
+    function markImageEditDirty(){
+        if(imageEditIsSaving){
+            return;
+        }
+        imageEditIsDirty = true;
+        setSaveState($imageEditSaveState, 'unsaved');
+    }
 
     function showRetryButton(containerSelector, handler){
         const container = $(containerSelector);
@@ -969,7 +1022,7 @@ $(function(){
 
     function renameImageDirect(id, newName){
         if(!newName) return;
-        $.post('modules/media/rename_media.php',{id:id,name:newName},function(res){
+        return $.post('modules/media/rename_media.php',{id:id,name:newName},function(res){
             if(res.status==='success'){
                 delete usageCache[id];
                 loadImages();
@@ -1003,6 +1056,7 @@ $(function(){
         $('#infoFolder').text(img.folder||'');
         resetUsageUI();
         $('#imageInfoModal').data('id', id);
+        resetImageInfoSaveState();
         openModal('imageInfoModal');
         loadMediaUsage(id);
     }
@@ -1022,6 +1076,7 @@ $(function(){
         const img = currentImages.find(i=>i.id===id);
         if(!img) return;
         $('#imageEditModal').data('id', id);
+        resetImageEditSaveState();
         openModal('imageEditModal');
         const el = document.getElementById('editImage');
         el.src = img.file;
@@ -1045,12 +1100,21 @@ $(function(){
         const quality = format === 'jpeg' ? 0.9 : 1;
         const dataUrl = canvas.toDataURL(mime, quality);
         confirmModal('Create a new version? Click Cancel to overwrite the original.').then(newVer => {
+            imageEditIsSaving = true;
+            setSaveState($imageEditSaveState, 'saving');
             $.post('modules/media/crop_media.php',{id:id,image:dataUrl,new_version:newVer?1:0,format:format},function(){
+                imageEditIsDirty = false;
+                setSaveState($imageEditSaveState, 'saved');
                 closeModal('imageEditModal');
                 if(cropper){cropper.destroy(); cropper=null;}
                 loadImages();
                 loadFolders();
-            },'json');
+            },'json').fail(function(){
+                imageEditIsDirty = true;
+                setSaveState($imageEditSaveState, 'unsaved');
+            }).always(function(){
+                imageEditIsSaving = false;
+            });
         });
     }
 
@@ -1162,13 +1226,35 @@ $(function(){
         deleteImage(id);
         closeModal('imageInfoModal');
     });
+    $('#imageInfoModal').on('input change', '#edit-name, #edit-fileName, #renamePhysicalCheckbox', function(){
+        markImageInfoDirty();
+    });
+
     $('#saveEditBtn').click(function(){
         const id = $('#imageInfoModal').data('id');
         const newName = $('#edit-fileName').val().trim();
         const current = currentImages.find(i=>i.id===id) || {};
+        imageInfoIsSaving = true;
+        setSaveState($imageInfoSaveState, 'saving');
         if(newName && newName!==current.name){
-            renameImageDirect(id,newName);
+            const request = renameImageDirect(id,newName);
+            if(request && typeof request.always === 'function'){
+                request.done(function(){
+                    imageInfoIsDirty = false;
+                    setSaveState($imageInfoSaveState, 'saved');
+                }).fail(function(){
+                    imageInfoIsDirty = true;
+                    setSaveState($imageInfoSaveState, 'unsaved');
+                }).always(function(){
+                    imageInfoIsSaving = false;
+                    closeModal('imageInfoModal');
+                });
+                return;
+            }
         }
+        imageInfoIsDirty = false;
+        imageInfoIsSaving = false;
+        setSaveState($imageInfoSaveState, 'saved');
         closeModal('imageInfoModal');
     });
 
@@ -1181,11 +1267,13 @@ $(function(){
         if(!cropper) return;
         flipX = flipX * -1;
         cropper.scaleX(flipX);
+        markImageEditDirty();
     });
     $('#flipVertical').click(function(){
         if(!cropper) return;
         flipY = flipY * -1;
         cropper.scaleY(flipY);
+        markImageEditDirty();
     });
     $('#scaleSlider').on('input', function(){
         const val = parseFloat(this.value);
@@ -1193,14 +1281,19 @@ $(function(){
             cropper.zoomTo(val);
             updateSizeEstimate();
         }
+        markImageEditDirty();
     });
     $('#crop-preset').change(function(){
         if(!cropper) return;
         const ratio = parseFloat(this.value);
         cropper.setAspectRatio(isNaN(ratio) ? NaN : ratio);
         updateSizeEstimate();
+        markImageEditDirty();
     });
-    $('#saveFormat').change(updateSizeEstimate);
+    $('#saveFormat').change(function(){
+        updateSizeEstimate();
+        markImageEditDirty();
+    });
 
     $('#sort-by').change(function(){ sortBy = this.value; currentPage = 1; loadImages(); });
     $('#sort-order').change(function(){ sortOrder = this.value; currentPage = 1; loadImages(); });

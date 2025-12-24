@@ -329,8 +329,14 @@ if ($homepagePageData !== null) {
                     <i class="fa-solid fa-xmark" aria-hidden="true"></i>
                 </button>
                 <header class="page-modal-header">
-                    <h2 class="page-modal-title" id="formTitle">Add New Page</h2>
-                    <p class="page-modal-description" id="pageModalDescription">Configure publishing, templates, and metadata before publishing your page.</p>
+                    <div class="page-modal-header-content">
+                        <h2 class="page-modal-title" id="formTitle">Add New Page</h2>
+                        <p class="page-modal-description" id="pageModalDescription">Configure publishing, templates, and metadata before publishing your page.</p>
+                    </div>
+                    <div class="editor-save-state" data-save-state data-state="saved" role="status" aria-live="polite" aria-atomic="true" tabindex="0">
+                        <span class="editor-save-state__dot" aria-hidden="true"></span>
+                        <span class="editor-save-state__text" data-save-state-text>Saved</span>
+                    </div>
                 </header>
                 <form id="pageForm" class="page-modal-form">
                     <input type="hidden" name="id" id="pageId">

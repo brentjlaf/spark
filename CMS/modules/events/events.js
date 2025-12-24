@@ -102,6 +102,49 @@
             submit: document.querySelector('[data-events-builder-submit]'),
         },
     };
+    const eventSaveState = {
+        element: selectors.modal?.querySelector('[data-save-state]') || null,
+        isSaving: false,
+        isDirty: false,
+        isReady: false,
+    };
+    const eventSaveLabels = {
+        saving: 'Saving…',
+        saved: 'Saved',
+        unsaved: 'Unsaved changes',
+    };
+
+    function setEventSaveState(state) {
+        if (!eventSaveState.element) {
+            return;
+        }
+        const nextState = eventSaveLabels[state] ? state : 'saved';
+        eventSaveState.element.dataset.state = nextState;
+        const label = eventSaveState.element.querySelector('[data-save-state-text]');
+        if (label) {
+            label.textContent = eventSaveLabels[nextState];
+        }
+        if (nextState === 'saving') {
+            eventSaveState.element.setAttribute('aria-busy', 'true');
+        } else {
+            eventSaveState.element.removeAttribute('aria-busy');
+        }
+    }
+
+    function resetEventSaveState() {
+        eventSaveState.isSaving = false;
+        eventSaveState.isDirty = false;
+        eventSaveState.isReady = true;
+        setEventSaveState('saved');
+    }
+
+    function markEventDirty() {
+        if (!eventSaveState.isReady || eventSaveState.isSaving) {
+            return;
+        }
+        eventSaveState.isDirty = true;
+        setEventSaveState('unsaved');
+    }
 
     const state = {
         events: new Map(),
@@ -3254,6 +3297,7 @@
         if (!modal) {
             return;
         }
+        eventSaveState.isReady = false;
         const form = modal.querySelector('[data-events-form="event"]');
         form.reset();
         form.querySelector('[name="id"]').value = eventData?.id || '';
@@ -3308,6 +3352,7 @@
         } else {
             tickets.forEach((ticket) => addTicketRow(ticketContainer, ticket));
         }
+        resetEventSaveState();
     }
 
     function renderEventFormOptions(select, selectedId = '') {
@@ -3456,9 +3501,11 @@
             event.preventDefault();
             document.execCommand(command, false, null);
             target.value = editor.innerHTML;
+            markEventDirty();
         });
         editor.addEventListener('input', () => {
             target.value = editor.innerHTML;
+            markEventDirty();
         });
     }
 
@@ -3472,21 +3519,32 @@
         if (!form.__imagePicker) {
             form.__imagePicker = initImagePicker(form);
         }
+        form.addEventListener('input', markEventDirty);
+        form.addEventListener('change', markEventDirty);
         form.addEventListener('submit', (event) => {
             event.preventDefault();
             const payload = serializeForm(form);
             payload.tickets = gatherTickets(form.querySelector('[data-events-tickets]'));
+            eventSaveState.isSaving = true;
+            setEventSaveState('saving');
             return fetchJSON('save_event', { method: 'POST', body: payload })
                 .then((response) => {
                     if (response?.event?.id) {
                         storeEvent(response.event);
                     }
+                    eventSaveState.isDirty = false;
+                    setEventSaveState('saved');
                     closeModal(selectors.modal);
                     showToast('Event saved successfully.');
                     refreshAll();
                 })
                 .catch(() => {
                     showToast('Unable to save event.', 'error');
+                    eventSaveState.isDirty = true;
+                    setEventSaveState('unsaved');
+                })
+                .finally(() => {
+                    eventSaveState.isSaving = false;
                 });
         });
         modal.addEventListener('click', (event) => {
