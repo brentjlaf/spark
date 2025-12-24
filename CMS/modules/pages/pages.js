@@ -24,6 +24,14 @@ $(function(){
             grid: document.querySelector('[data-page-media-grid]'),
             search: document.querySelector('[data-page-media-search]')
         };
+        const $pageSaveState = $('#pageModal [data-save-state]');
+        const pageSaveLabels = {
+            saving: 'Saving…',
+            saved: 'Saved',
+            unsaved: 'Unsaved changes'
+        };
+        let pageIsSaving = false;
+        let pageIsDirty = false;
         if ($('#robots').length) {
             $('#robots').val(ROBOTS_DEFAULT);
         }
@@ -82,6 +90,34 @@ $(function(){
                 return sanitizeToastMessage(xhr.responseText, fallback);
             }
             return fallback;
+        }
+
+        function setPageSaveState(state){
+            if(!$pageSaveState.length){
+                return;
+            }
+            const nextState = pageSaveLabels[state] ? state : 'saved';
+            $pageSaveState.attr('data-state', nextState);
+            $pageSaveState.find('[data-save-state-text]').text(pageSaveLabels[nextState]);
+            if(nextState === 'saving'){
+                $pageSaveState.attr('aria-busy', 'true');
+            } else {
+                $pageSaveState.removeAttr('aria-busy');
+            }
+        }
+
+        function resetPageSaveState(){
+            pageIsDirty = false;
+            pageIsSaving = false;
+            setPageSaveState('saved');
+        }
+
+        function markPageDirty(){
+            if(pageIsSaving){
+                return;
+            }
+            pageIsDirty = true;
+            setPageSaveState('unsaved');
         }
 
         function escapeHtml(value) {
@@ -341,6 +377,7 @@ $(function(){
 
         function openPageModal() {
             openModal('pageModal');
+            resetPageSaveState();
         }
 
         function closePageModal() {
@@ -892,6 +929,10 @@ $(function(){
             return $(`[data-page-item][data-id="${id}"]`);
         }
 
+        $('#pageForm').on('input change', 'input, textarea, select', function(){
+            markPageDirty();
+        });
+
         $('#pageForm').on('submit', function(e){
             e.preventDefault();
 
@@ -939,12 +980,16 @@ $(function(){
             const $submitButton = $form.find('button[type="submit"]');
             const originalButtonHtml = $submitButton.html();
             $submitButton.prop('disabled', true).text('Saving...');
+            pageIsSaving = true;
+            setPageSaveState('saving');
 
             $.post('modules/pages/save_page.php', $form.serialize())
                 .done(function(){
                     const shouldSetHomepage = $('#homepage').is(':checked');
                     slugEdited = false;
                     closePageModal();
+                    pageIsDirty = false;
+                    setPageSaveState('saved');
 
                     if (isEditing) {
                         updatePageRow(pageData);
@@ -994,9 +1039,12 @@ $(function(){
                 .fail(function(xhr){
                     const message = extractErrorMessage(xhr, 'An unexpected error occurred while saving the page.');
                     toastError(message);
+                    pageIsDirty = true;
+                    setPageSaveState('unsaved');
                 })
                 .always(function(){
                     $submitButton.prop('disabled', false).html(originalButtonHtml);
+                    pageIsSaving = false;
                 });
         });
         $('.deleteBtn').on('click', function(){
@@ -1208,4 +1256,3 @@ $(function(){
             };
             return allowed[directive] ? directive : ROBOTS_DEFAULT;
         }
-

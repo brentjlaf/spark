@@ -16,6 +16,7 @@ $(function(){
     const $formName = $('#formName');
     const $formTitle = $('#formBuilderTitle');
     const $formPreview = $('#formPreview');
+    const $formSaveState = $('#formBuilderDrawer [data-save-state]');
     const $cancelFormEdit = $('#cancelFormEdit');
     const $closeFormBuilder = $('#closeFormBuilder');
     const $formsGrid = $('#formsLibrary');
@@ -44,6 +45,43 @@ $(function(){
         fromName: ($form.attr('data-default-from-name') || '').trim(),
         fromEmail: ($form.attr('data-default-from-email') || '').trim()
     };
+    const formSaveLabels = {
+        saving: 'Saving…',
+        saved: 'Saved',
+        unsaved: 'Unsaved changes'
+    };
+    let formIsSaving = false;
+    let formIsDirty = false;
+    let formIsReady = false;
+
+    function setFormSaveState(state){
+        if(!$formSaveState.length){
+            return;
+        }
+        const nextState = formSaveLabels[state] ? state : 'saved';
+        $formSaveState.attr('data-state', nextState);
+        $formSaveState.find('[data-save-state-text]').text(formSaveLabels[nextState]);
+        if(nextState === 'saving'){
+            $formSaveState.attr('aria-busy', 'true');
+        } else {
+            $formSaveState.removeAttr('aria-busy');
+        }
+    }
+
+    function resetFormSaveState(){
+        formIsSaving = false;
+        formIsDirty = false;
+        formIsReady = true;
+        setFormSaveState('saved');
+    }
+
+    function markFormDirty(){
+        if(!formIsReady || formIsSaving){
+            return;
+        }
+        formIsDirty = true;
+        setFormSaveState('unsaved');
+    }
 
     function markFieldPending($field, pending){
         if(!$field || !$field.length){
@@ -941,11 +979,13 @@ $(function(){
         }
         hideBuilderAlert();
         $drawer.attr('hidden', false).addClass('is-visible');
+        resetFormSaveState();
         setTimeout(focusFormBuilder, 80);
     }
 
     function closeFormBuilder(){
         $drawer.attr('hidden', true).removeClass('is-visible');
+        formIsReady = false;
     }
 
     function dismissFormBuilder(){
@@ -1248,6 +1288,7 @@ $(function(){
             selectField($li);
         }
         if(isNew){
+            markFormDirty();
             markFieldPending($li, true);
         } else {
             markFieldPending($li, false);
@@ -1417,6 +1458,10 @@ $(function(){
         });
     });
 
+    $form.on('input change', 'input, textarea, select', function(){
+        markFormDirty();
+    });
+
     $('#formBuilderForm').on('submit', function(e){
         e.preventDefault();
         hideBuilderAlert();
@@ -1554,13 +1599,23 @@ $(function(){
             confirmation_email: JSON.stringify(confirmationConfig)
         };
 
+        formIsSaving = true;
+        setFormSaveState('saving');
+
         $.post('modules/forms/save_form.php', payload)
             .done(function(){
+                formIsDirty = false;
+                setFormSaveState('saved');
                 dismissFormBuilder();
                 loadForms();
             })
             .fail(function(){
                 showBuilderAlert('Unable to save the form. Please try again.');
+                formIsDirty = true;
+                setFormSaveState('unsaved');
+            })
+            .always(function(){
+                formIsSaving = false;
             });
     });
 
@@ -1569,6 +1624,7 @@ $(function(){
         const li = $(this).closest('li');
         if(currentField && currentField[0] === li[0]) selectField(null);
         li.remove();
+        markFormDirty();
         if(!$('#formPreview > li').length){
             selectField(null);
         }

@@ -164,8 +164,12 @@
                     </div>
                     <div class="modal" id="imageInfoModal">
                         <div class="modal-content">
-                            <div class="modal-header">
+                            <div class="modal-header media-modal-header">
                                 <h2>Image Details</h2>
+                                <div class="editor-save-state" data-save-state data-state="saved" role="status" aria-live="polite" aria-atomic="true" tabindex="0">
+                                    <span class="editor-save-state__dot" aria-hidden="true"></span>
+                                    <span class="editor-save-state__text" data-save-state-text>Saved</span>
+                                </div>
                             </div>
                             <div class="modal-body info-layout">
                                 <div class="info-preview">
@@ -210,8 +214,12 @@
                     </div>
                     <div class="modal" id="imageEditModal">
                         <div class="modal-content">
-                            <div class="modal-header">
+                            <div class="modal-header media-modal-header">
                                 <h2>Edit Image</h2>
+                                <div class="editor-save-state" data-save-state data-state="saved" role="status" aria-live="polite" aria-atomic="true" tabindex="0">
+                                    <span class="editor-save-state__dot" aria-hidden="true"></span>
+                                    <span class="editor-save-state__text" data-save-state-text>Saved</span>
+                                </div>
                             </div>
                             <div class="modal-body edit-layout">
                                 <div class="crop-container">
