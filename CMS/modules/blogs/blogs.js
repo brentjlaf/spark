@@ -1033,7 +1033,7 @@ $(document).ready(function(){
                         <span class="blog-category-item__name">${cat}</span>
                         <span class="blog-category-item__count">${count} ${countLabel}</span>
                     </div>
-                    <button type="button" class="blog-modal__button blog-modal__button--danger delete-category-btn" data-category="${cat}">Delete</button>
+                    <button type="button" class="c-button c-button--danger c-button--sm delete-category-btn" data-category="${cat}">Delete</button>
                 </div>`;
         }).join('');
         list.html(items);

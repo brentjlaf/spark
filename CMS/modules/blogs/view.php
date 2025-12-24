@@ -229,8 +229,8 @@
                 </form>
             </div>
             <footer class="blog-modal__footer">
-                <button type="button" class="blog-modal__button blog-modal__button--secondary" id="cancelBtn">Cancel</button>
-                <button type="submit" class="blog-modal__button blog-modal__button--primary" id="saveBtn" form="postForm">Save Post</button>
+                <button type="button" class="c-button c-button--secondary" id="cancelBtn">Cancel</button>
+                <button type="submit" class="c-button c-button--primary" id="saveBtn" form="postForm">Save Post</button>
             </footer>
         </div>
     </div>
@@ -252,13 +252,13 @@
                     <label for="newCategoryName">Add New Category</label>
                     <div class="blog-modal__inline-input">
                         <input type="text" id="newCategoryName" placeholder="Category name">
-                        <button type="button" class="blog-modal__button blog-modal__button--primary" id="addCategoryBtn">Add</button>
+                        <button type="button" class="c-button c-button--primary c-button--sm" id="addCategoryBtn">Add</button>
                     </div>
                 </div>
                 <div id="categoriesList" class="blog-category-list" aria-live="polite"></div>
             </div>
             <footer class="blog-modal__footer">
-                <button type="button" class="blog-modal__button blog-modal__button--secondary" id="categoriesDoneBtn">Done</button>
+                <button type="button" class="c-button c-button--secondary" id="categoriesDoneBtn">Done</button>
             </footer>
         </div>
     </div>
@@ -284,8 +284,8 @@
                 <div id="previewContent" class="blog-preview-content"></div>
             </div>
             <footer class="blog-modal__footer">
-                <button type="button" class="blog-modal__button blog-modal__button--secondary" id="closePreviewBtn">Close</button>
-                <button type="button" class="blog-modal__button blog-modal__button--primary" id="editPreviewBtn">Edit</button>
+                <button type="button" class="c-button c-button--secondary" id="closePreviewBtn">Close</button>
+                <button type="button" class="c-button c-button--primary" id="editPreviewBtn">Edit</button>
             </footer>
         </div>
     </div>

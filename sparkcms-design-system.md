@@ -77,6 +77,73 @@ Each component must define:
 - Density: provide `data-density="comfortable|compact"` to tighten admin lists.
 - Sticky header patterns: header stays visible; avoid layout jump on stickiness.
 
+## Component: Button
+**Purpose**  
+Provide a consistent, accessible call-to-action across the CMS, with predictable variants and states.
+
+**Anatomy**  
+- Container: `.c-button`
+- Optional icon: `.c-button__icon` (inline SVG or `<i>`)
+
+**Variants (size/intent/state)**  
+- Intent: `.c-button--primary`, `.c-button--secondary`, `.c-button--ghost`, `.c-button--danger`
+- Size: `.c-button--sm` (default is standard)
+- State: `.is-loading` or `data-state="loading"` for loading
+
+**States**  
+- Default: tokenized background, text, border
+- Hover/Active: tokenized background + optional shadow
+- Disabled: reduced opacity, `cursor: not-allowed`, no shadow
+- Loading: spinner overlay, text visually hidden
+- Focus: visible focus ring (`:focus-visible`)
+
+**Accessibility**  
+- Use native `<button>` where possible.
+- Disabled state uses the `disabled` attribute (or `aria-disabled="true"` on non-buttons).
+- Loading buttons should also set `aria-busy="true"` and keep label text in DOM.
+
+**Keyboard interactions**  
+- Native button keyboard behavior (Space/Enter).
+
+**Minimal HTML**
+```html
+<button class="c-button c-button--primary">Save</button>
+<button class="c-button c-button--secondary">Cancel</button>
+<button class="c-button c-button--ghost">Clear</button>
+<button class="c-button c-button--danger" data-state="loading" aria-busy="true">
+  <span>Delete</span>
+</button>
+```
+
+**Token-driven CSS (excerpt)**
+```css
+.c-button {
+  --button-bg: var(--color-surface);
+  --button-text: var(--color-text-primary);
+  --button-border: var(--color-border);
+  --button-bg-hover: var(--color-surface-muted);
+  --button-bg-active: var(--color-surface-muted);
+}
+.c-button--primary {
+  --button-bg: var(--color-primary);
+  --button-text: var(--color-text-inverse);
+  --button-border: transparent;
+}
+```
+
+**Do**
+- Use `.c-button` + a variant class for all CTAs.
+- Use `data-state="loading"` for async actions.
+
+**Don’t**
+- Create one-off button styles for a module.
+- Remove the focus ring.
+
+**Test checklist**
+- Verify hover/active/disabled/loading in both themes.
+- Check focus-visible ring contrast.
+- Confirm button labels are announced in loading state.
+
 ## Component: Status badge
 **Purpose**  
 Communicate content lifecycle or system state at a glance using a compact, color-coded label.
