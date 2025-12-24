@@ -206,8 +206,11 @@ $initialAttr = htmlspecialchars(json_encode($initialPayload, JSON_UNESCAPED_UNIC
         <div class="maps-modal" id="mapLocationModal" role="dialog" aria-modal="true" aria-labelledby="mapLocationModalTitle" hidden>
             <div class="maps-modal__dialog">
                 <header class="maps-modal__header">
-                    <div>
-                        <h3 id="mapLocationModalTitle">Add location</h3>
+                    <div class="maps-modal__header-content">
+                        <div class="maps-modal__title-row">
+                            <h3 id="mapLocationModalTitle">Add location</h3>
+                            <span class="status-badge status-draft" data-map-status-badge aria-label="Status: Draft">Draft</span>
+                        </div>
                         <p class="maps-modal__subtitle">Provide details visitors will see in directory listings and map pins.</p>
                     </div>
                     <button type="button" class="a11y-btn a11y-btn--icon maps-modal__close" data-map-dismiss="mapLocationModal">

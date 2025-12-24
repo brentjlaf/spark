@@ -711,7 +711,7 @@ $(function(){
                     state = 'scheduled';
                     isLive = 0;
                     statusText = 'Scheduled';
-                    statusClass = 'status-warning';
+                    statusClass = 'status-scheduled';
                     statusNote = publishDate ? `Publishes ${formatTimestamp(publishDate)}` : '';
                 }
 
@@ -720,7 +720,7 @@ $(function(){
                         state = 'expired';
                         isLive = 0;
                         statusText = 'Expired';
-                        statusClass = 'status-critical';
+                        statusClass = 'status-expired';
                         statusNote = `Expired ${formatTimestamp(unpublishDate)}`;
                     } else if (state !== 'scheduled') {
                         statusNote = `Unpublishes ${formatTimestamp(unpublishDate)}`;
@@ -732,13 +732,13 @@ $(function(){
                         state = 'scheduled';
                         isLive = 0;
                         statusText = 'Scheduled';
-                        statusClass = 'status-warning';
+                        statusClass = 'status-scheduled';
                         statusNote = publishDate ? `Publishes ${formatTimestamp(publishDate)}` : '';
                     } else {
                         state = 'expired';
                         isLive = 0;
                         statusText = 'Expired';
-                        statusClass = 'status-critical';
+                        statusClass = 'status-expired';
                         const reference = unpublishDate || publishDate;
                         statusNote = reference ? `Expired ${formatTimestamp(reference)}` : '';
                     }
@@ -754,6 +754,27 @@ $(function(){
                 publishAt: publishAt || '',
                 unpublishAt: unpublishAt || ''
             };
+        }
+
+        const PAGE_STATUS_CLASSES = 'status-published status-draft status-scheduled status-expired';
+
+        function updatePageModalStatusBadge(scheduleState) {
+            const $badge = $('[data-page-status-badge]');
+            if (!$badge.length || !scheduleState) {
+                return;
+            }
+            $badge.removeClass(PAGE_STATUS_CLASSES);
+            $badge.addClass(scheduleState.statusClass);
+            $badge.text(scheduleState.statusText);
+            $badge.attr('aria-label', `Status: ${scheduleState.statusText}`);
+        }
+
+        function getScheduleStateFromForm() {
+            return evaluateScheduleState({
+                published: $('#published').prop('checked') ? 1 : 0,
+                publish_at: $('#publish_at').val(),
+                unpublish_at: $('#unpublish_at').val()
+            });
         }
 
         function updatePageRow(data){
@@ -832,9 +853,10 @@ $(function(){
             $row.find('.pages-list-slug').text(`/${data.slug}`);
 
             const $rowStatusBadge = $row.find('.status-badge');
-            $rowStatusBadge.removeClass('status-published status-draft status-warning status-critical');
+            $rowStatusBadge.removeClass('status-published status-draft status-scheduled status-expired');
             $rowStatusBadge.addClass(scheduleState.statusClass);
             $rowStatusBadge.text(scheduleState.statusText);
+            $rowStatusBadge.attr('aria-label', `Status: ${scheduleState.statusText}`);
 
             const $statusNote = $row.find('[data-status-note]');
             if ($statusNote.length) {
@@ -1107,6 +1129,7 @@ $(function(){
             $('#robots').val(normalizeRobotsDirective(row.data('robots')));
             $('#homepage').prop('checked', row.data('homepage') == 1);
             $('#cancelEdit').show();
+            updatePageModalStatusBadge(getScheduleStateFromForm());
             openPageModal();
             slugEdited = true;
         });
@@ -1123,6 +1146,7 @@ $(function(){
             $('#homepage').prop('checked', false);
             $('#publish_at').val('');
             $('#unpublish_at').val('');
+            updatePageModalStatusBadge(getScheduleStateFromForm());
             closePageModal();
             slugEdited = false;
         });
@@ -1142,6 +1166,7 @@ $(function(){
             $('#publish_at').val('');
             $('#unpublish_at').val('');
             removeTemporaryTemplateOptions();
+            updatePageModalStatusBadge(getScheduleStateFromForm());
             openPageModal();
             slugEdited = false;
         });
@@ -1149,6 +1174,10 @@ $(function(){
         $('#closePageModal').on('click', function(){
             closePageModal();
             slugEdited = false;
+        });
+
+        $('#published, #publish_at, #unpublish_at').on('change input', function(){
+            updatePageModalStatusBadge(getScheduleStateFromForm());
         });
 
         if ($listView.length) {

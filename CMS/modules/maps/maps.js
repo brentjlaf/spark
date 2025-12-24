@@ -18,6 +18,34 @@
         },
         viewMode: 'list'
     };
+    var STATUS_BADGE_MAP = {
+        draft: { label: 'Draft', className: 'status-draft' },
+        published: { label: 'Published', className: 'status-published' }
+    };
+    var STATUS_BADGE_CLASSES = Object.keys(STATUS_BADGE_MAP)
+        .map(function (key) {
+            return STATUS_BADGE_MAP[key].className;
+        })
+        .join(' ');
+
+    function getStatusBadgeInfo(status) {
+        var key = String(status || '').toLowerCase();
+        return STATUS_BADGE_MAP[key] || STATUS_BADGE_MAP.draft;
+    }
+
+    function applyStatusBadge($badge, status) {
+        if (!$badge || !$badge.length) {
+            return;
+        }
+        var info = getStatusBadgeInfo(status);
+        $badge.removeClass(STATUS_BADGE_CLASSES).addClass(info.className);
+        $badge.text(info.label);
+        $badge.attr('aria-label', 'Status: ' + info.label);
+    }
+
+    function updateLocationModalStatusBadge(status) {
+        applyStatusBadge(root.find('[data-map-status-badge]'), status);
+    }
 
     var geocodeTimer = null;
     var geocodeRequest = null;
@@ -86,6 +114,10 @@
         root.on('change', '#mapStatusFilter', function () {
             state.filters.status = $(this).val();
             render();
+        });
+
+        root.on('change', '#mapLocationStatus', function () {
+            updateLocationModalStatusBadge($(this).val() || 'draft');
         });
 
         root.on('click', '[data-map-view]', function () {
@@ -431,7 +463,8 @@
 
     function buildLocationRow(location) {
         var row = $('<div class="maps-table__row"></div>');
-        var statusBadge = $('<span class="maps-status maps-status--' + location.status + '"></span>').text(capitalize(location.status));
+        var statusBadge = $('<span class="status-badge"></span>');
+        applyStatusBadge(statusBadge, location.status);
         var cityRegion = $.trim([location.city, location.region].filter(Boolean).join(', '));
         var updated = location.updated_at ? formatRelativeTime(location.updated_at) : '—';
         var categories = $('<div class="maps-category-chips"></div>');
@@ -1036,6 +1069,7 @@
             $('#mapLocationName').val(location.name || '');
             $('#mapLocationSlug').val(location.slug || '');
             $('#mapLocationStatus').val(location.status || 'draft');
+            updateLocationModalStatusBadge(location.status || 'draft');
             $('#mapLocationDescription').val(location.description || '');
             if (location.address) {
                 $('#mapLocationStreet').val(location.address.street || '');
@@ -1076,6 +1110,7 @@
         } else {
             $('#mapLocationModalTitle').text('Add location');
             $('#mapLocationDeleteBtn').attr('hidden', 'hidden');
+            updateLocationModalStatusBadge('draft');
             geocodeLastSuccessfulQuery = '';
         }
         coordinatesAutoFilled = false;

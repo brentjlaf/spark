@@ -149,7 +149,10 @@
             </button>
             <header class="blog-modal__header">
                 <span class="blog-modal__subtitle">Post settings</span>
-                <h2 class="blog-modal__title" id="modalTitle">New Post</h2>
+                <div class="blog-modal__title-row">
+                    <h2 class="blog-modal__title" id="modalTitle">New Post</h2>
+                    <span class="status-badge status-draft" data-blog-status-badge aria-label="Status: Draft">Draft</span>
+                </div>
                 <p class="blog-modal__description" id="postModalDescription">Craft your article content, assign categories, and schedule publication.</p>
             </header>
             <div class="blog-modal__body">
@@ -269,7 +272,10 @@
             </button>
             <header class="blog-modal__header">
                 <span class="blog-modal__subtitle">Post preview</span>
-                <h2 class="blog-modal__title" id="previewTitle"></h2>
+                <div class="blog-modal__title-row">
+                    <h2 class="blog-modal__title" id="previewTitle"></h2>
+                    <span class="status-badge status-draft" data-blog-preview-status-badge aria-label="Status: Draft">Draft</span>
+                </div>
                 <p class="blog-modal__description">Review your content before publishing or return to make edits.</p>
             </header>
             <div class="blog-modal__body">

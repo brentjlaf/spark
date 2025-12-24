@@ -17,6 +17,31 @@ $(document).ready(function(){
     const $searchInput = $('#blogSearchInput');
     const $statusFilterButtons = $('[data-blog-filter]');
     let activeStatusFilter = 'all';
+    const STATUS_BADGE_MAP = {
+        draft: { label: 'Draft', className: 'status-draft' },
+        published: { label: 'Published', className: 'status-published' },
+        scheduled: { label: 'Scheduled', className: 'status-scheduled' },
+        archived: { label: 'Archived', className: 'status-archived' }
+    };
+
+    function getStatusBadgeInfo(status) {
+        const key = String(status || '').toLowerCase();
+        return STATUS_BADGE_MAP[key] || { label: 'Draft', className: 'status-draft' };
+    }
+
+    const STATUS_BADGE_CLASSES = Object.values(STATUS_BADGE_MAP)
+        .map((entry) => entry.className)
+        .join(' ');
+
+    function updateStatusBadge($badge, status) {
+        if (!$badge || !$badge.length) {
+            return;
+        }
+        const info = getStatusBadgeInfo(status);
+        $badge.removeClass(STATUS_BADGE_CLASSES).addClass(info.className);
+        $badge.text(info.label);
+        $badge.attr('aria-label', `Status: ${info.label}`);
+    }
 
     function renderTableMessage(message, options={}){
         const opts = Object.assign({ isError: false, countLabel: null }, options);
@@ -729,6 +754,7 @@ $(document).ready(function(){
             const thumbnail = post.image
                 ? `<div class="blog-table-thumb"><img src="${post.image}" alt="${safeAlt}"></div>`
                 : `<div class="blog-table-thumb blog-table-thumb--empty" aria-hidden="true"><span>${getPostInitial(post)}</span></div>`;
+            const statusInfo = getStatusBadgeInfo(post.status);
             const row = $(`
                 <tr
                     data-blog-post
@@ -756,7 +782,7 @@ $(document).ready(function(){
                         </div>
                     </td>
                     <td><span class="category-tag">${post.category}</span></td>
-                    <td><span class="status-badge status-${post.status}">${post.status}</span></td>
+                    <td><span class="status-badge ${statusInfo.className}" aria-label="Status: ${statusInfo.label}">${statusInfo.label}</span></td>
                     <td>${formatDate(post.publishDate || post.createdAt)}</td>
                     <td>
                         <div class="actions">
@@ -790,6 +816,7 @@ $(document).ready(function(){
     }
 
     function openPostModal(id=null){
+        const $modalStatusBadge = $('[data-blog-status-badge]');
         if(id){
             const post = posts.find(p=>p.id===id);
             $('#modalTitle').text('Edit Post');
@@ -810,6 +837,7 @@ $(document).ready(function(){
                 $('#publishDate').val('');
             }
             setImagePreviewFromPost(post);
+            updateStatusBadge($modalStatusBadge, post.status);
         } else {
             $('#modalTitle').text('New Post');
             $('#postForm')[0].reset();
@@ -817,6 +845,7 @@ $(document).ready(function(){
             $('#postContent').html('');
             $('#publishDate').val('');
             setImagePreviewFromPost({});
+            updateStatusBadge($modalStatusBadge, $('#postStatus').val() || 'draft');
         }
         openModal('postModal');
     }
@@ -825,6 +854,8 @@ $(document).ready(function(){
         const post = posts.find(p=>p.id===id);
         if(!post) return;
         $('#previewTitle').text(post.title);
+        updateStatusBadge($('[data-blog-preview-status-badge]'), post.status);
+        const statusInfo = getStatusBadgeInfo(post.status);
         const metaHtml = `
             <div class="blog-preview-meta__row">
                 <div class="author-info blog-preview-author">
@@ -836,7 +867,7 @@ $(document).ready(function(){
                 </div>
                 <div class="blog-preview-labels">
                     <span class="category-tag">${post.category}</span>
-                    <span class="status-badge status-${post.status}">${post.status}</span>
+                    <span class="status-badge ${statusInfo.className}" aria-label="Status: ${statusInfo.label}">${statusInfo.label}</span>
                 </div>
             </div>`;
         $('#previewMeta').html(metaHtml);
@@ -1080,5 +1111,9 @@ $(document).ready(function(){
         autoSaveTimer = setTimeout(function(){
             console.log('Auto-saving draft...');
         },2000);
+    });
+
+    $('#postStatus').on('change', function(){
+        updateStatusBadge($('[data-blog-status-badge]'), $(this).val());
     });
 });
