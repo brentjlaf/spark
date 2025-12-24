@@ -89,7 +89,7 @@
     container.innerHTML = '';
     var error = document.createElement('div');
     error.className = 'spark-form-error text-danger';
-    error.textContent = message || 'This form is currently unavailable.';
+    error.textContent = message || 'This form is currently unavailable. Please refresh the page or try again later.';
     container.appendChild(error);
     container.removeAttribute('data-rendered-form-id');
   }
@@ -127,9 +127,23 @@
       return wrapper;
     }
 
-    function appendFeedback(target, blockDisplay) {
+    function addDescribedBy(input, describedById) {
+      if (!input || !describedById) return;
+      var existing = input.getAttribute('aria-describedby');
+      if (!existing) {
+        input.setAttribute('aria-describedby', describedById);
+        return;
+      }
+      var parts = existing.split(/\s+/);
+      if (parts.indexOf(describedById) === -1) {
+        input.setAttribute('aria-describedby', existing + ' ' + describedById);
+      }
+    }
+
+    function appendFeedback(target, feedbackId, blockDisplay) {
       var feedback = document.createElement('div');
-      feedback.className = 'invalid-feedback' + (blockDisplay ? ' d-block' : '');
+      feedback.className = 'invalid-feedback spark-form-error-text' + (blockDisplay ? ' d-block' : '');
+      feedback.id = feedbackId;
       target.appendChild(feedback);
       return feedback;
     }
@@ -151,7 +165,8 @@
       checkboxWrap.appendChild(checkbox);
       checkboxWrap.appendChild(checkboxLabel);
       wrapper.appendChild(checkboxWrap);
-      appendFeedback(wrapper, true);
+      var checkboxFeedback = appendFeedback(wrapper, fieldId + '-error', true);
+      addDescribedBy(checkbox, checkboxFeedback.id);
       return wrapper;
     }
 
@@ -189,7 +204,10 @@
         choices.appendChild(checkWrap);
       });
       wrapper.appendChild(choices);
-      appendFeedback(wrapper, true);
+      var groupFeedback = appendFeedback(wrapper, fieldId + '-error', true);
+      choices.querySelectorAll('input').forEach(function (input) {
+        addDescribedBy(input, groupFeedback.id);
+      });
       return wrapper;
     }
 
@@ -207,7 +225,8 @@
       textarea.rows = 4;
       if (required) textarea.required = true;
       wrapper.appendChild(textarea);
-      appendFeedback(wrapper);
+      var textareaFeedback = appendFeedback(wrapper, fieldId + '-error');
+      addDescribedBy(textarea, textareaFeedback.id);
       return wrapper;
     }
 
@@ -228,7 +247,8 @@
         select.appendChild(opt);
       });
       wrapper.appendChild(select);
-      appendFeedback(wrapper);
+      var selectFeedback = appendFeedback(wrapper, fieldId + '-error');
+      addDescribedBy(select, selectFeedback.id);
       return wrapper;
     }
 
@@ -258,7 +278,8 @@
     }
     input.className = input.type === 'file' ? 'form-control' : 'form-control';
     wrapper.appendChild(input);
-    appendFeedback(wrapper);
+    var inputFeedback = appendFeedback(wrapper, fieldId + '-error');
+    addDescribedBy(input, inputFeedback.id);
     return wrapper;
   }
 
@@ -267,6 +288,7 @@
       wrapper.classList.remove('has-error');
       wrapper.querySelectorAll('.is-invalid').forEach(function (el) {
         el.classList.remove('is-invalid');
+        el.removeAttribute('aria-invalid');
       });
       var feedback = wrapper.querySelector('.invalid-feedback');
       if (feedback) {
@@ -287,6 +309,7 @@
       var inputs = wrapper.querySelectorAll('input, textarea, select');
       inputs.forEach(function (input) {
         input.classList.add('is-invalid');
+        input.setAttribute('aria-invalid', 'true');
       });
       var feedback = wrapper.querySelector('.invalid-feedback');
       if (feedback) {
@@ -329,7 +352,7 @@
             var errors = result.data && result.data.errors ? result.data.errors : null;
             applyFieldErrors(formEl, errors);
             if (statusEl) {
-              statusEl.textContent = (result.data && result.data.message) || 'We were unable to submit the form.';
+              statusEl.textContent = (result.data && result.data.message) || 'We could not submit the form. Check the highlighted fields and try again.';
               statusEl.classList.add('text-danger');
             }
             return;
@@ -342,7 +365,7 @@
         })
         .catch(function () {
           if (statusEl) {
-            statusEl.textContent = 'We were unable to submit the form.';
+            statusEl.textContent = 'We could not submit the form. Please try again in a moment.';
             statusEl.classList.add('text-danger');
           }
         })
@@ -417,7 +440,7 @@
         })
         .catch(function () {
           if (container.getAttribute('data-render-token') !== token) return;
-          showError(container, 'We were unable to load this form.');
+          showError(container, 'We could not load this form. Please refresh the page or try again later.');
           container.removeAttribute('data-render-token');
         });
     });

@@ -348,6 +348,8 @@
   --form-subcontrol-color-hover: var(--white);
   --form-subcontrol-bg: var(--primary);
   --form-subcontrol-bg-hover: var(--primary);
+  --form-error-text-color: var(--danger);
+  --form-error-bg: rgba(220, 53, 69, 0.08);
   /*
    |--------------------------------
    | Size

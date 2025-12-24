@@ -1550,6 +1550,30 @@ section.container-fluid {
     background-color: rgba(220, 53, 69, 0.08);
 }
 
+.spark-form-embed .spark-form-field.has-error .form-control,
+.spark-form-embed .spark-form-field.has-error .form-select,
+.spark-form-embed .spark-form-field.has-error .form-check-input {
+    border-color: var(--form-border-color-error);
+    box-shadow: var(--form-shadow-error);
+}
+
+.spark-form-embed .spark-form-field.has-error .form-control:focus,
+.spark-form-embed .spark-form-field.has-error .form-select:focus,
+.spark-form-embed .spark-form-field.has-error .form-check-input:focus {
+    border-color: var(--form-border-color-error-focus);
+    box-shadow: var(--form-shadow-error-focus);
+}
+
+.spark-form-embed .spark-form-error-text {
+    margin-top: 0.35rem;
+    font-size: 0.9rem;
+    color: var(--form-error-text-color);
+}
+
+.spark-form-embed .spark-form-field.has-error {
+    padding-bottom: 0.25rem;
+}
+
 .spark-form-embed .spark-choice-group .form-check {
     margin-bottom: 0.5rem;
 }
