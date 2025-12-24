@@ -454,11 +454,11 @@ if ($homepagePageData !== null) {
                                                 <span class="page-media-placeholder">No image selected yet.</span>
                                             </div>
                                             <div class="page-media-actions">
-                                                <button type="button" class="page-modal-button page-modal-button--secondary" data-page-media-open>
+                                                <button type="button" class="c-button c-button--secondary" data-page-media-open>
                                                     <i class="fa-solid fa-image" aria-hidden="true"></i>
                                                     <span>Choose image</span>
                                                 </button>
-                                                <button type="button" class="page-modal-button page-modal-button--ghost" data-page-media-clear hidden>
+                                                <button type="button" class="c-button c-button--ghost" data-page-media-clear hidden>
                                                     <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
                                                     <span>Remove image</span>
                                                 </button>
@@ -472,8 +472,8 @@ if ($homepagePageData !== null) {
                         </div>
                     </div>
                     <footer class="page-modal-footer">
-                        <button type="button" class="page-modal-button page-modal-button--secondary" id="cancelEdit">Cancel</button>
-                        <button type="submit" class="page-modal-button page-modal-button--primary">Save Page</button>
+                        <button type="button" class="c-button c-button--secondary" id="cancelEdit">Cancel</button>
+                        <button type="submit" class="c-button c-button--primary">Save Page</button>
                     </footer>
                 </form>
             </div>
