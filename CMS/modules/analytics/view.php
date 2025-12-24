@@ -307,9 +307,18 @@ $summaryComparisons = [
             </table>
         </div>
 
-        <div class="analytics-empty-state" id="analyticsEmptyState" hidden>
-            <i class="fa-regular fa-chart-bar" aria-hidden="true"></i>
-            <p>No pages match your current filters. Adjust the filters or clear the search to see results.</p>
+        <div class="empty-state analytics-empty-state" id="analyticsEmptyState" hidden aria-labelledby="analyticsEmptyTitle" aria-describedby="analyticsEmptyDescription">
+            <div class="empty-state__icon" aria-hidden="true">
+                <i class="fa-regular fa-chart-bar"></i>
+            </div>
+            <div class="empty-state__content">
+                <h3 class="empty-state__title" id="analyticsEmptyTitle">No pages match your current filters</h3>
+                <p class="empty-state__description" id="analyticsEmptyDescription">Adjust the filters or clear the search to see results.</p>
+            </div>
+            <button type="button" class="analytics-btn analytics-btn--primary empty-state__cta" id="analyticsEmptyCta">
+                <i class="fa-solid fa-rotate" aria-hidden="true"></i>
+                <span>Refresh data</span>
+            </button>
         </div>
     </div>
     <div class="a11y-page-detail analytics-detail" id="analyticsDetail" hidden role="dialog" aria-modal="true" aria-labelledby="analyticsDetailTitle">

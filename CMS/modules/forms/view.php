@@ -138,10 +138,18 @@ $lastSubmissionLabel = $latestSubmission > 0
                     </header>
                     <div class="forms-library" aria-live="polite">
                         <div class="a11y-pages-grid forms-library-grid" id="formsLibrary" role="list" aria-busy="false"></div>
-                        <div class="a11y-empty-state forms-library-empty" id="formsLibraryEmptyState" hidden>
-                            <i class="fa-solid fa-clipboard-list" aria-hidden="true"></i>
-                            <h4>Build your first form</h4>
-                            <p>Create a form to start collecting submissions.</p>
+                        <div class="empty-state forms-library-empty" id="formsLibraryEmptyState" hidden aria-labelledby="formsLibraryEmptyTitle" aria-describedby="formsLibraryEmptyDescription">
+                            <div class="empty-state__icon" aria-hidden="true">
+                                <i class="fa-solid fa-clipboard-list"></i>
+                            </div>
+                            <div class="empty-state__content">
+                                <h3 class="empty-state__title" id="formsLibraryEmptyTitle">Build your first form</h3>
+                                <p class="empty-state__description" id="formsLibraryEmptyDescription">Create a form to start collecting submissions.</p>
+                            </div>
+                            <button type="button" class="a11y-btn a11y-btn--primary empty-state__cta" id="formsEmptyCta">
+                                <i class="fas fa-plus" aria-hidden="true"></i>
+                                <span>New form</span>
+                            </button>
                         </div>
                     </div>
                 </section>

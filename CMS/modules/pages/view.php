@@ -315,10 +315,18 @@ if ($homepagePageData !== null) {
             </table>
         </section>
 
-        <div class="pages-empty-state" id="pagesEmptyState" hidden>
-            <i class="fa-solid fa-file-circle-question" aria-hidden="true"></i>
-            <h3>No pages match your filters</h3>
-            <p>Try a different search term or choose another status filter.</p>
+        <div class="empty-state pages-empty-state" id="pagesEmptyState" hidden aria-labelledby="pagesEmptyStateTitle" aria-describedby="pagesEmptyStateDescription">
+            <div class="empty-state__icon" aria-hidden="true">
+                <i class="fa-solid fa-file-circle-question"></i>
+            </div>
+            <div class="empty-state__content">
+                <h3 class="empty-state__title" id="pagesEmptyStateTitle">No pages match your filters</h3>
+                <p class="empty-state__description" id="pagesEmptyStateDescription">Try a different search term or choose another status filter.</p>
+            </div>
+            <button type="button" class="a11y-btn a11y-btn--primary empty-state__cta" id="pagesEmptyCta">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                <span>New page</span>
+            </button>
         </div>
     </div>
 

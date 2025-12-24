@@ -419,6 +419,10 @@ $(function () {
         $('#newMenuBtn').trigger('click');
     });
 
+    $('#menuNoResultsCta').on('click', function () {
+        $('#newMenuBtn').trigger('click');
+    });
+
     $('#closeMenuEditor').on('click', function () {
         closeMenuEditor();
     });

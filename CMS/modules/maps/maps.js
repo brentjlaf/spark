@@ -147,7 +147,7 @@
             coordinatesAutoFilled = false;
         });
 
-        root.on('click', '#mapAddLocationBtn, #mapEmptyAddBtn', function () {
+        root.on('click', '#mapAddLocationBtn, #mapEmptyAddBtn, #mapNoResultsAddBtn, #mapMapEmptyAddBtn', function () {
             openLocationModal();
         });
 

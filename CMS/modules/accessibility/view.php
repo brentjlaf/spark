@@ -655,10 +655,18 @@ $dashboardStats = [
             <div id="a11yTableBody"></div>
         </div>
 
-        <div class="a11y-empty-state" id="a11yEmptyState" hidden>
-            <i class="fas fa-universal-access" aria-hidden="true"></i>
-            <h3>No pages match your filters</h3>
-            <p>Try adjusting the search or changing the filter selection.</p>
+        <div class="empty-state" id="a11yEmptyState" hidden aria-labelledby="a11yEmptyTitle" aria-describedby="a11yEmptyDescription">
+            <div class="empty-state__icon" aria-hidden="true">
+                <i class="fas fa-universal-access"></i>
+            </div>
+            <div class="empty-state__content">
+                <h3 class="empty-state__title" id="a11yEmptyTitle">No pages match your filters</h3>
+                <p class="empty-state__description" id="a11yEmptyDescription">Try adjusting the search or changing the filter selection.</p>
+            </div>
+            <button type="button" class="a11y-btn a11y-btn--primary empty-state__cta" id="a11yEmptyCta">
+                <i class="fas fa-universal-access" aria-hidden="true"></i>
+                <span>Scan all pages</span>
+            </button>
         </div>
     </div>
 

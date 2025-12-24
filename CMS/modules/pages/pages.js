@@ -6,6 +6,7 @@ $(function(){
         const $sortButtons = $('[data-pages-sort]');
         const $emptyState = $('#pagesEmptyState');
         const $visibleCount = $('#pagesVisibleCount');
+        const $emptyCta = $('#pagesEmptyCta');
         let activeFilter = 'all';
         const sortState = { key: null, direction: 'asc' };
         let homepageSlug = ($listView.data('homepageSlug') || '').toString();
@@ -1170,6 +1171,12 @@ $(function(){
             openPageModal();
             slugEdited = false;
         });
+
+        if ($emptyCta.length) {
+            $emptyCta.on('click', function () {
+                $('#newPageBtn').trigger('click');
+            });
+        }
 
         $('#closePageModal').on('click', function(){
             closePageModal();

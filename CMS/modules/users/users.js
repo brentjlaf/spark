@@ -18,6 +18,7 @@ $(function () {
     const $newBtn = $('#usersNewBtn');
     const $refreshBtn = $('#usersRefreshBtn');
     const $lastSync = $('#usersLastSync');
+    const $emptyCta = $('#usersEmptyCta');
 
     const $drawer = $('#usersDrawer');
     const $form = $('#userForm');
@@ -361,6 +362,10 @@ $(function () {
 
     $newBtn.on('click', function () {
         openDrawer(null);
+    });
+
+    $emptyCta.on('click', function () {
+        $newBtn.trigger('click');
     });
 
     $refreshBtn.on('click', function () {

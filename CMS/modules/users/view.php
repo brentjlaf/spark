@@ -78,10 +78,18 @@
             <div id="usersTableBody"></div>
         </div>
 
-        <div class="a11y-empty-state users-empty" id="usersEmptyState" hidden>
-            <i class="fas fa-users" aria-hidden="true"></i>
-            <h3>No team members match your filters</h3>
-            <p>Try adjusting your search terms or select a different filter option.</p>
+        <div class="empty-state users-empty" id="usersEmptyState" hidden aria-labelledby="usersEmptyTitle" aria-describedby="usersEmptyDescription">
+            <div class="empty-state__icon" aria-hidden="true">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="empty-state__content">
+                <h3 class="empty-state__title" id="usersEmptyTitle">No team members match your filters</h3>
+                <p class="empty-state__description" id="usersEmptyDescription">Try adjusting your search terms or select a different filter option.</p>
+            </div>
+            <button type="button" class="a11y-btn a11y-btn--primary empty-state__cta" id="usersEmptyCta">
+                <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
+                <span>Invite teammate</span>
+            </button>
         </div>
     </div>
 
@@ -135,4 +143,3 @@
         </div>
     </div>
 </div>
-

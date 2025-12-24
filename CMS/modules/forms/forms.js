@@ -21,6 +21,7 @@ $(function(){
     const $closeFormBuilder = $('#closeFormBuilder');
     const $formsGrid = $('#formsLibrary');
     const $formsEmptyState = $('#formsLibraryEmptyState');
+    const $emptyCta = $('#formsEmptyCta');
     const $exportForm = $('#exportSubmissionsForm');
     const $exportFormId = $('#exportFormId');
     const $exportButton = $('#exportSubmissionsBtn');
@@ -1356,6 +1357,12 @@ $(function(){
         clearFormBuilder();
         openFormBuilder('Add form');
     });
+
+    if ($emptyCta.length) {
+        $emptyCta.on('click', function () {
+            $('#newFormBtn').trigger('click');
+        });
+    }
 
     $cancelFormEdit.on('click', function(){
         dismissFormBuilder();

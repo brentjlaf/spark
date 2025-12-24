@@ -112,15 +112,31 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="media-empty-state" id="selectFolderState">
-                                        <i class="fa-solid fa-folder-tree" aria-hidden="true"></i>
-                                        <h3>Select a folder to view images</h3>
-                                        <p>Choose a folder from the sidebar to manage its assets.</p>
+                                    <div class="empty-state media-empty-state" id="selectFolderState" aria-labelledby="selectFolderStateTitle" aria-describedby="selectFolderStateDescription">
+                                        <div class="empty-state__icon" aria-hidden="true">
+                                            <i class="fa-solid fa-folder-tree"></i>
+                                        </div>
+                                        <div class="empty-state__content">
+                                            <h3 class="empty-state__title" id="selectFolderStateTitle">Select a folder to view images</h3>
+                                            <p class="empty-state__description" id="selectFolderStateDescription">Choose a folder from the sidebar to manage its assets.</p>
+                                        </div>
+                                        <button type="button" class="btn btn-secondary empty-state__cta" id="mediaCreateFolderCta">
+                                            <i class="fa-solid fa-folder-plus btn-icon" aria-hidden="true"></i>
+                                            <span>Create folder</span>
+                                        </button>
                                     </div>
-                                    <div class="media-empty-state" id="emptyFolderState" style="display: none;">
-                                        <i class="fa-solid fa-images" aria-hidden="true"></i>
-                                        <h3>No media in this folder</h3>
-                                        <p>Click "Upload Media" to add new files.</p>
+                                    <div class="empty-state media-empty-state" id="emptyFolderState" style="display: none;" aria-labelledby="emptyFolderStateTitle" aria-describedby="emptyFolderStateDescription">
+                                        <div class="empty-state__icon" aria-hidden="true">
+                                            <i class="fa-solid fa-images"></i>
+                                        </div>
+                                        <div class="empty-state__content">
+                                            <h3 class="empty-state__title" id="emptyFolderStateTitle">No media in this folder</h3>
+                                            <p class="empty-state__description" id="emptyFolderStateDescription">Upload your first file to start building this folder.</p>
+                                        </div>
+                                        <button type="button" class="btn btn-primary empty-state__cta" id="mediaUploadCta">
+                                            <i class="fa-solid fa-upload btn-icon" aria-hidden="true"></i>
+                                            <span>Upload media</span>
+                                        </button>
                                     </div>
                                     <div class="image-grid" id="imageGrid" style="display: none;"></div>
                                     <div class="gallery-pagination" id="galleryPagination" style="display:none;"></div>
