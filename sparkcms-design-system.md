@@ -77,6 +77,84 @@ Each component must define:
 - Density: provide `data-density="comfortable|compact"` to tighten admin lists.
 - Sticky header patterns: header stays visible; avoid layout jump on stickiness.
 
+## Component: Status badge
+**Purpose**  
+Communicate content lifecycle or system state at a glance using a compact, color-coded label.
+
+**Anatomy**  
+- Container: `.status-badge`
+- Status intent class: `.status-draft`, `.status-published`, etc.
+
+**Variants (size/intent/state)**  
+- Intent classes map to tokenized colors (see mapping table below).
+- Optional subtle variant via `.status-badge--subtle` (future-ready; use only when needed).
+
+**States**  
+- Default: static label
+- Disabled: use reduced opacity + `aria-disabled="true"` if interactive (rare)
+
+**Accessibility**  
+- Provide an explicit status label for assistive tech: `aria-label="Status: Published"`.
+- Use semantic text in the badge itself (e.g., “Published”, “Draft”).
+
+**Keyboard interactions**  
+- Not interactive by default.
+
+**Minimal HTML**
+```html
+<span class="status-badge status-published" aria-label="Status: Published">Published</span>
+```
+
+**Minimal CSS**
+```css
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.status-published { background: var(--color-success-soft); color: var(--color-success-strong); }
+.status-draft { background: var(--color-info-soft); color: var(--color-info-strong); }
+.status-scheduled { background: var(--color-warning-soft); color: var(--color-warning-strong); }
+.status-ended,
+.status-expired,
+.status-refunded { background: var(--color-danger-soft); color: var(--color-danger-strong); }
+.status-pending { background: var(--color-warning-soft); color: var(--color-warning-strong); }
+.status-paid { background: var(--color-success-soft); color: var(--color-success-strong); }
+.status-archived { background: var(--color-surface-muted); color: var(--color-text-secondary); }
+```
+
+**Status mapping (labels + colors)**
+| Status value | Label | Intent |
+| --- | --- | --- |
+| `draft` | Draft | Info |
+| `published` | Published | Success |
+| `scheduled` | Scheduled | Warning |
+| `pending` | Pending | Warning |
+| `paid` | Paid | Success |
+| `ended` | Ended | Danger |
+| `expired` | Expired | Danger |
+| `refunded` | Refunded | Danger |
+| `archived` | Archived | Neutral |
+
+**Do**
+- Use consistent status values across modules.
+- Keep labels title-cased and short.
+
+**Don’t**
+- Introduce one-off colors or labels that don’t map to the table.
+- Use status badges as primary buttons.
+
+**Test checklist**
+- Verify the badge is announced as “Status: X” by screen readers.
+- Check contrast in dark and light themes.
+- Verify layout in compact density tables and modal headers.
+
 ## CSS architecture rules
 - Low specificity selectors: prefer `.c-button` not `header .btn`.
 - No `!important` unless integrating with legacy constraints.

@@ -362,7 +362,10 @@ $initialPayload = [
     <div class="events-modal" role="dialog" aria-modal="true" aria-labelledby="eventsModalTitle">
         <header class="events-modal-header">
             <div class="events-modal-header-content">
-                <h2 class="events-modal-title" id="eventsModalTitle">Create event</h2>
+                <div class="events-modal-title-row">
+                    <h2 class="events-modal-title" id="eventsModalTitle">Create event</h2>
+                    <span class="status-badge status-draft" data-events-status-badge aria-label="Status: Draft">Draft</span>
+                </div>
                 <div class="editor-save-state" data-save-state data-state="saved" role="status" aria-live="polite" aria-atomic="true" tabindex="0">
                     <span class="editor-save-state__dot" aria-hidden="true"></span>
                     <span class="editor-save-state__text" data-save-state-text>Saved</span>

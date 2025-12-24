@@ -210,10 +210,10 @@ if ($homepagePageData !== null) {
         $statusBadgeClass = 'status-published';
         $statusText = 'Published';
     } elseif ($scheduleState === 'scheduled') {
-        $statusBadgeClass = 'status-warning';
+        $statusBadgeClass = 'status-scheduled';
         $statusText = 'Scheduled';
     } elseif ($scheduleState === 'expired') {
-        $statusBadgeClass = 'status-critical';
+        $statusBadgeClass = 'status-expired';
         $statusText = 'Expired';
     }
     $statusNote = $scheduleInfo['detail'];
@@ -272,7 +272,7 @@ if ($homepagePageData !== null) {
                             </div>
                         </td>
                         <td class="pages-list-cell pages-list-cell--status" data-label="Status">
-                            <span class="status-badge <?php echo htmlspecialchars($statusBadgeClass, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>" data-status-badge>
+                            <span class="status-badge <?php echo htmlspecialchars($statusBadgeClass, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>" data-status-badge aria-label="<?php echo htmlspecialchars('Status: ' . $statusText, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>">
                                 <?php echo htmlspecialchars($statusText, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>
                             </span>
                             <span class="pages-list-status-note" data-status-note<?php echo $statusNote === '' ? ' hidden' : ''; ?>>
@@ -330,7 +330,10 @@ if ($homepagePageData !== null) {
                 </button>
                 <header class="page-modal-header">
                     <div class="page-modal-header-content">
-                        <h2 class="page-modal-title" id="formTitle">Add New Page</h2>
+                        <div class="page-modal-title-row">
+                            <h2 class="page-modal-title" id="formTitle">Add New Page</h2>
+                            <span class="status-badge status-draft" data-page-status-badge aria-label="Status: Draft">Draft</span>
+                        </div>
                         <p class="page-modal-description" id="pageModalDescription">Configure publishing, templates, and metadata before publishing your page.</p>
                     </div>
                     <div class="editor-save-state" data-save-state data-state="saved" role="status" aria-live="polite" aria-atomic="true" tabindex="0">

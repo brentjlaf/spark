@@ -113,6 +113,34 @@
         saved: 'Saved',
         unsaved: 'Unsaved changes',
     };
+    const STATUS_BADGE_MAP = {
+        draft: { label: 'Draft', className: 'status-draft' },
+        published: { label: 'Published', className: 'status-published' },
+        scheduled: { label: 'Scheduled', className: 'status-scheduled' },
+        ended: { label: 'Ended', className: 'status-ended' },
+        pending: { label: 'Pending', className: 'status-pending' },
+        paid: { label: 'Paid', className: 'status-paid' },
+        refunded: { label: 'Refunded', className: 'status-refunded' },
+    };
+    const STATUS_BADGE_CLASSES = Object.values(STATUS_BADGE_MAP)
+        .map((entry) => entry.className)
+        .join(' ');
+
+    function getStatusBadgeInfo(status) {
+        const key = String(status || '').toLowerCase();
+        return STATUS_BADGE_MAP[key] || { label: 'Draft', className: 'status-draft' };
+    }
+
+    function applyStatusBadge(element, status) {
+        if (!element) {
+            return;
+        }
+        const info = getStatusBadgeInfo(status);
+        element.classList.remove(...STATUS_BADGE_CLASSES.split(' '));
+        element.classList.add(info.className);
+        element.textContent = info.label;
+        element.setAttribute('aria-label', `Status: ${info.label}`);
+    }
 
     function setEventSaveState(state) {
         if (!eventSaveState.element) {
@@ -539,6 +567,25 @@
         result.schedule_note = scheduleNote;
 
         return result;
+    }
+
+    function getEventStatusFromForm(form) {
+        if (!form) {
+            return 'draft';
+        }
+        const status = form.querySelector('[name="status"]:checked')?.value || 'draft';
+        const publishAt = form.querySelector('[name="publish_at"]')?.value || '';
+        const unpublishAt = form.querySelector('[name="unpublish_at"]')?.value || '';
+        const derived = withSchedule({ status, publish_at: publishAt, unpublish_at: unpublishAt });
+        return derived.status || status;
+    }
+
+    function updateEventModalStatusBadge(form) {
+        const badge = selectors.modal?.querySelector('[data-events-status-badge]');
+        if (!badge) {
+            return;
+        }
+        applyStatusBadge(badge, getEventStatusFromForm(form));
     }
 
     function normalizeFormOption(form) {
@@ -2032,9 +2079,8 @@
 
     function createStatusBadge(status) {
         const span = document.createElement('span');
-        const value = String(status || 'draft');
-        span.className = `events-status events-status--${value}`;
-        span.textContent = value.charAt(0).toUpperCase() + value.slice(1);
+        span.className = 'status-badge';
+        applyStatusBadge(span, status);
         return span;
     }
 
@@ -3352,6 +3398,7 @@
         } else {
             tickets.forEach((ticket) => addTicketRow(ticketContainer, ticket));
         }
+        updateEventModalStatusBadge(form);
         resetEventSaveState();
     }
 
@@ -3519,6 +3566,14 @@
         if (!form.__imagePicker) {
             form.__imagePicker = initImagePicker(form);
         }
+        form.querySelectorAll('[name="status"]').forEach((input) => {
+            input.addEventListener('change', () => updateEventModalStatusBadge(form));
+        });
+        const scheduleInputs = form.querySelectorAll('[name="publish_at"], [name="unpublish_at"]');
+        scheduleInputs.forEach((input) => {
+            input.addEventListener('change', () => updateEventModalStatusBadge(form));
+            input.addEventListener('input', () => updateEventModalStatusBadge(form));
+        });
         form.addEventListener('input', markEventDirty);
         form.addEventListener('change', markEventDirty);
         form.addEventListener('submit', (event) => {
