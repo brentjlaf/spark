@@ -104,6 +104,12 @@ tailwind.config = {
   .a11y-detail-meta__value { @apply font-semibold text-slate-900; }
   .a11y-detail-grid { @apply grid gap-4 md:grid-cols-2 xl:grid-cols-3; }
   .a11y-empty-state { @apply flex flex-col items-center justify-center text-center gap-3 p-6 border border-dashed border-slate-300 rounded-xl bg-slate-50 text-slate-600; }
+  .empty-state { @apply flex flex-col items-center justify-center text-center gap-4 p-6 border border-dashed border-slate-300 rounded-2xl bg-white text-slate-600 shadow-sm; }
+  .empty-state__icon { @apply w-12 h-12 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center text-xl; }
+  .empty-state__content { @apply space-y-1; }
+  .empty-state__title { @apply text-lg font-semibold text-slate-900; }
+  .empty-state__description { @apply text-sm text-slate-600 max-w-md; }
+  .empty-state__cta { @apply mt-2; }
 
   .a11y-pages-grid { @apply grid gap-3 sm:grid-cols-2 xl:grid-cols-3; }
   .a11y-page-detail { @apply fixed inset-0 z-40 flex items-start justify-end bg-slate-900/50; }

@@ -153,17 +153,29 @@ $filterCounts = [
             <div class="menu-table-body" id="menuTableBody"></div>
         </div>
 
-        <div class="menu-empty-search" id="menuNoResults" hidden>
-            <i class="fas fa-filter" aria-hidden="true"></i>
-            <h3>No menus match your filters</h3>
-            <p>Try adjusting the search or switching to a different filter.</p>
+        <div class="empty-state menu-empty-search" id="menuNoResults" hidden aria-labelledby="menuNoResultsTitle" aria-describedby="menuNoResultsDescription">
+            <div class="empty-state__icon" aria-hidden="true">
+                <i class="fas fa-filter"></i>
+            </div>
+            <div class="empty-state__content">
+                <h3 class="empty-state__title" id="menuNoResultsTitle">No menus match your filters</h3>
+                <p class="empty-state__description" id="menuNoResultsDescription">Try adjusting the search or switching to a different filter.</p>
+            </div>
+            <button type="button" class="menu-btn menu-btn--primary empty-state__cta" id="menuNoResultsCta">
+                <i class="fas fa-plus" aria-hidden="true"></i>
+                <span>Create menu</span>
+            </button>
         </div>
 
-        <div class="menu-empty-state" id="menuEmptyState" <?php echo $totalMenus > 0 ? 'hidden' : ''; ?>>
-            <i class="fas fa-sitemap" aria-hidden="true"></i>
-            <h3>No menus yet</h3>
-            <p>Create your first navigation menu to help visitors find key pages.</p>
-            <button type="button" class="menu-btn menu-btn--primary" id="emptyStateCreateMenu">
+        <div class="empty-state menu-empty-state" id="menuEmptyState" <?php echo $totalMenus > 0 ? 'hidden' : ''; ?> aria-labelledby="menuEmptyStateTitle" aria-describedby="menuEmptyStateDescription">
+            <div class="empty-state__icon" aria-hidden="true">
+                <i class="fas fa-sitemap"></i>
+            </div>
+            <div class="empty-state__content">
+                <h3 class="empty-state__title" id="menuEmptyStateTitle">No menus yet</h3>
+                <p class="empty-state__description" id="menuEmptyStateDescription">Create your first navigation menu to help visitors find key pages.</p>
+            </div>
+            <button type="button" class="menu-btn menu-btn--primary empty-state__cta" id="emptyStateCreateMenu">
                 <i class="fas fa-plus" aria-hidden="true"></i>
                 <span>Create Menu</span>
             </button>

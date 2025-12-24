@@ -282,6 +282,7 @@
         const $modalDescription = $('#a11yDetailDescription');
         const $fullAuditBtn = $modal.find('[data-a11y-action="full-audit"]');
         const $scanAllBtn = $('#scanAllPagesBtn');
+        const $emptyCta = $('#a11yEmptyCta');
 
         let currentFilter = 'all';
         let currentView = 'grid';
@@ -596,6 +597,12 @@
                         window.location.reload();
                     }
                 }, 900);
+            });
+        }
+
+        if ($emptyCta.length) {
+            $emptyCta.on('click', function () {
+                $scanAllBtn.trigger('click');
             });
         }
 

@@ -1170,6 +1170,12 @@ $(function(){
         openModal('createFolderModal');
         $('#newFolderName').focus();
     });
+    $('#mediaCreateFolderCta').click(function(){
+        $('#createFolderBtn').trigger('click');
+    });
+    $('#mediaUploadCta').click(function(){
+        $('#uploadBtn').trigger('click');
+    });
     $('#cancelBtn').click(function(){
         closeModal('createFolderModal');
         $('#newFolderName').val('');

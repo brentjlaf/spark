@@ -806,10 +806,18 @@ write_json_file($snapshotFile, $currentSnapshot);
             </div>
             <div id="speedTableBody"></div>
         </div>
-        <div class="a11y-empty-state" id="speedEmptyState" hidden>
-            <i class="fas fa-gauge-high" aria-hidden="true"></i>
-            <h3>No pages match your filters</h3>
-            <p>Try adjusting the search or choosing a different performance segment.</p>
+        <div class="empty-state" id="speedEmptyState" hidden aria-labelledby="speedEmptyTitle" aria-describedby="speedEmptyDescription">
+            <div class="empty-state__icon" aria-hidden="true">
+                <i class="fas fa-gauge-high"></i>
+            </div>
+            <div class="empty-state__content">
+                <h3 class="empty-state__title" id="speedEmptyTitle">No pages match your filters</h3>
+                <p class="empty-state__description" id="speedEmptyDescription">Try adjusting the search or choosing a different performance segment.</p>
+            </div>
+            <button type="button" class="a11y-btn a11y-btn--primary empty-state__cta" id="speedEmptyCta">
+                <i class="fas fa-gauge-simple-high" aria-hidden="true"></i>
+                <span>Scan all pages</span>
+            </button>
         </div>
     </div>
     <div class="a11y-page-detail" id="speedPageDetail" hidden role="dialog" aria-modal="true" aria-labelledby="speedDetailTitle">

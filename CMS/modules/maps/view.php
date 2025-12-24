@@ -139,19 +139,31 @@ $initialAttr = htmlspecialchars(json_encode($initialPayload, JSON_UNESCAPED_UNIC
                         </div>
                         <div class="maps-table__body" id="mapLocationsTable"></div>
                     </div>
-                    <div class="a11y-empty-state maps-empty" id="mapLocationsEmpty" <?php echo $totalLocations > 0 ? 'hidden' : ''; ?>>
-                        <i class="fas fa-map-location-dot" aria-hidden="true"></i>
-                        <h3>No locations yet</h3>
-                        <p>Start by adding your first place to power your interactive maps.</p>
-                        <button type="button" class="a11y-btn a11y-btn--primary" id="mapEmptyAddBtn">
+                    <div class="empty-state maps-empty" id="mapLocationsEmpty" <?php echo $totalLocations > 0 ? 'hidden' : ''; ?> aria-labelledby="mapLocationsEmptyTitle" aria-describedby="mapLocationsEmptyDescription">
+                        <div class="empty-state__icon" aria-hidden="true">
+                            <i class="fas fa-map-location-dot"></i>
+                        </div>
+                        <div class="empty-state__content">
+                            <h3 class="empty-state__title" id="mapLocationsEmptyTitle">No locations yet</h3>
+                            <p class="empty-state__description" id="mapLocationsEmptyDescription">Start by adding your first place to power your interactive maps.</p>
+                        </div>
+                        <button type="button" class="a11y-btn a11y-btn--primary empty-state__cta" id="mapEmptyAddBtn">
                             <i class="fas fa-plus" aria-hidden="true"></i>
                             <span>Create location</span>
                         </button>
                     </div>
-                    <div class="a11y-empty-state maps-empty" id="mapLocationsNoResults" hidden>
-                        <i class="fas fa-filter" aria-hidden="true"></i>
-                        <h3>No matches found</h3>
-                        <p>Try adjusting the search term or filters.</p>
+                    <div class="empty-state maps-empty" id="mapLocationsNoResults" hidden aria-labelledby="mapLocationsNoResultsTitle" aria-describedby="mapLocationsNoResultsDescription">
+                        <div class="empty-state__icon" aria-hidden="true">
+                            <i class="fas fa-filter"></i>
+                        </div>
+                        <div class="empty-state__content">
+                            <h3 class="empty-state__title" id="mapLocationsNoResultsTitle">No matches found</h3>
+                            <p class="empty-state__description" id="mapLocationsNoResultsDescription">Try adjusting the search term or filters.</p>
+                        </div>
+                        <button type="button" class="a11y-btn a11y-btn--primary empty-state__cta" id="mapNoResultsAddBtn">
+                            <i class="fas fa-plus" aria-hidden="true"></i>
+                            <span>Create location</span>
+                        </button>
                     </div>
                 </div>
 
@@ -159,10 +171,18 @@ $initialAttr = htmlspecialchars(json_encode($initialPayload, JSON_UNESCAPED_UNIC
                     <div class="maps-map-wrapper" id="mapMapWrapper" hidden>
                         <div class="maps-map" id="mapLocationsMap" role="img" aria-label="Map showing locations"></div>
                     </div>
-                    <div class="a11y-empty-state maps-empty" id="mapMapNoData" hidden>
-                        <i class="fas fa-map-location-dot" aria-hidden="true"></i>
-                        <h3 id="mapMapNoDataTitle">No locations yet</h3>
-                        <p id="mapMapNoDataMessage">Add a location to visualize it on the map.</p>
+                    <div class="empty-state maps-empty" id="mapMapNoData" hidden aria-labelledby="mapMapNoDataTitle" aria-describedby="mapMapNoDataMessage">
+                        <div class="empty-state__icon" aria-hidden="true">
+                            <i class="fas fa-map-location-dot"></i>
+                        </div>
+                        <div class="empty-state__content">
+                            <h3 class="empty-state__title" id="mapMapNoDataTitle">No locations yet</h3>
+                            <p class="empty-state__description" id="mapMapNoDataMessage">Add a location to visualize it on the map.</p>
+                        </div>
+                        <button type="button" class="a11y-btn a11y-btn--primary empty-state__cta" id="mapMapEmptyAddBtn">
+                            <i class="fas fa-plus" aria-hidden="true"></i>
+                            <span>Create location</span>
+                        </button>
                     </div>
                     <div class="maps-map-legend" id="mapMapLegend" aria-live="polite"></div>
                 </div>

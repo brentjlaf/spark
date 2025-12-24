@@ -41,6 +41,7 @@ $(function(){
     const $counts = $('[data-analytics-count]');
     const $refreshBtn = $('[data-analytics-action="refresh"]');
     const $exportBtn = $('[data-analytics-action="export"]');
+    const $emptyCta = $('#analyticsEmptyCta');
     const $totalViews = $('#analyticsTotalViews');
     const $averageViews = $('#analyticsAverageViews');
     const $totalPages = $('#analyticsTotalPages');
@@ -1544,6 +1545,12 @@ $(function(){
     if ($refreshBtn.length) {
         $refreshBtn.on('click', function(){
             loadFromServer();
+        });
+    }
+
+    if ($emptyCta.length) {
+        $emptyCta.on('click', function () {
+            $refreshBtn.trigger('click');
         });
     }
 

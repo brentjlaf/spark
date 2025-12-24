@@ -380,6 +380,7 @@
         const $modalDescription = $('#speedDetailDescription');
         const $fullAuditBtn = $modal.find('[data-speed-action="full-diagnose"]');
         const $scanAllBtn = $('#speedScanAllBtn');
+        const $emptyCta = $('#speedEmptyCta');
         const $downloadReportBtn = $('#speedDownloadReport');
         const $heroHeaviest = $('[data-speed-action="view-heaviest"]');
 
@@ -632,6 +633,12 @@
                         $btn.prop('disabled', false).removeClass('is-loading');
                     }
                 }, 900);
+            });
+        }
+
+        if ($emptyCta.length) {
+            $emptyCta.on('click', function () {
+                $scanAllBtn.trigger('click');
             });
         }
 
