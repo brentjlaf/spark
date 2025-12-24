@@ -176,7 +176,7 @@ $initialPayload = [
                             <option value="">All statuses</option>
                             <option value="draft">Draft</option>
                             <option value="published">Published</option>
-                            <option value="ended">Ended</option>
+                            <option value="ended">Archived</option>
                         </select>
                     </label>
                     <label class="events-search" for="eventsSearch">

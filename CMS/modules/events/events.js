@@ -117,7 +117,7 @@
         draft: { label: 'Draft', className: 'status-draft' },
         published: { label: 'Published', className: 'status-published' },
         scheduled: { label: 'Scheduled', className: 'status-scheduled' },
-        ended: { label: 'Ended', className: 'status-ended' },
+        ended: { label: 'Archived', className: 'status-archived' },
         pending: { label: 'Pending', className: 'status-pending' },
         paid: { label: 'Paid', className: 'status-paid' },
         refunded: { label: 'Refunded', className: 'status-refunded' },

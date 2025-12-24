@@ -69,6 +69,13 @@ $(function(){
                     rel: 'noopener'
                 })
             ));
+            $row.append($('<td>').append(
+                $('<span>', {
+                    class: 'status-badge status-published',
+                    text: 'Published',
+                    'aria-label': 'Status: Published'
+                })
+            ));
             $row.append($('<td>').text(lastmod));
             $tableBody.append($row);
         });

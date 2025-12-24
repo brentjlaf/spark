@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/data.php';
 require_once __DIR__ . '/../../includes/search_helpers.php';
+require_once __DIR__ . '/../../includes/page_schedule.php';
 require_login();
 
 $q = isset($_GET['q']) ? trim($_GET['q']) : '';
@@ -41,6 +42,17 @@ $searchSuggestions = get_search_suggestions();
 $historyDataAttr = htmlspecialchars(json_encode($historyRecords, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8');
 $suggestionsAttr = htmlspecialchars(json_encode($searchSuggestions, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8');
 $selectedTypesAttr = htmlspecialchars(json_encode($normalizedTypes, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8');
+
+function search_status_badge(string $status): array {
+    $map = [
+        'draft' => ['label' => 'Draft', 'class' => 'status-draft'],
+        'published' => ['label' => 'Published', 'class' => 'status-published'],
+        'scheduled' => ['label' => 'Scheduled', 'class' => 'status-scheduled'],
+        'archived' => ['label' => 'Archived', 'class' => 'status-archived'],
+    ];
+    $key = strtolower($status);
+    return $map[$key] ?? $map['draft'];
+}
 ?>
 <div class="content-section" id="search" data-query="<?php echo htmlspecialchars($q); ?>" data-history="<?php echo $historyDataAttr; ?>" data-suggestions="<?php echo $suggestionsAttr; ?>" data-selected-types="<?php echo $selectedTypesAttr; ?>">
     <div class="search-dashboard a11y-dashboard">
@@ -124,18 +136,19 @@ $selectedTypesAttr = htmlspecialchars(json_encode($normalizedTypes, JSON_UNESCAP
                                     $record = $r['record'];
                                     if(($r['type'] ?? '') === 'Post') {
                                         $viewUrl = '../blogs/' . urlencode($record['slug'] ?? $r['slug']);
-                                        $status = ucfirst($record['status'] ?? 'draft');
+                                        $statusKey = strtolower($record['status'] ?? 'draft');
                                     } elseif(($r['type'] ?? '') === 'Media') {
                                         $viewUrl = '../' . ltrim($record['file'] ?? $r['slug'], '/');
-                                        $size = $record['size'] ?? 0;
-                                        $status = $size ? round($size/1024) . ' KB' : '';
+                                        $statusKey = 'archived';
                                     } else {
                                         $viewUrl = '../?page=' . urlencode($record['slug'] ?? $r['slug']);
                                         if(isset($_SESSION['user'])) {
                                             $viewUrl = '../liveed/builder.php?id=' . urlencode($record['id'] ?? $r['id']);
                                         }
-                                        $status = !empty($record['published']) ? 'Published' : 'Draft';
+                                        $scheduleInfo = sparkcms_page_schedule_info($record);
+                                        $statusKey = $scheduleInfo['state'] === 'expired' ? 'archived' : $scheduleInfo['state'];
                                     }
+                                    $statusBadge = search_status_badge($statusKey);
                                 ?>
                                 <tr data-id="<?php echo htmlspecialchars((string) $r['id']); ?>" data-type="<?php echo htmlspecialchars($r['type']); ?>" data-score="<?php echo htmlspecialchars(number_format($r['score'], 4, '.', '')); ?>">
                                     <td><?php echo htmlspecialchars($r['type'] ?? ''); ?></td>
@@ -146,7 +159,11 @@ $selectedTypesAttr = htmlspecialchars(json_encode($normalizedTypes, JSON_UNESCAP
                                         <?php endif; ?>
                                     </td>
                                     <td><?php echo htmlspecialchars($r['slug']); ?></td>
-                                    <td><?php echo htmlspecialchars($status); ?></td>
+                                    <td>
+                                        <span class="status-badge <?php echo htmlspecialchars($statusBadge['class']); ?>" aria-label="<?php echo htmlspecialchars('Status: ' . $statusBadge['label']); ?>">
+                                            <?php echo htmlspecialchars($statusBadge['label']); ?>
+                                        </span>
+                                    </td>
                                     <td><a class="btn btn-secondary" href="<?php echo $viewUrl; ?>" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square btn-icon" aria-hidden="true"></i><span class="btn-label">View</span></a></td>
                                 </tr>
                             <?php endforeach; ?>

@@ -95,7 +95,7 @@ $statusMessage = $entryCount > 0
                 <div class="sitemap-table"<?php echo $entries ? '' : ' style="display:none;"'; ?>>
                     <table class="data-table">
                         <thead>
-                            <tr><th scope="col">Title</th><th scope="col">URL</th><th scope="col">Last modified</th></tr>
+                            <tr><th scope="col">Title</th><th scope="col">URL</th><th scope="col">Status</th><th scope="col">Last modified</th></tr>
                         </thead>
                         <tbody id="sitemapTableBody">
                             <?php if ($entries): ?>
@@ -103,6 +103,9 @@ $statusMessage = $entryCount > 0
                                     <tr>
                                         <td><?php echo htmlspecialchars($entry['title']); ?></td>
                                         <td><a href="<?php echo htmlspecialchars($entry['url']); ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars($entry['url']); ?></a></td>
+                                        <td>
+                                            <span class="status-badge status-published" aria-label="Status: Published">Published</span>
+                                        </td>
                                         <td><?php echo htmlspecialchars($entry['lastmod']); ?></td>
                                     </tr>
                                 <?php endforeach; ?>
