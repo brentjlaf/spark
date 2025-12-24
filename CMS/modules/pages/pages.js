@@ -720,9 +720,9 @@ $(function(){
                     if (now >= unpublishDate) {
                         state = 'expired';
                         isLive = 0;
-                        statusText = 'Expired';
-                        statusClass = 'status-expired';
-                        statusNote = `Expired ${formatTimestamp(unpublishDate)}`;
+                        statusText = 'Archived';
+                        statusClass = 'status-archived';
+                        statusNote = `Archived ${formatTimestamp(unpublishDate)}`;
                     } else if (state !== 'scheduled') {
                         statusNote = `Unpublishes ${formatTimestamp(unpublishDate)}`;
                     }
@@ -738,10 +738,10 @@ $(function(){
                     } else {
                         state = 'expired';
                         isLive = 0;
-                        statusText = 'Expired';
-                        statusClass = 'status-expired';
+                        statusText = 'Archived';
+                        statusClass = 'status-archived';
                         const reference = unpublishDate || publishDate;
-                        statusNote = reference ? `Expired ${formatTimestamp(reference)}` : '';
+                        statusNote = reference ? `Archived ${formatTimestamp(reference)}` : '';
                     }
                 }
             }
@@ -757,7 +757,7 @@ $(function(){
             };
         }
 
-        const PAGE_STATUS_CLASSES = 'status-published status-draft status-scheduled status-expired';
+        const PAGE_STATUS_CLASSES = 'status-published status-draft status-scheduled status-archived';
 
         function updatePageModalStatusBadge(scheduleState) {
             const $badge = $('[data-page-status-badge]');

@@ -61,7 +61,7 @@ function sparkcms_page_schedule_info(array $page, ?int $now = null): array {
     if ($state === 'scheduled' && $publishTimestamp !== null) {
         $detail = 'Publishes ' . date('M j, Y g:i A', $publishTimestamp);
     } elseif ($state === 'expired' && $unpublishTimestamp !== null) {
-        $detail = 'Expired ' . date('M j, Y g:i A', $unpublishTimestamp);
+        $detail = 'Archived ' . date('M j, Y g:i A', $unpublishTimestamp);
     } elseif ($state === 'published' && $unpublishTimestamp !== null) {
         $detail = 'Unpublishes ' . date('M j, Y g:i A', $unpublishTimestamp);
     }
@@ -76,4 +76,3 @@ function sparkcms_page_schedule_info(array $page, ?int $now = null): array {
         'detail' => $detail,
     ];
 }
-

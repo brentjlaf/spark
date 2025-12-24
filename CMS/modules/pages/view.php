@@ -213,8 +213,8 @@ if ($homepagePageData !== null) {
         $statusBadgeClass = 'status-scheduled';
         $statusText = 'Scheduled';
     } elseif ($scheduleState === 'expired') {
-        $statusBadgeClass = 'status-expired';
-        $statusText = 'Expired';
+        $statusBadgeClass = 'status-archived';
+        $statusText = 'Archived';
     }
     $statusNote = $scheduleInfo['detail'];
     $accessValue = strtolower((string) $accessRaw);

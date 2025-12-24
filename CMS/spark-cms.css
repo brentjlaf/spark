@@ -1064,13 +1064,15 @@
 
         .search-results-table {
             border-radius: 14px;
-            overflow: hidden;
+            overflow-x: auto;
+            overflow-y: hidden;
             box-shadow: inset 0 0 0 1px #e2e8f0;
             background: #fff;
         }
 
         .search-results-table .data-table {
             margin: 0;
+            min-width: 720px;
         }
 
         .search-results-card .data-table th,
@@ -1268,11 +1270,13 @@
             background: #ffffff;
             border-radius: 16px;
             box-shadow: inset 0 0 0 1px #e2e8f0;
-            overflow: hidden;
+            overflow-x: auto;
+            overflow-y: hidden;
         }
 
         .sitemap-table .data-table {
             margin: 0;
+            min-width: 640px;
         }
 
         .sitemap-table .data-table th,
