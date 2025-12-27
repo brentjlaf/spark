@@ -23,15 +23,17 @@
     <dl class="sparkDialog _tpl-box">
         <dt>Alignment</dt>
         <dd class="align-options">
-            <label><input type="radio" name="custom_align" value=" text-start"> Left</label>
-            <label><input type="radio" name="custom_align" value=" text-center" checked> Center</label>
-            <label><input type="radio" name="custom_align" value=" text-end"> Right</label>
+            <label><input type="radio" name="custom_align" value="text-start"> Left</label>
+            <label><input type="radio" name="custom_align" value="text-center" checked> Center</label>
+            <label><input type="radio" name="custom_align" value="text-end"> Right</label>
         </dd>
     </dl>
 </templateSetting>
-<section class="hero-section hero-{custom_size} d-flex align-items-center" style="background-image:url('{custom_bg}');" data-tpl-tooltip="Hero">
-    <div class="container">
-        <div class="hero-content{custom_align}"><div class="drop-area"></div>
+<section class="hero-section hero-{custom_size} bg-cover bg-center" style="background-image:url('{custom_bg}');" data-tpl-tooltip="Hero">
+    <div class="hero-overlay"></div>
+    <div class="mx-auto w-full max-w-6xl px-4">
+        <div class="hero-content {custom_align} max-w-3xl space-y-6">
+            <div class="drop-area"></div>
             <div class="drop-area"></div>
         </div>
     </div>

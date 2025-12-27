@@ -104,13 +104,11 @@
         </dd>
     </dl>
 </templateSetting>
-<section id="<?= $blockId ?>" class="events-block events-block--layout-{custom_layout}" data-tpl-tooltip="Events" data-events-block data-events-layout="{custom_layout}" data-events-limit="{custom_limit}" data-events-category="{custom_category}" data-events-detail-base="{custom_detail_base}" data-events-button-label="{custom_button_label}" data-events-show-button="{custom_show_button}" data-events-show-description="{custom_show_description}" data-events-description-length="{custom_description_length}" data-events-show-location="{custom_show_location}" data-events-show-categories="{custom_show_categories}" data-events-show-price="{custom_show_price}" data-events-empty="{custom_empty}">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-8 text-center mb-4">
-                <h2 class="events-block__heading" data-editable>{custom_title}</h2>
-                <p class="events-block__intro text-muted" data-editable>{custom_intro}</p>
-            </div>
+<section id="<?= $blockId ?>" class="section events-block events-block--layout-{custom_layout}" data-tpl-tooltip="Events" data-events-block data-events-layout="{custom_layout}" data-events-limit="{custom_limit}" data-events-category="{custom_category}" data-events-detail-base="{custom_detail_base}" data-events-button-label="{custom_button_label}" data-events-show-button="{custom_show_button}" data-events-show-description="{custom_show_description}" data-events-description-length="{custom_description_length}" data-events-show-location="{custom_show_location}" data-events-show-categories="{custom_show_categories}" data-events-show-price="{custom_show_price}" data-events-empty="{custom_empty}">
+    <div class="mx-auto w-full max-w-6xl px-4">
+        <div class="text-center mb-8">
+            <h2 class="text-3xl md:text-4xl font-semibold tracking-tight" data-editable>{custom_title}</h2>
+            <p class="mt-3 text-slate-600" data-editable>{custom_intro}</p>
         </div>
         <div class="events-block__items" data-events-items>
             <article class="events-block__item events-block__item--placeholder">
@@ -120,6 +118,6 @@
                 </div>
             </article>
         </div>
-        <div class="events-block__empty text-center text-muted d-none" data-events-empty>{custom_empty}</div>
+        <div class="events-block__empty text-center text-slate-500 d-none" data-events-empty>{custom_empty}</div>
     </div>
 </section>

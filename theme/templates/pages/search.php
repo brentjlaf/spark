@@ -18,7 +18,7 @@ require_once __DIR__ . '/includes/menu_helpers.php';
 
 
 		<!-- Default Page -->
-		<div id="app" class="page-template default-page">
+		<div id="app" class="min-h-screen bg-slate-50 flex flex-col">
 
                         <!-- Header -->
                         <!-- Header moved to block palette -->

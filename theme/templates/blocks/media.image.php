@@ -15,12 +15,12 @@
     <dl class="sparkDialog _tpl-box">
         <dt>Alignment</dt>
         <dd class="align-options">
-            <label><input type="radio" name="custom_align" value=" text-start"> Left</label>
-            <label><input type="radio" name="custom_align" value=" text-center" checked> Center</label>
-            <label><input type="radio" name="custom_align" value=" text-end"> Right</label>
+            <label><input type="radio" name="custom_align" value="text-start"> Left</label>
+            <label><input type="radio" name="custom_align" value="text-center" checked> Center</label>
+            <label><input type="radio" name="custom_align" value="text-end"> Right</label>
         </dd>
     </dl>
 </templateSetting>
 <div class="{custom_align}">
-    <img src="{custom_src}" alt="{custom_alt}" class="img-fluid" data-tpl-tooltip="Image"/>
+    <img src="{custom_src}" alt="{custom_alt}" class="inline-block max-w-full rounded-2xl shadow-sm" data-tpl-tooltip="Image"/>
 </div>
