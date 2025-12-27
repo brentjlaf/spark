@@ -312,7 +312,7 @@
             text-decoration: none;
         }
 
-        .c-button:hover {
+        .c-button:is(:hover, :focus-visible) {
             background: var(--button-bg-hover);
             box-shadow: var(--button-shadow-hover);
         }
@@ -3518,7 +3518,7 @@
             box-shadow: 0 16px 32px rgba(37, 99, 235, 0.3);
         }
 
-        .accessibility-hero .a11y-btn--primary:hover {
+        .accessibility-hero .a11y-btn--primary:is(:hover, :focus-visible) {
             transform: translateY(-1px);
             box-shadow: 0 20px 36px rgba(8, 145, 178, 0.35);
         }
@@ -3542,7 +3542,7 @@
             box-shadow: var(--shadow-soft);
         }
 
-        .a11y-btn:hover {
+        .a11y-btn:is(:hover, :focus-visible) {
             transform: translateY(-1px);
             box-shadow: var(--shadow-card);
         }
@@ -3559,7 +3559,7 @@
             box-shadow: var(--shadow-card-strong);
         }
 
-        .a11y-btn--primary:hover {
+        .a11y-btn--primary:is(:hover, :focus-visible) {
             transform: translateY(-2px);
             box-shadow: 0 18px 36px rgba(79, 70, 229, 0.35);
         }
@@ -3570,7 +3570,7 @@
             border-color: var(--color-border);
         }
 
-        .a11y-btn--secondary:hover {
+        .a11y-btn--secondary:is(:hover, :focus-visible) {
             background: var(--color-primary-soft);
             border-color: var(--color-primary-subtle);
             color: var(--color-primary-strong);
@@ -3583,7 +3583,7 @@
             box-shadow: none;
         }
 
-        .a11y-btn--ghost:hover {
+        .a11y-btn--ghost:is(:hover, :focus-visible) {
             background: var(--color-primary-soft);
             color: var(--color-primary-strong);
             border-color: var(--color-primary);
@@ -3596,7 +3596,7 @@
             box-shadow: none;
         }
 
-        .a11y-btn--danger:hover {
+        .a11y-btn--danger:is(:hover, :focus-visible) {
             background: var(--color-danger-strong);
             color: var(--color-text-inverse);
             box-shadow: 0 12px 24px rgba(220, 38, 38, 0.25);
@@ -5731,7 +5731,7 @@
             color: var(--color-text-primary);
         }
 
-        .btn:hover {
+        .btn:is(:hover, :focus-visible) {
             transform: translateY(-1px);
             box-shadow: var(--shadow-card);
         }
@@ -5863,7 +5863,7 @@
             border-color: var(--color-primary-strong);
         }
 
-        .btn-primary:hover {
+        .btn-primary:is(:hover, :focus-visible) {
             background: linear-gradient(135deg, var(--color-primary-strong), var(--color-primary));
             box-shadow: var(--shadow-card-strong);
         }
@@ -5874,7 +5874,7 @@
             border-color: var(--color-border);
         }
 
-        .btn-secondary:hover {
+        .btn-secondary:is(:hover, :focus-visible) {
             background: var(--color-primary-soft);
             border-color: var(--color-primary-subtle);
             color: var(--color-primary-strong);
@@ -5886,7 +5886,7 @@
             border-color: var(--color-danger-strong);
         }
 
-        .btn-danger:hover {
+        .btn-danger:is(:hover, :focus-visible) {
             background: var(--color-danger-strong);
             box-shadow: var(--shadow-card);
         }
@@ -5897,7 +5897,7 @@
             border-color: var(--color-success-strong);
         }
 
-        .btn-success:hover {
+        .btn-success:is(:hover, :focus-visible) {
             background: linear-gradient(135deg, var(--color-success-strong), var(--color-success));
             box-shadow: var(--shadow-card);
         }
