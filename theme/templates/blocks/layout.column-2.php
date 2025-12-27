@@ -5,13 +5,13 @@
         <dt>Layout:</dt>
         <dd>
             <select name="custom_layout">
-                <option value="20_80">20% | 80%</option>
-                <option value="30_70">30% | 70%</option>
-                <option value="40_60">40% | 60%</option>
-                <option value="50_50" selected="selected">50% | 50% (default)</option>
-                <option value="60_40">60% | 40%</option>
-                <option value="70_30">70% | 30%</option>
-                <option value="80_20">80% | 20%</option>
+                <option value="layout-20-80">20% | 80%</option>
+                <option value="layout-30-70">30% | 70%</option>
+                <option value="layout-40-60">40% | 60%</option>
+                <option value="layout-50-50" selected="selected">50% | 50% (default)</option>
+                <option value="layout-60-40">60% | 40%</option>
+                <option value="layout-70-30">70% | 30%</option>
+                <option value="layout-80-20">80% | 20%</option>
             </select>
         </dd>
         <dt>Gap:</dt>
@@ -38,4 +38,3 @@
     <div class="col"><div class="drop-area"></div></div>
     <div class="col"><div class="drop-area"></div></div>
 </div>
-

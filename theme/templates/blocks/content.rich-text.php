@@ -8,10 +8,10 @@
     <dl class="sparkDialog _tpl-box">
         <dt>Alignment</dt>
         <dd class="align-options">
-            <label class="me-2"><input type="radio" name="custom_align" value=" text-start" checked> Left</label>
-            <label class="me-2"><input type="radio" name="custom_align" value=" text-center"> Center</label>
-            <label><input type="radio" name="custom_align" value=" text-end"> Right</label>
+            <label class="me-2"><input type="radio" name="custom_align" value="text-left" checked> Left</label>
+            <label class="me-2"><input type="radio" name="custom_align" value="text-center"> Center</label>
+            <label><input type="radio" name="custom_align" value="text-right"> Right</label>
         </dd>
     </dl>
 </templateSetting>
-<div class="rich-text{custom_align}" data-tpl-tooltip="Rich Text" data-editable>{custom_html}</div>
+<div class="rich-text space-y-4 {custom_align}" data-tpl-tooltip="Rich Text" data-editable>{custom_html}</div>

@@ -20,17 +20,17 @@
     <dl class="sparkDialog _tpl-box">
         <dt>Alignment</dt>
         <dd class="align-options">
-            <label><input type="radio" name="custom_align" value=" text-start"> Left</label>
-            <label><input type="radio" name="custom_align" value=" text-center" checked> Center</label>
-            <label><input type="radio" name="custom_align" value=" text-end"> Right</label>
+            <label><input type="radio" name="custom_align" value="text-start"> Left</label>
+            <label><input type="radio" name="custom_align" value="text-center" checked> Center</label>
+            <label><input type="radio" name="custom_align" value="text-end"> Right</label>
         </dd>
     </dl>
 </templateSetting>
 <div class="{custom_align}">
-    <figure class="video-figure" data-tpl-tooltip="Video">
-        <div class="video-block">
-            <iframe src="{custom_src}" title="{custom_title}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>
+    <figure class="space-y-3" data-tpl-tooltip="Video">
+        <div class="aspect-video overflow-hidden rounded-2xl bg-slate-900/10 shadow-sm">
+            <iframe class="h-full w-full" src="{custom_src}" title="{custom_title}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>
         </div>
-        <figcaption class="video-caption" data-editable>{custom_caption}</figcaption>
+        <figcaption class="text-sm text-slate-500" data-editable>{custom_caption}</figcaption>
     </figure>
 </div>
