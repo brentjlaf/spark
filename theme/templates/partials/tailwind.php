@@ -2,6 +2,7 @@
 // Tailwind CDN helpers for public theme pages.
 ?>
 <script>
+window.tailwind = window.tailwind || {};
 tailwind.config = {
     theme: {
         extend: {

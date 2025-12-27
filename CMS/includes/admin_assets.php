@@ -2,6 +2,7 @@
 // Shared Tailwind assets for admin-facing pages.
 ?>
 <script>
+window.tailwind = window.tailwind || {};
 tailwind.config = {
     theme: {
         extend: {
