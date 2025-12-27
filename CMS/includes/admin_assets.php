@@ -48,7 +48,7 @@ tailwind.config = {
   .sidebar-nav { @apply px-3 py-4 space-y-6; }
   .nav-section { @apply space-y-2; }
   .nav-section-title { @apply text-xs uppercase tracking-[0.15em] text-slate-400 font-semibold px-3; }
-  .nav-item { @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-primary-50 hover:text-primary-700 cursor-pointer; }
+  .nav-item { @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold hover:bg-primary-50 hover:text-primary-700 cursor-pointer; }
   .nav-item.active { @apply bg-primary-600 text-white shadow-sm; }
   .nav-item .nav-icon { @apply w-5 h-5 text-slate-400 flex items-center justify-center; }
   .nav-item.active .nav-icon { @apply text-white; }
