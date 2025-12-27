@@ -25,5 +25,8 @@ if (is_string($faviconSetting) && $faviconSetting !== '' && preg_match('#^https?
         <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,600;0,700;1,400&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
 
         <?php include __DIR__ . '/tailwind.php'; ?>
+        <link rel="stylesheet" href="<?php echo htmlspecialchars($themeBase); ?>/css/root.css">
+        <link rel="stylesheet" href="<?php echo htmlspecialchars($themeBase); ?>/css/skin.css">
+        <link rel="stylesheet" href="<?php echo htmlspecialchars($themeBase); ?>/css/override.css">
     </head>
     <body<?php echo $bodyClass !== '' ? ' class="' . htmlspecialchars($bodyClass) . '"' : ''; ?>>
