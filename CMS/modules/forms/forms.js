@@ -134,6 +134,42 @@ $(function(){
         submit: 'Submit'
     };
 
+    const FORM_TEMPLATES = {
+        contact: {
+            label: 'Contact form',
+            name: 'Contact form',
+            fields: [
+                { type: 'text', label: 'Full name', name: 'full_name', required: true },
+                { type: 'email', label: 'Email address', name: 'email', required: true },
+                { type: 'text', label: 'Company', name: 'company' },
+                { type: 'textarea', label: 'How can we help?', name: 'message', required: true },
+                { type: 'submit', label: 'Send message', name: 'submit' }
+            ]
+        },
+        newsletter: {
+            label: 'Newsletter signup',
+            name: 'Newsletter signup',
+            fields: [
+                { type: 'text', label: 'First name', name: 'first_name' },
+                { type: 'email', label: 'Email address', name: 'email', required: true },
+                { type: 'checkbox', label: 'Email preferences', name: 'topics', options: 'Product updates, Events, Blog highlights' },
+                { type: 'submit', label: 'Subscribe', name: 'submit' }
+            ]
+        },
+        rsvp: {
+            label: 'Event RSVP',
+            name: 'Event RSVP',
+            fields: [
+                { type: 'text', label: 'Full name', name: 'full_name', required: true },
+                { type: 'email', label: 'Email address', name: 'email', required: true },
+                { type: 'select', label: 'Attendance', name: 'attendance', required: true, options: 'Attending, Not attending, Maybe' },
+                { type: 'number', label: 'Guests', name: 'guest_count' },
+                { type: 'textarea', label: 'Dietary needs', name: 'dietary_needs' },
+                { type: 'submit', label: 'RSVP', name: 'submit' }
+            ]
+        }
+    };
+
     function slugifyName(value){
         return String(value || '')
             .trim()
@@ -948,7 +984,7 @@ $(function(){
             currentField.addClass('selected');
             $('#fieldSettings').append(currentField.find('.field-body').show());
         } else {
-            $('#fieldSettings').html('<p>Select a field in the preview to edit its settings.</p>');
+            $('#fieldSettings').html('<div class="field-settings-empty"><h4>Field settings</h4><p>Select a field in the preview to customize labels, names, and validation.</p></div>');
         }
     }
 
@@ -972,6 +1008,43 @@ $(function(){
         selectField(null);
         hideBuilderAlert();
         resetConfirmationEmailConfig();
+    }
+
+    function canReplaceBuilder(){
+        if(!$('#formPreview > li').length){
+            return $.Deferred().resolve(true).promise();
+        }
+        if(typeof confirmModal === 'function'){
+            return confirmModal('Replace the current fields with a template?');
+        }
+        const deferred = $.Deferred();
+        deferred.resolve(window.confirm('Replace the current fields with a template?'));
+        return deferred.promise();
+    }
+
+    function applyTemplate(templateKey){
+        const template = FORM_TEMPLATES[templateKey];
+        if(!template){
+            return;
+        }
+        canReplaceBuilder().then(function(ok){
+            if(!ok){
+                return;
+            }
+            $formPreview.empty();
+            selectField(null);
+            (template.fields || []).forEach(function(field){
+                addField(field.type, field, { suppressSelect: true });
+            });
+            if(!$formName.val()){
+                $formName.val(template.name);
+            }
+            const firstField = $('#formPreview > li').first();
+            if(firstField.length){
+                selectField(firstField);
+            }
+            markFormDirty();
+        });
     }
 
     function openFormBuilder(title){
@@ -1191,6 +1264,25 @@ $(function(){
             optionsInput = $('<input type="text" class="form-input field-options-input" placeholder="Option 1, Option 2">');
             optionsGroup.append(optionsInput);
             optionsGroup.append('<p class="field-help">Separate each choice with a comma.</p>');
+            const suggestions = [
+                { label: 'Yes / No', value: 'Yes, No' },
+                { label: 'Agree / Disagree', value: 'Strongly agree, Agree, Neutral, Disagree, Strongly disagree' },
+                { label: 'Sizes', value: 'Small, Medium, Large, Extra large' },
+                { label: 'Ratings', value: '1, 2, 3, 4, 5' }
+            ];
+            const $suggestions = $('<div class="field-options-suggestions" role="list"></div>');
+            suggestions.forEach(function(suggestion){
+                const $chip = $('<button type="button" class="field-option-chip" role="listitem"></button>');
+                $chip.text(suggestion.label);
+                $chip.on('click', function(){
+                    optionsInput.val(suggestion.value);
+                    updatePreview($li);
+                    markFormDirty();
+                    markFieldConfigured($li);
+                });
+                $suggestions.append($chip);
+            });
+            optionsGroup.append($suggestions);
             body.append(optionsGroup);
         }
 
@@ -1313,6 +1405,13 @@ $(function(){
             if(type){
                 addField(type, {}, { isNew: true });
             }
+        }
+    });
+
+    $('.forms-template-btn').on('click', function(){
+        const templateKey = $(this).data('template');
+        if(templateKey){
+            applyTemplate(templateKey);
         }
     });
 

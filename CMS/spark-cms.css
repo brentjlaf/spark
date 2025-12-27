@@ -10277,6 +10277,47 @@
     gap: 20px;
 }
 
+.forms-builder-quickstart {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 18px;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(14, 165, 233, 0.08));
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.forms-builder-quickstart__content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.forms-builder-quickstart__content h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #0f172a;
+}
+
+.forms-builder-quickstart__content p {
+    margin: 0;
+    color: #475569;
+    font-size: 14px;
+}
+
+.forms-builder-quickstart__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.forms-builder-quickstart__actions .a11y-btn {
+    gap: 8px;
+}
+
 .forms-drawer .forms-builder-actions {
     justify-content: flex-start;
     gap: 12px;
@@ -10507,6 +10548,15 @@
     padding: 16px;
 }
 
+.field-list:empty::before {
+    content: attr(data-placeholder);
+    display: block;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 14px;
+    padding: 32px 16px;
+}
+
 .field-item {
     border-radius: 10px;
     box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.35);
@@ -10524,9 +10574,47 @@
     min-width: 260px;
 }
 
+.field-settings-empty {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
 #fieldSettings p {
     margin: 0;
     color: #64748b;
+}
+
+.field-settings-empty h4 {
+    margin: 0;
+    font-size: 16px;
+    color: #0f172a;
+}
+
+.field-options-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.field-option-chip {
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 999px;
+    padding: 6px 12px;
+    background: rgba(99, 102, 241, 0.08);
+    color: #4338ca;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.field-option-chip:hover,
+.field-option-chip:focus-visible {
+    outline: none;
+    background: rgba(99, 102, 241, 0.16);
+    border-color: rgba(99, 102, 241, 0.45);
 }
 
 #formsTable tbody tr.selected {
@@ -10564,6 +10652,15 @@
 
     #fieldSettings {
         width: 100%;
+    }
+
+    .forms-builder-quickstart {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .forms-builder-quickstart__actions {
+        justify-content: flex-start;
     }
 }
 

@@ -210,7 +210,27 @@ $lastSubmissionLabel = $latestSubmission > 0
                         <p class="form-hint" id="formNameHint">Use a descriptive name so teammates can quickly identify the form.</p>
                     </div>
                     <div class="form-alert" id="formBuilderAlert" role="alert" aria-live="assertive" style="display:none;"></div>
-                    <p class="builder-tip">Drag inputs from the palette or press Enter on a field type to add it instantly.</p>
+                    <div class="forms-builder-quickstart" aria-label="Form builder quick start">
+                        <div class="forms-builder-quickstart__content">
+                            <h3>Quick start templates</h3>
+                            <p>Start with a ready-made layout and tweak it to match your intake needs.</p>
+                        </div>
+                        <div class="forms-builder-quickstart__actions" role="group" aria-label="Form templates">
+                            <button type="button" class="a11y-btn a11y-btn--secondary forms-template-btn" data-template="contact">
+                                <i class="fa-solid fa-message" aria-hidden="true"></i>
+                                <span>Contact form</span>
+                            </button>
+                            <button type="button" class="a11y-btn a11y-btn--secondary forms-template-btn" data-template="newsletter">
+                                <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+                                <span>Newsletter signup</span>
+                            </button>
+                            <button type="button" class="a11y-btn a11y-btn--secondary forms-template-btn" data-template="rsvp">
+                                <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
+                                <span>Event RSVP</span>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="builder-tip">Drag inputs from the palette or press Enter on a field type to add it instantly. Template buttons can create a full form in one click.</p>
                     <div class="builder-container">
                         <div id="fieldPalette" aria-label="Form fields palette">
                             <div class="palette-heading">Field types</div>
@@ -230,7 +250,10 @@ $lastSubmissionLabel = $latestSubmission > 0
                         <div class="builder-columns">
                             <ul id="formPreview" class="field-list" aria-label="Form preview" data-placeholder="Drop fields here"></ul>
                             <div id="fieldSettings" class="field-settings">
-                                <p>Select a field in the preview to edit its settings.</p>
+                                <div class="field-settings-empty">
+                                    <h4>Field settings</h4>
+                                    <p>Select a field in the preview to customize labels, names, and validation.</p>
+                                </div>
                             </div>
                         </div>
                     </div>
