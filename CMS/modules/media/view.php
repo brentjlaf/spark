@@ -189,35 +189,63 @@
                             </div>
                             <div class="modal-body info-layout">
                                 <div class="info-preview">
-                                    <img id="infoImage" src="" alt="Preview" style="max-width:100%;border:1px solid #ccc;">
+                                    <img id="infoImage" src="" alt="Preview">
                                 </div>
                                 <div class="info-meta">
-                                    <div id="item-info" class="form-group">
-                                        <p><strong>Type:</strong> <span id="infoType"></span></p>
-                                        <p><strong>File:</strong> <span id="infoFile"></span></p>
-                                        <p><strong>Size:</strong> <span id="infoSize"></span></p>
-                                        <p><strong>Dimensions:</strong> <span id="infoDimensions"></span></p>
-                                        <p><strong>Extension:</strong> <span id="infoExt"></span></p>
-                                        <p><strong>Date:</strong> <span id="infoDate"></span></p>
-                                        <p><strong>Folder:</strong> <span id="infoFolder"></span></p>
+                                    <div class="media-info-card" aria-labelledby="mediaFileDetailsTitle">
+                                        <div class="media-info-header">
+                                            <h3 id="mediaFileDetailsTitle">File details</h3>
+                                        </div>
+                                        <dl id="item-info" class="media-info-list">
+                                            <div class="media-info-row">
+                                                <dt>Type</dt>
+                                                <dd><span id="infoType"></span></dd>
+                                            </div>
+                                            <div class="media-info-row">
+                                                <dt>File</dt>
+                                                <dd><span id="infoFile"></span></dd>
+                                            </div>
+                                            <div class="media-info-row">
+                                                <dt>Size</dt>
+                                                <dd><span id="infoSize"></span></dd>
+                                            </div>
+                                            <div class="media-info-row">
+                                                <dt>Dimensions</dt>
+                                                <dd><span id="infoDimensions"></span></dd>
+                                            </div>
+                                            <div class="media-info-row">
+                                                <dt>Extension</dt>
+                                                <dd><span id="infoExt"></span></dd>
+                                            </div>
+                                            <div class="media-info-row">
+                                                <dt>Date</dt>
+                                                <dd><span id="infoDate"></span></dd>
+                                            </div>
+                                            <div class="media-info-row">
+                                                <dt>Folder</dt>
+                                                <dd><span id="infoFolder"></span></dd>
+                                            </div>
+                                        </dl>
                                     </div>
-                                    <div class="form-group media-usage-group">
+                                    <div class="media-info-card media-usage-card">
                                         <label class="form-label" for="mediaUsageList">Used In</label>
                                         <div id="mediaUsageLoading" class="form-help" style="display:none;">Checking content references…</div>
                                         <div id="mediaUsageError" class="form-help media-usage-error" style="display:none;"></div>
                                         <ul id="mediaUsageList" class="media-usage-list" aria-live="polite" style="display:none;"></ul>
                                         <p id="mediaUsageEmpty" class="form-help" style="display:none;">This file is not currently used in any content.</p>
                                     </div>
-                                    <div class="form-group">
-                                        <label class="form-label" for="edit-name">Name/Title</label>
-                                        <input type="text" id="edit-name" class="form-input">
-                                    </div>
-                                    <div class="form-group" id="rename-file-group">
-                                        <label class="form-label" for="edit-fileName">Rename File</label>
-                                        <input type="text" id="edit-fileName" class="form-input">
-                                        <div class="form-check" style="margin-top:8px;">
-                                            <input type="checkbox" id="renamePhysicalCheckbox">
-                                            <label for="renamePhysicalCheckbox">Rename on disk</label>
+                                    <div class="media-info-card">
+                                        <div class="form-group">
+                                            <label class="form-label" for="edit-name">Name/Title</label>
+                                            <input type="text" id="edit-name" class="form-input">
+                                        </div>
+                                        <div class="form-group" id="rename-file-group">
+                                            <label class="form-label" for="edit-fileName">Rename File</label>
+                                            <input type="text" id="edit-fileName" class="form-input">
+                                            <div class="form-check">
+                                                <input type="checkbox" id="renamePhysicalCheckbox">
+                                                <label for="renamePhysicalCheckbox">Rename on disk</label>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="form-actions" id="infoActions">
