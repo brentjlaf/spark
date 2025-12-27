@@ -93,6 +93,11 @@ INDEX `idx_cms_users_username` (`username`),
 INDEX `idx_cms_users_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+INSERT INTO `cms_users` (`id`,`payload`,`username`,`role`,`status`,`created_at`,`last_login`,`password`) VALUES
+('1','{\"id\":1,\"username\":\"alex.admin\",\"role\":\"admin\",\"status\":\"active\",\"created_at\":1750000000,\"last_login\":null}','alex.admin','admin','active','1750000000',NULL,'$2y$12$eaq3Bz2RE3W2ZxN3csZeCu0OvC5VSp8jrW/JftjTwGrt4iXluqmWS'),
+('2','{\"id\":2,\"username\":\"morgan.admin\",\"role\":\"admin\",\"status\":\"active\",\"created_at\":1750100000,\"last_login\":null}','morgan.admin','admin','active','1750100000',NULL,'$2y$12$z4vYGzDB9/hFOQaSgVCOoO/dY1U6bVwQiLcpcZGKlH12/E7VTn4Wm'),
+('3','{\"id\":3,\"username\":\"riley.editor\",\"role\":\"editor\",\"status\":\"active\",\"created_at\":1750200000,\"last_login\":null}','riley.editor','editor','active','1750200000',NULL,'$2y$12$nGla41BBncGifx4at/rP4uFVVqC0bqdFjzRE1jrWPGSZnwnUf4DBy');
+
 DROP TABLE IF EXISTS `cms_settings`;
 
 CREATE TABLE `cms_settings` (
