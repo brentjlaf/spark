@@ -56,7 +56,7 @@ tailwind.config = {
   .sidebar-overlay { @apply fixed inset-0 bg-slate-900/40 z-30 hidden; }
   .sidebar-overlay.active { @apply block; }
 
-  .main-content { @apply flex-1 min-h-screen md:ml-72 flex flex-col; }
+  .main-content { @apply flex-1 min-h-screen flex flex-col; }
   .top-bar { @apply sticky top-0 z-20 h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-6 shadow-sm; }
   .menu-toggle { @apply md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50; }
   .page-title { @apply text-lg font-semibold text-slate-800; }
