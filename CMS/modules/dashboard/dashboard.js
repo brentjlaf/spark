@@ -158,6 +158,7 @@ $(function(){
         media: 'fa-images',
         blogs: 'fa-blog',
         events: 'fa-calendar-days',
+        fundraising: 'fa-hand-holding-dollar',
         forms: 'fa-clipboard-list',
         menus: 'fa-bars',
         users: 'fa-users',

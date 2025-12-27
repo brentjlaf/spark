@@ -14,6 +14,8 @@ $postsFile = __DIR__ . '/../../data/blog_posts.json';
 $historyFile = __DIR__ . '/../../data/page_history.json';
 $eventsFile = __DIR__ . '/../../data/events.json';
 $eventOrdersFile = __DIR__ . '/../../data/event_orders.json';
+$fundraisingCampaignsFile = __DIR__ . '/../../data/fundraising_campaigns.json';
+$fundraisingDonationsFile = __DIR__ . '/../../data/fundraising_donations.json';
 $dataDirectory = __DIR__ . '/../../data';
 
 $pages = read_json_file($pagesFile);
@@ -26,6 +28,8 @@ $posts = read_json_file($postsFile);
 $history = read_json_file($historyFile);
 $events = read_json_file($eventsFile);
 $eventOrders = read_json_file($eventOrdersFile);
+$fundraisingCampaigns = read_json_file($fundraisingCampaignsFile);
+$fundraisingDonations = read_json_file($fundraisingDonationsFile);
 
 if (!is_array($pages)) {
     $pages = [];
@@ -57,9 +61,17 @@ if (!is_array($events)) {
 if (!is_array($eventOrders)) {
     $eventOrders = [];
 }
+if (!is_array($fundraisingCampaigns)) {
+    $fundraisingCampaigns = [];
+}
+if (!is_array($fundraisingDonations)) {
+    $fundraisingDonations = [];
+}
 
 $events = array_values(array_filter($events, 'is_array'));
 $eventOrders = array_values(array_filter($eventOrders, 'is_array'));
+$fundraisingCampaigns = array_values(array_filter($fundraisingCampaigns, 'is_array'));
+$fundraisingDonations = array_values(array_filter($fundraisingDonations, 'is_array'));
 
 $views = 0;
 foreach ($pages as $p) {
@@ -584,6 +596,31 @@ foreach ($eventOrders as $order) {
     }
 }
 
+$fundraisingTotal = count($fundraisingCampaigns);
+$fundraisingActive = 0;
+$fundraisingRaised = 0.0;
+$fundraisingDonorKeys = [];
+$fundraisingCurrency = !empty($settings['currency']) ? strtoupper((string)$settings['currency']) : 'USD';
+
+foreach ($fundraisingCampaigns as $campaign) {
+    $status = strtolower(trim((string)($campaign['status'] ?? 'active')));
+    if ($status === 'active') {
+        $fundraisingActive++;
+    }
+}
+
+foreach ($fundraisingDonations as $donation) {
+    $fundraisingRaised += (float)($donation['amount'] ?? 0);
+    $email = strtolower(trim((string)($donation['donor_email'] ?? '')));
+    $name = strtolower(trim((string)($donation['donor_name'] ?? '')));
+    $key = $email !== '' ? $email : $name;
+    if ($key !== '') {
+        $fundraisingDonorKeys[$key] = true;
+    }
+}
+
+$fundraisingDonors = count($fundraisingDonorKeys);
+
 $pagesStatus = 'ok';
 if ($totalPages === 0) {
     $pagesStatus = 'urgent';
@@ -720,6 +757,18 @@ $eventsCta = $eventsTotal === 0
     ? 'Create an event'
     : ($eventsPendingOrders > 0 ? 'Review event orders' : 'Open events');
 
+$fundraisingStatus = 'ok';
+if ($fundraisingTotal === 0) {
+    $fundraisingStatus = 'urgent';
+} elseif ($fundraisingRaised <= 0 || $fundraisingActive === 0) {
+    $fundraisingStatus = 'warning';
+}
+$fundraisingSecondary = 'Active campaigns: ' . dashboard_format_number($fundraisingActive) . ' • Donors: ' . dashboard_format_number($fundraisingDonors);
+$fundraisingTrend = $fundraisingRaised > 0
+    ? 'Raised: ' . dashboard_format_currency($fundraisingRaised, $fundraisingCurrency)
+    : 'No donations recorded yet';
+$fundraisingCta = $fundraisingTotal === 0 ? 'Create a campaign' : 'Review fundraising';
+
 $moduleSummaries = [
     [
         'id' => 'pages',
@@ -760,6 +809,16 @@ $moduleSummaries = [
         'statusLabel' => dashboard_status_label($eventsStatus),
         'trend' => $eventsTrend,
         'cta' => $eventsCta,
+    ],
+    [
+        'id' => 'fundraising',
+        'module' => 'Fundraising',
+        'primary' => dashboard_format_number($fundraisingTotal) . ' campaigns',
+        'secondary' => $fundraisingSecondary,
+        'status' => $fundraisingStatus,
+        'statusLabel' => dashboard_status_label($fundraisingStatus),
+        'trend' => $fundraisingTrend,
+        'cta' => $fundraisingCta,
     ],
     [
         'id' => 'forms',
@@ -915,6 +974,10 @@ $data = [
     'eventsTicketsSold' => $eventsTicketsSold,
     'eventsRevenue' => $eventsRevenue,
     'eventsPendingOrders' => $eventsPendingOrders,
+    'fundraisingTotal' => $fundraisingTotal,
+    'fundraisingActive' => $fundraisingActive,
+    'fundraisingDonors' => $fundraisingDonors,
+    'fundraisingRaised' => $fundraisingRaised,
     'formsTotal' => count($forms),
     'formsFields' => $formsFields,
     'menusCount' => count($menus),
