@@ -18,11 +18,12 @@
 
 .builder .modal-content {
   background: #fff;
-  padding: 20px;
-  border-radius: 8px;
+  padding: 24px;
+  border-radius: 12px;
   max-width: 400px;
   width: 90%;
   text-align: center;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.2);
 }
 
 .builder .modal-footer {
@@ -36,11 +37,11 @@
   align-items: center;
   justify-content: center;
   gap: 0.55rem;
-  padding: 0.65rem 1.4rem;
+  padding: 0.75rem 1.6rem;
   border: 1px solid transparent;
   border-radius: 999px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.01em;
   line-height: 1.2;
@@ -127,14 +128,15 @@
 .settings-content textarea,
 .settings-content select {
   width: 100%;
-  padding: 8px 12px;
+  padding: 10px 12px;
   font-size: 14px;
   font-family: inherit;
   border: 1px solid rgba(51, 65, 85, 0.4);
-  border-radius: 4px;
+  border-radius: 8px;
   box-sizing: border-box;
-  background: rgba(15, 23, 42, 0.8);
+  background: rgba(15, 23, 42, 0.9);
   color: #e2e8f0;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .settings-content .color-swatch {height:32px; width:32px; display:inline-block; border-radius:50%; bordeR:1px solid #ccc;}
 
@@ -151,8 +153,8 @@
 .settings-content textarea:focus,
 .settings-content select:focus {
   outline: none;
-  border-color: #3182ce;
-  box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.2);
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.25);
 }
 
 .canvas-container.preview-desktop .page-template.default-page {
@@ -190,4 +192,3 @@
     padding: 20px;
   }
 }
-
