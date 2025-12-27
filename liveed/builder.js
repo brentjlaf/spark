@@ -365,13 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const history = initUndoRedo({ canvas, onChange: scheduleSave, maxHistory: 15 });
   const undoBtn = palette.querySelector('.undo-btn');
   const redoBtn = palette.querySelector('.redo-btn');
-  const historyBtn = palette.querySelector('.page-history-btn');
   const saveBtn = palette.querySelector('.manual-save-btn');
-  const historyPanel = document.getElementById('historyPanel');
-  if (historyPanel) {
-    historyPanel.classList.remove('open');
-    historyPanel.style.left = '0px';
-  }
   if (undoBtn) undoBtn.addEventListener('click', () => history.undo());
   if (redoBtn) redoBtn.addEventListener('click', () => history.redo());
   if (saveBtn)
@@ -379,54 +373,6 @@ document.addEventListener('DOMContentLoaded', () => {
       clearTimeout(saveTimer);
       savePage();
     });
-  if (historyBtn && historyPanel) {
-    const closeBtn = historyPanel.querySelector('.close-btn');
-    const renderHistory = () => {
-      fetch(
-        window.builderBase + '/liveed/get-history.php?id=' + window.builderPageId
-      )
-        .then((r) => {
-          if (!r.ok) throw new Error('fetch failed');
-          return r.json();
-        })
-        .then((data) => {
-          const cont = historyPanel.querySelector('.history-content');
-          cont.innerHTML = '';
-          if (data.history && data.history.length) {
-            const ul = document.createElement('ul');
-            const entries = data.history
-              .slice()
-              .sort((a, b) => b.time - a.time);
-            entries.forEach((h) => {
-              const li = document.createElement('li');
-              const d = new Date(h.time * 1000);
-              const action = h.action ? ' - ' + h.action : '';
-              li.textContent = d.toLocaleString() + ' - ' + h.user + action;
-              ul.appendChild(li);
-            });
-            cont.appendChild(ul);
-          } else {
-            cont.textContent = 'No history yet.';
-          }
-        })
-        .catch(() => {
-          const cont = historyPanel.querySelector('.history-content');
-          cont.textContent = 'Error loading history.';
-        });
-    };
-    historyBtn.addEventListener('click', () => {
-      const rect = palette.getBoundingClientRect();
-      historyPanel.style.left = rect.right + 'px';
-      historyPanel.style.top = rect.top + 'px';
-      renderHistory();
-      historyPanel.classList.add('open');
-    });
-    if (closeBtn)
-      closeBtn.addEventListener('click', () => {
-        historyPanel.classList.remove('open');
-        historyPanel.style.left = '0px';
-      });
-  }
   initWysiwyg(canvas, true);
   initMediaPicker({ basePath: window.builderBase });
   window.openMediaPicker = openMediaPicker;

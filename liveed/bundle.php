@@ -6,7 +6,6 @@ $base = __DIR__;
 
 $cssFiles = [
     "$base/css/builder-core.css",
-    "$base/css/builder-history.css",
     "$base/css/builder-settings.css",
     "$base/css/builder-palette.css",
     "$base/css/builder-modal.css",
