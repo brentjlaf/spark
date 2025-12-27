@@ -185,6 +185,7 @@ function extract_search_terms($query)
     foreach ($matches[0] as $i => $match) {
         $term = $matches[1][$i] ?? $matches[2][$i] ?? $matches[3][$i] ?? '';
         $term = trim($term);
+        $term = trim(preg_replace('/^[^a-z0-9]+|[^a-z0-9]+$/i', '', $term));
         if ($term !== '' && $term !== 'and') {
             $terms[] = $term;
         }
@@ -202,14 +203,23 @@ function extract_search_terms($query)
 function score_entry_against_terms(array $entry, array $terms)
 {
     $score = 0.0;
+    $matched = 0;
     foreach ($terms as $term) {
         $termScore = match_term_against_entry($entry, $term);
         if ($termScore === null) {
-            return null;
+            continue;
         }
+        $matched++;
         $score += $termScore;
     }
-    return $score;
+    if ($matched === 0) {
+        return null;
+    }
+
+    $missing = count($terms) - $matched;
+    $coveragePenalty = $missing * 2.5;
+    $averageScore = $score / $matched;
+    return $averageScore + $coveragePenalty;
 }
 
 /**
@@ -223,9 +233,15 @@ function match_term_against_entry(array $entry, $term)
 {
     $bestScore = null;
     $term = strtolower($term);
+    $termLength = strlen($term);
+    if ($termLength === 0) {
+        return null;
+    }
+    $isPhrase = strpos($term, ' ') !== false;
+    $allowFuzzy = !$isPhrase && $termLength >= 3;
     $threshold = max(1, (int) ceil(strlen($term) * 0.4));
 
-    $wordDistance = minimum_levenshtein_distance($term, $entry['words']);
+    $wordDistance = $allowFuzzy ? minimum_levenshtein_distance($term, $entry['words']) : null;
 
     foreach ($entry['fields'] as $field) {
         $text = $field['value'];
@@ -238,6 +254,10 @@ function match_term_against_entry(array $entry, $term)
             if ($bestScore === null || $score < $bestScore) {
                 $bestScore = $score;
             }
+            continue;
+        }
+
+        if (!$allowFuzzy) {
             continue;
         }
 

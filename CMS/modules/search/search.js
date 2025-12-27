@@ -49,6 +49,24 @@
         return normaliseTerm(term).toLowerCase();
     }
 
+    function scoreMatch(value, query) {
+        const target = lower(value);
+        if (!query) {
+            return 0;
+        }
+        if (target === query) {
+            return -6;
+        }
+        if (target.startsWith(query)) {
+            return -4;
+        }
+        if (target.indexOf(query) !== -1) {
+            return -2;
+        }
+        const distance = levenshtein(query, target.slice(0, Math.max(query.length, 3)));
+        return Math.max(0, distance);
+    }
+
     const SparkSearch = {
         $input: null,
         $container: null,
@@ -216,6 +234,7 @@
                     label: `${item.term} · Recent`,
                     type: 'history',
                     count: item.count,
+                    score: scoreMatch(item.term, query),
                 });
             });
 
@@ -241,7 +260,24 @@
                     value: item.value,
                     label: item.label || item.value,
                     type: item.type || '',
+                    score: scoreMatch(item.value, query),
                 });
+            });
+
+            suggestions.sort((a, b) => {
+                if (a.score === b.score) {
+                    if (a.type === 'history' && b.type === 'history') {
+                        return (b.count || 0) - (a.count || 0);
+                    }
+                    if (a.type === 'history') {
+                        return -1;
+                    }
+                    if (b.type === 'history') {
+                        return 1;
+                    }
+                    return a.value.localeCompare(b.value);
+                }
+                return a.score - b.score;
             });
 
             this.currentSuggestions = suggestions.slice(0, MAX_SUGGESTIONS);
