@@ -1,8 +1,8 @@
 <?php
 // Shared Tailwind assets for admin-facing pages.
 ?>
+<script src="https://cdn.tailwindcss.com"></script>
 <script>
-window.tailwind = window.tailwind || {};
 tailwind.config = {
     theme: {
         extend: {
@@ -28,7 +28,6 @@ tailwind.config = {
     }
 };
 </script>
-<script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
