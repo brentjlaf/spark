@@ -51,6 +51,7 @@ tailwind.config = {
   .nav-item { @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold hover:bg-primary-50 hover:text-primary-700 cursor-pointer; }
   .nav-item.active { @apply bg-primary-600 text-white shadow-sm; }
   .nav-item .nav-icon { @apply w-5 h-5 text-slate-400 flex items-center justify-center; }
+  .nav-item:hover .nav-icon { @apply text-primary-700; }
   .nav-item.active .nav-icon { @apply text-white; }
   .nav-text a { @apply block w-full text-inherit no-underline; }
   .sidebar-overlay { @apply fixed inset-0 bg-slate-900/40 z-30 hidden; }
