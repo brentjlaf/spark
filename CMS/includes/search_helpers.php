@@ -68,11 +68,11 @@ function get_search_suggestions($limit = 60)
     foreach ($index as $entry) {
         $candidates = $entry['suggestions'];
         foreach ($candidates as $candidate) {
-            $value = strtolower($candidate['value']);
+            $value = search_normalize_text($candidate['value']);
             if ($value === '') {
                 continue;
             }
-            $key = $value . '|' . strtolower($candidate['type']);
+            $key = $value . '|' . search_normalize_text($candidate['type']);
             if (isset($seen[$key])) {
                 continue;
             }
@@ -102,10 +102,11 @@ function perform_search($query, array $filters = [])
 {
     $query = trim((string) $query);
     $index = get_search_index();
+    $indexCounts = get_index_type_counts($index);
     if ($query === '') {
         return [
             'results' => [],
-            'counts' => ['Page' => 0, 'Post' => 0, 'Media' => 0],
+            'counts' => $indexCounts,
         ];
     }
 
@@ -113,14 +114,14 @@ function perform_search($query, array $filters = [])
     if (!$terms) {
         return [
             'results' => [],
-            'counts' => ['Page' => 0, 'Post' => 0, 'Media' => 0],
+            'counts' => $indexCounts,
         ];
     }
 
     $selectedTypes = [];
     if (!empty($filters['types']) && is_array($filters['types'])) {
         foreach ($filters['types'] as $type) {
-            $type = strtolower(trim($type));
+            $type = search_normalize_text(trim($type));
             if ($type !== '') {
                 $selectedTypes[] = $type;
             }
@@ -131,11 +132,6 @@ function perform_search($query, array $filters = [])
     $typeCounts = ['Page' => 0, 'Post' => 0, 'Media' => 0];
 
     foreach ($index as $entry) {
-        $typeKey = strtolower($entry['type']);
-        if ($selectedTypes && !in_array($typeKey, $selectedTypes, true)) {
-            continue;
-        }
-
         $score = score_entry_against_terms($entry, $terms);
         if ($score === null) {
             continue;
@@ -152,10 +148,16 @@ function perform_search($query, array $filters = [])
             'record' => $entry['record'],
         ];
 
-        $results[] = $result;
         if (isset($typeCounts[$entry['type']])) {
             $typeCounts[$entry['type']]++;
         }
+
+        $typeKey = search_normalize_text($entry['type']);
+        if ($selectedTypes && !in_array($typeKey, $selectedTypes, true)) {
+            continue;
+        }
+
+        $results[] = $result;
     }
 
     usort($results, function ($a, $b) {
@@ -179,13 +181,13 @@ function perform_search($query, array $filters = [])
  */
 function extract_search_terms($query)
 {
-    $query = strtolower($query);
-    preg_match_all('/"([^"]+)"|\'([^\']+)\'|(\S+)/', $query, $matches);
+    $query = search_normalize_text($query);
+    preg_match_all('/"([^"]+)"|\'([^\']+)\'|(\S+)/u', $query, $matches);
     $terms = [];
     foreach ($matches[0] as $i => $match) {
         $term = $matches[1][$i] ?? $matches[2][$i] ?? $matches[3][$i] ?? '';
         $term = trim($term);
-        $term = trim(preg_replace('/^[^a-z0-9]+|[^a-z0-9]+$/i', '', $term));
+        $term = trim(preg_replace('/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/u', '', $term));
         if ($term !== '' && $term !== 'and') {
             $terms[] = $term;
         }
@@ -232,7 +234,7 @@ function score_entry_against_terms(array $entry, array $terms)
 function match_term_against_entry(array $entry, $term)
 {
     $bestScore = null;
-    $term = strtolower($term);
+    $term = search_normalize_text($term);
     $termLength = strlen($term);
     if ($termLength === 0) {
         return null;
@@ -376,10 +378,10 @@ function build_page_entry(array $page)
     ]));
 
     $fields = [
-        ['name' => 'title', 'value' => strtolower((string) ($page['title'] ?? '')), 'weight' => 1],
-        ['name' => 'slug', 'value' => strtolower((string) ($page['slug'] ?? '')), 'weight' => 1.5],
-        ['name' => 'metadata', 'value' => strtolower($metadata), 'weight' => 2],
-        ['name' => 'content', 'value' => strtolower($plain), 'weight' => 3],
+        ['name' => 'title', 'value' => search_normalize_text((string) ($page['title'] ?? '')), 'weight' => 1],
+        ['name' => 'slug', 'value' => search_normalize_text((string) ($page['slug'] ?? '')), 'weight' => 1.5],
+        ['name' => 'metadata', 'value' => search_normalize_text($metadata), 'weight' => 2],
+        ['name' => 'content', 'value' => search_normalize_text($plain), 'weight' => 3],
     ];
 
     return [
@@ -413,10 +415,10 @@ function build_post_entry(array $post)
     ]));
 
     $fields = [
-        ['name' => 'title', 'value' => strtolower((string) ($post['title'] ?? '')), 'weight' => 1],
-        ['name' => 'slug', 'value' => strtolower((string) ($post['slug'] ?? '')), 'weight' => 1.5],
-        ['name' => 'metadata', 'value' => strtolower($metadata), 'weight' => 2],
-        ['name' => 'content', 'value' => strtolower($plain), 'weight' => 3],
+        ['name' => 'title', 'value' => search_normalize_text((string) ($post['title'] ?? '')), 'weight' => 1],
+        ['name' => 'slug', 'value' => search_normalize_text((string) ($post['slug'] ?? '')), 'weight' => 1.5],
+        ['name' => 'metadata', 'value' => search_normalize_text($metadata), 'weight' => 2],
+        ['name' => 'content', 'value' => search_normalize_text($plain), 'weight' => 3],
     ];
 
     return [
@@ -466,10 +468,10 @@ function build_media_entry(array $media, array $pages, array $posts)
     $plain = trim(implode(' ', $context));
 
     $fields = [
-        ['name' => 'name', 'value' => strtolower($name), 'weight' => 1],
-        ['name' => 'file', 'value' => strtolower($filename), 'weight' => 1.5],
-        ['name' => 'tags', 'value' => strtolower($tags), 'weight' => 2],
-        ['name' => 'context', 'value' => strtolower($plain), 'weight' => 2.5],
+        ['name' => 'name', 'value' => search_normalize_text($name), 'weight' => 1],
+        ['name' => 'file', 'value' => search_normalize_text($filename), 'weight' => 1.5],
+        ['name' => 'tags', 'value' => search_normalize_text($tags), 'weight' => 2],
+        ['name' => 'context', 'value' => search_normalize_text($plain), 'weight' => 2.5],
     ];
 
     return [
@@ -587,11 +589,11 @@ function extract_words_from_fields(array $fields)
 {
     $words = [];
     foreach ($fields as $field) {
-        $value = strtolower((string) $field['value']);
+        $value = search_normalize_text((string) $field['value']);
         if ($value === '') {
             continue;
         }
-        $parts = preg_split('/[^a-z0-9]+/', $value);
+        $parts = preg_split('/[^\p{L}\p{N}]+/u', $value);
         foreach ($parts as $part) {
             if ($part === '') {
                 continue;
@@ -671,7 +673,7 @@ function push_search_history($term)
         $_SESSION['search_history'] = [];
     }
 
-    $key = strtolower($term);
+    $key = search_normalize_text($term);
     $records = $_SESSION['search_history'];
     if (!isset($records[$key])) {
         $records[$key] = [
@@ -743,5 +745,43 @@ function get_search_history_terms($limit = 10)
     return array_map(function ($item) {
         return $item['term'];
     }, get_search_history($limit));
+}
+
+/**
+ * Normalize text for searching (lowercase, trim).
+ *
+ * @param string $value
+ * @return string
+ */
+function search_normalize_text($value)
+{
+    $value = trim((string) $value);
+    if ($value === '') {
+        return '';
+    }
+    if (function_exists('mb_strtolower')) {
+        return mb_strtolower($value, 'UTF-8');
+    }
+    return strtolower($value);
+}
+
+/**
+ * Return index counts for each content type.
+ *
+ * @param array $index
+ * @return array
+ */
+function get_index_type_counts(array $index)
+{
+    $counts = ['Page' => 0, 'Post' => 0, 'Media' => 0];
+    foreach ($index as $entry) {
+        if (!isset($entry['type'])) {
+            continue;
+        }
+        if (isset($counts[$entry['type']])) {
+            $counts[$entry['type']]++;
+        }
+    }
+    return $counts;
 }
 ?>
