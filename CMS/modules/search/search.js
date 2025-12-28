@@ -185,33 +185,42 @@
         },
 
         loadLocalHistory() {
-            if (!window.localStorage) {
+            try {
+                if (!window.localStorage) {
+                    return [];
+                }
+                const raw = window.localStorage.getItem(STORAGE_KEY);
+                if (!raw) {
+                    return [];
+                }
+                const parsed = parseJSON(raw);
+                return parsed.map((term) => ({
+                    term,
+                    count: 1,
+                    last: Date.now(),
+                }));
+            } catch (error) {
                 return [];
             }
-            const raw = window.localStorage.getItem(STORAGE_KEY);
-            if (!raw) {
-                return [];
-            }
-            const parsed = parseJSON(raw);
-            return parsed.map((term) => ({
-                term,
-                count: 1,
-                last: Date.now(),
-            }));
         },
 
         persistLocalHistory() {
-            if (!window.localStorage) {
-                return;
+            try {
+                if (!window.localStorage) {
+                    return;
+                }
+                const terms = this.history.map((item) => item.term).slice(0, MAX_HISTORY);
+                window.localStorage.setItem(STORAGE_KEY, JSON.stringify(terms));
+            } catch (error) {
+                // Ignore storage errors (e.g., private mode).
             }
-            const terms = this.history.map((item) => item.term).slice(0, MAX_HISTORY);
-            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(terms));
         },
 
         showSuggestions(term) {
             const query = lower(term);
             const suggestions = [];
             const used = new Set();
+            const usedTerms = new Set();
 
             this.history.forEach((item) => {
                 if (!item.term) {
@@ -229,6 +238,7 @@
                     return;
                 }
                 used.add(key);
+                usedTerms.add(valueLower);
                 suggestions.push({
                     value: item.term,
                     label: `${item.term} · Recent`,
@@ -243,6 +253,9 @@
                     return;
                 }
                 const candidate = lower(item.value);
+                if (usedTerms.has(candidate)) {
+                    return;
+                }
                 if (query) {
                     if (candidate.indexOf(query) === -1) {
                         const distance = levenshtein(query, candidate.slice(0, Math.max(query.length, 3)));
