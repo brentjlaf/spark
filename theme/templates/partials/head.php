@@ -19,8 +19,6 @@ if (is_string($faviconSetting) && $faviconSetting !== '' && preg_match('#^https?
         <!-- Favicon -->
         <link rel="shortcut icon" href="<?php echo htmlspecialchars($favicon); ?>" type="image/x-icon"/>
 
-        <?php include __DIR__ . '/tailwind.php'; ?>
-
         <!-- Theme Styles -->
         <link rel="stylesheet" href="<?php echo htmlspecialchars($themeBase); ?>/css/root.css">
         <link rel="stylesheet" href="<?php echo htmlspecialchars($themeBase); ?>/css/skin.css">
