@@ -120,6 +120,7 @@ $(function(){
         const $cards = $metricsGrid.find('.dashboard-overview-card');
         if (isLoading) {
             $cards.addClass('is-loading');
+            $cards.removeClass('is-error');
             $cards.find('[data-stat]').attr('aria-hidden', 'true');
         } else {
             $cards.removeClass('is-loading');
@@ -130,6 +131,17 @@ $(function(){
             const message = statusText || (isLoading ? metricsMessages.loading : metricsMessages.updated);
             $metricsStatus.text(message);
         }
+    }
+
+    function setMetricsErrorState() {
+        if (!$metricsGrid.length) {
+            return;
+        }
+
+        const $cards = $metricsGrid.find('.dashboard-overview-card');
+        $cards.addClass('is-error');
+        $cards.find('.a11y-overview-value').text('—');
+        $cards.find('.dashboard-overview-meta').text('Unavailable');
     }
 
     const statusClassMap = {
@@ -396,6 +408,7 @@ $(function(){
             .fail(function(){
                 updateLastUpdated(null);
                 renderModuleSummaries([], { message: 'Unable to load module data' });
+                setMetricsErrorState();
                 setMetricsLoading(false, metricsMessages.error);
             })
             .always(function(){
