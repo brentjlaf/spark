@@ -76,12 +76,16 @@ function read_json_file($file) {
     $schema = cms_schema_for_json($file);
     $isUserFile = basename($file) === 'users.json';
 
-    if ($schema && is_database_configured()) {
-        return read_table_as_array($schema);
-    }
+    if ($schema) {
+        if (is_database_configured()) {
+            return read_table_as_array($schema);
+        }
 
-    if ($isUserFile) {
-        render_installation_required('User accounts require a configured database. Please run the installer to finish setup.');
+        $message = $isUserFile
+            ? 'User accounts require a configured database. Please run the installer to finish setup.'
+            : 'Database storage is required for CMS content. Please configure your database credentials and rerun this action.';
+        render_installation_required($message);
+        return [];
     }
 
     if (!file_exists($file)) {
@@ -102,19 +106,23 @@ function write_json_file($file, $data) {
     $schema = cms_schema_for_json($file);
     $isUserFile = basename($file) === 'users.json';
 
-    if ($schema && is_database_configured()) {
-        $pdo = get_db_connection();
-        if (!cms_table_exists($pdo, $schema['table'])) {
-            cms_ensure_table($pdo, $schema, is_array($data) ? $data : []);
+    if ($schema) {
+        if (is_database_configured()) {
+            $pdo = get_db_connection();
+            if (!cms_table_exists($pdo, $schema['table'])) {
+                cms_ensure_table($pdo, $schema, is_array($data) ? $data : []);
+            }
+            $persisted = write_table_from_array($schema, $data);
+            if ($persisted) {
+                return true;
+            }
         }
-        $persisted = write_table_from_array($schema, $data);
-        if ($persisted) {
-            return true;
-        }
-    }
 
-    if ($isUserFile) {
-        render_installation_required('User accounts must be stored in the database. Please configure your database credentials and rerun this action.');
+        $message = $isUserFile
+            ? 'User accounts must be stored in the database. Please configure your database credentials and rerun this action.'
+            : 'Database storage is required for CMS content. Please configure your database credentials and rerun this action.';
+        render_installation_required($message);
+        return false;
     }
 
     return file_put_contents($file, json_encode($data, JSON_PRETTY_PRINT)) !== false;
