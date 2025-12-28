@@ -73,6 +73,80 @@ if (substr($scriptBase, -4) === '/CMS') {
 $scriptBase = rtrim($scriptBase, '/');
 
 $templateDir = realpath(__DIR__ . '/../../../theme/templates/pages');
+$cacheFile = $dataDirectory . '/dashboard_cache.json';
+
+function dashboard_collect_template_mtimes(?string $templateDir): array
+{
+    if (!$templateDir || !is_dir($templateDir)) {
+        return [];
+    }
+
+    $mtimes = [];
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($templateDir, FilesystemIterator::SKIP_DOTS)
+    );
+    foreach ($iterator as $file) {
+        if (!$file->isFile()) {
+            continue;
+        }
+        $path = $file->getPathname();
+        $relativePath = ltrim(substr($path, strlen($templateDir)), DIRECTORY_SEPARATOR);
+        $mtimes[$relativePath] = $file->getMTime();
+    }
+
+    ksort($mtimes);
+
+    return $mtimes;
+}
+
+function dashboard_load_cache(string $cacheFile): ?array
+{
+    if (!is_file($cacheFile)) {
+        return null;
+    }
+
+    $contents = @file_get_contents($cacheFile);
+    if ($contents === false) {
+        return null;
+    }
+
+    $decoded = json_decode($contents, true);
+    if (!is_array($decoded)) {
+        return null;
+    }
+
+    return $decoded;
+}
+
+function dashboard_cache_is_valid(?array $cache, array $signature): bool
+{
+    if (!is_array($cache) || !isset($cache['signature']) || !is_array($cache['signature'])) {
+        return false;
+    }
+
+    if (($cache['signature']['pagesMtime'] ?? null) !== ($signature['pagesMtime'] ?? null)) {
+        return false;
+    }
+
+    if (($cache['signature']['templates'] ?? null) !== ($signature['templates'] ?? null)) {
+        return false;
+    }
+
+    $requiredKeys = [
+        'accessibilitySummary',
+        'seoSummary',
+        'speedSummary',
+        'analyticsSummary',
+        'largestPage',
+    ];
+    foreach ($requiredKeys as $key) {
+        if (!isset($cache[$key]) || !is_array($cache[$key])) {
+            return false;
+        }
+    }
+
+    return true;
+}
 
 function dashboard_capture_template_html(string $templateFile, array $settings, array $menus, string $scriptBase): string {
     $page = ['content' => '{{CONTENT}}'];
@@ -247,7 +321,13 @@ function dashboard_status_label(string $status): string
     }
 }
 
-$libxmlPrevious = libxml_use_internal_errors(true);
+$cacheSignature = [
+    'pagesMtime' => is_file($pagesFile) ? filemtime($pagesFile) : null,
+    'templates' => dashboard_collect_template_mtimes($templateDir),
+];
+$dashboardCache = dashboard_load_cache($cacheFile);
+$cacheIsValid = dashboard_cache_is_valid($dashboardCache, $cacheSignature);
+$cacheGeneratedAt = null;
 
 $accessibilitySummary = [
     'accessible' => 0,
@@ -266,134 +346,160 @@ $seoSummary = [
     'issues' => 0,
 ];
 
-$slugCounts = [];
-foreach ($pages as $page) {
-    $slug = strtolower(trim((string)($page['slug'] ?? '')));
-    if ($slug === '') {
-        continue;
-    }
-    if (!isset($slugCounts[$slug])) {
-        $slugCounts[$slug] = 0;
-    }
-    $slugCounts[$slug]++;
-}
-
-$genericLinkTerms = [
-    'click here',
-    'read more',
-    'learn more',
-    'here',
-    'more',
-    'this page',
+$speedSummary = [
+    'fast' => 0,
+    'monitor' => 0,
+    'slow' => 0,
 ];
 
-foreach ($pages as $page) {
-    $pageHtml = dashboard_build_page_html($page, $settings, $menus, $scriptBase, $templateDir);
+$analyticsSummary = [
+    'totalViews' => 0,
+    'averageViews' => 0,
+    'topPage' => null,
+    'topViews' => 0,
+];
 
-    $doc = new DOMDocument();
-    $loaded = trim($pageHtml) !== '' && $doc->loadHTML('<?xml encoding="utf-8" ?>' . $pageHtml);
+$largestPage = ['title' => null, 'length' => 0];
 
-    $missingAlt = 0;
-    $genericLinks = 0;
-    $landmarks = 0;
-    $h1Count = 0;
-    $seoIssues = 0;
+if ($cacheIsValid) {
+    $accessibilitySummary = $dashboardCache['accessibilitySummary'];
+    $seoSummary = $dashboardCache['seoSummary'];
+    $speedSummary = $dashboardCache['speedSummary'];
+    $analyticsSummary = $dashboardCache['analyticsSummary'];
+    $largestPage = $dashboardCache['largestPage'];
+    $cacheGeneratedAt = $dashboardCache['generatedAt'] ?? null;
+} else {
+    $libxmlPrevious = libxml_use_internal_errors(true);
 
-    if ($loaded) {
-        $images = $doc->getElementsByTagName('img');
-        foreach ($images as $img) {
-            $alt = trim($img->getAttribute('alt'));
-            if ($alt === '') {
-                $missingAlt++;
-            }
+    $slugCounts = [];
+    foreach ($pages as $page) {
+        $slug = strtolower(trim((string)($page['slug'] ?? '')));
+        if ($slug === '') {
+            continue;
         }
+        if (!isset($slugCounts[$slug])) {
+            $slugCounts[$slug] = 0;
+        }
+        $slugCounts[$slug]++;
+    }
 
-        $h1Count = $doc->getElementsByTagName('h1')->length;
+    $genericLinkTerms = [
+        'click here',
+        'read more',
+        'learn more',
+        'here',
+        'more',
+        'this page',
+    ];
 
-        $anchors = $doc->getElementsByTagName('a');
-        foreach ($anchors as $anchor) {
-            $text = strtolower(trim($anchor->textContent));
-            if ($text !== '') {
-                foreach ($genericLinkTerms as $term) {
-                    if ($text === $term) {
-                        $genericLinks++;
-                        break;
+    foreach ($pages as $page) {
+        $pageHtml = dashboard_build_page_html($page, $settings, $menus, $scriptBase, $templateDir);
+
+        $doc = new DOMDocument();
+        $loaded = trim($pageHtml) !== '' && $doc->loadHTML('<?xml encoding="utf-8" ?>' . $pageHtml);
+
+        $missingAlt = 0;
+        $genericLinks = 0;
+        $landmarks = 0;
+        $h1Count = 0;
+        $seoIssues = 0;
+
+        if ($loaded) {
+            $images = $doc->getElementsByTagName('img');
+            foreach ($images as $img) {
+                $alt = trim($img->getAttribute('alt'));
+                if ($alt === '') {
+                    $missingAlt++;
+                }
+            }
+
+            $h1Count = $doc->getElementsByTagName('h1')->length;
+
+            $anchors = $doc->getElementsByTagName('a');
+            foreach ($anchors as $anchor) {
+                $text = strtolower(trim($anchor->textContent));
+                if ($text !== '') {
+                    foreach ($genericLinkTerms as $term) {
+                        if ($text === $term) {
+                            $genericLinks++;
+                            break;
+                        }
                     }
                 }
             }
+
+            $landmarkTags = ['main', 'nav', 'header', 'footer'];
+            foreach ($landmarkTags as $tag) {
+                $landmarks += $doc->getElementsByTagName($tag)->length;
+            }
         }
 
-        $landmarkTags = ['main', 'nav', 'header', 'footer'];
-        foreach ($landmarkTags as $tag) {
-            $landmarks += $doc->getElementsByTagName($tag)->length;
+        $issues = [];
+
+        if ($missingAlt > 0) {
+            $issues[] = 'missing_alt';
+            $accessibilitySummary['missing_alt'] += $missingAlt;
         }
-    }
 
-    $issues = [];
+        if ($h1Count === 0 || $h1Count > 1) {
+            $issues[] = 'h1_count';
+        }
 
-    if ($missingAlt > 0) {
-        $issues[] = 'missing_alt';
-        $accessibilitySummary['missing_alt'] += $missingAlt;
-    }
+        if ($genericLinks > 0) {
+            $issues[] = 'generic_links';
+        }
 
-    if ($h1Count === 0 || $h1Count > 1) {
-        $issues[] = 'h1_count';
-    }
+        if ($landmarks === 0) {
+            $issues[] = 'landmarks';
+        }
 
-    if ($genericLinks > 0) {
-        $issues[] = 'generic_links';
-    }
+        if (empty($issues)) {
+            $accessibilitySummary['accessible']++;
+        } else {
+            $accessibilitySummary['needs_review']++;
+        }
 
-    if ($landmarks === 0) {
-        $issues[] = 'landmarks';
-    }
+        $accessibilitySummary['issues'] += count($issues);
 
-    if (empty($issues)) {
-        $accessibilitySummary['accessible']++;
-    } else {
-        $accessibilitySummary['needs_review']++;
-    }
-
-    $accessibilitySummary['issues'] += count($issues);
-
-    $metaTitle = trim((string)($page['meta_title'] ?? ''));
-    if ($metaTitle === '') {
-        $seoSummary['missing_title']++;
-        $seoIssues++;
-    } else {
-        $titleLength = dashboard_strlen($metaTitle);
-        if ($titleLength > 60) {
-            $seoSummary['long_title']++;
+        $metaTitle = trim((string)($page['meta_title'] ?? ''));
+        if ($metaTitle === '') {
+            $seoSummary['missing_title']++;
             $seoIssues++;
+        } else {
+            $titleLength = dashboard_strlen($metaTitle);
+            if ($titleLength > 60) {
+                $seoSummary['long_title']++;
+                $seoIssues++;
+            }
         }
-    }
 
-    $metaDescription = trim((string)($page['meta_description'] ?? ''));
-    if ($metaDescription === '') {
-        $seoSummary['missing_description']++;
-        $seoIssues++;
-    } else {
-        $descriptionLength = dashboard_strlen($metaDescription);
-        if ($descriptionLength < 50 || $descriptionLength > 160) {
-            $seoSummary['description_length']++;
+        $metaDescription = trim((string)($page['meta_description'] ?? ''));
+        if ($metaDescription === '') {
+            $seoSummary['missing_description']++;
             $seoIssues++;
+        } else {
+            $descriptionLength = dashboard_strlen($metaDescription);
+            if ($descriptionLength < 50 || $descriptionLength > 160) {
+                $seoSummary['description_length']++;
+                $seoIssues++;
+            }
         }
+
+        if ($seoIssues === 0) {
+            $seoSummary['optimised']++;
+        }
+
+        $seoSummary['issues'] += $seoIssues;
     }
 
-    if ($seoIssues === 0) {
-        $seoSummary['optimised']++;
-    }
+    libxml_clear_errors();
+    libxml_use_internal_errors($libxmlPrevious);
 
-    $seoSummary['issues'] += $seoIssues;
-}
-
-libxml_clear_errors();
-libxml_use_internal_errors($libxmlPrevious);
-
-foreach ($slugCounts as $slug => $count) {
-    if ($count > 1) {
-        $seoSummary['duplicate_slugs'] += $count - 1;
-        $seoSummary['issues'] += $count - 1;
+    foreach ($slugCounts as $slug => $count) {
+        if ($count > 1) {
+            $seoSummary['duplicate_slugs'] += $count - 1;
+            $seoSummary['issues'] += $count - 1;
+        }
     }
 }
 
@@ -402,12 +508,6 @@ $accessibilityScore = $totalPages > 0 ? round(($accessibilitySummary['accessible
 
 $pagesPublished = 0;
 $pagesDraft = 0;
-$largestPage = ['title' => null, 'length' => 0];
-$speedSummary = [
-    'fast' => 0,
-    'monitor' => 0,
-    'slow' => 0,
-];
 
 foreach ($pages as $page) {
     if (!empty($page['published'])) {
@@ -416,21 +516,23 @@ foreach ($pages as $page) {
         $pagesDraft++;
     }
 
-    $content = strip_tags((string)($page['content'] ?? ''));
-    $length = strlen($content);
-    if ($length > $largestPage['length']) {
-        $largestPage = [
-            'title' => (string)($page['title'] ?? ''),
-            'length' => $length,
-        ];
-    }
+    if (!$cacheIsValid) {
+        $content = strip_tags((string)($page['content'] ?? ''));
+        $length = strlen($content);
+        if ($length > $largestPage['length']) {
+            $largestPage = [
+                'title' => (string)($page['title'] ?? ''),
+                'length' => $length,
+            ];
+        }
 
-    if ($length < 5000) {
-        $speedSummary['fast']++;
-    } elseif ($length < 15000) {
-        $speedSummary['monitor']++;
-    } else {
-        $speedSummary['slow']++;
+        if ($length < 5000) {
+            $speedSummary['fast']++;
+        } elseif ($length < 15000) {
+            $speedSummary['monitor']++;
+        } else {
+            $speedSummary['slow']++;
+        }
     }
 }
 
@@ -533,13 +635,31 @@ foreach ($pages as $page) {
     }
 }
 
+if (!$cacheIsValid) {
+    $analyticsSummary = [
+        'totalViews' => $views,
+        'averageViews' => $totalPages > 0 ? (int)round($views / $totalPages) : 0,
+        'topPage' => $topPage['title'] ?? null,
+        'topViews' => $topPage['views'] ?? 0,
+    ];
+}
 
-$analyticsSummary = [
-    'totalViews' => $views,
-    'averageViews' => $totalPages > 0 ? (int)round($views / $totalPages) : 0,
-    'topPage' => $topPage['title'] ?? null,
-    'topViews' => $topPage['views'] ?? 0,
-];
+if (!$cacheIsValid) {
+    $cacheGeneratedAt = gmdate(DATE_ATOM);
+    $cachePayload = [
+        'signature' => $cacheSignature,
+        'generatedAt' => $cacheGeneratedAt,
+        'accessibilitySummary' => $accessibilitySummary,
+        'seoSummary' => $seoSummary,
+        'speedSummary' => $speedSummary,
+        'analyticsSummary' => $analyticsSummary,
+        'largestPage' => $largestPage,
+    ];
+
+    if (is_dir($dataDirectory)) {
+        @file_put_contents($cacheFile, json_encode($cachePayload, JSON_PRETTY_PRINT));
+    }
+}
 
 $eventsTotal = count($events);
 $eventsPublished = 0;
@@ -900,6 +1020,8 @@ usort($moduleSummaries, function (array $a, array $b) use ($statusPriority): int
     return $priorityA <=> $priorityB;
 });
 
+$generatedAt = $cacheGeneratedAt ?? gmdate(DATE_ATOM);
+
 $data = [
     'pages' => $totalPages,
     'pagesPublished' => $pagesPublished,
@@ -953,7 +1075,7 @@ $data = [
     'seoDuplicateSlugs' => $seoSummary['duplicate_slugs'],
     'seoIssues' => $seoSummary['issues'],
     'moduleSummaries' => $moduleSummaries,
-    'generatedAt' => gmdate(DATE_ATOM),
+    'generatedAt' => $generatedAt,
 ];
 
 header('Content-Type: application/json');
