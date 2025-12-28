@@ -368,6 +368,14 @@ $(function(){
             updateText('#statViewsAverage, [data-stat="views-average"]', data.analyticsAvgViews, function(value){
                 return `Average per page: ${formatNumber(value || 0)}`;
             });
+            updateText('#statViewsTopPage, [data-stat="views-top-page"]', [data.analyticsTopPage, data.analyticsTopViews], function(values){
+                const title = values[0];
+                const views = values[1];
+                if (!title) {
+                    return 'No views recorded yet';
+                }
+                return `Top page: ${title} (${formatNumber(views || 0)})`;
+            });
 
             updateText('#statAccessibilityScore, [data-stat="accessibility-score"]', data.accessibilityScore, formatPercent);
             updateText('#statAccessibilityBreakdown, [data-stat="accessibility-breakdown"]', [data.accessibilityCompliant, data.accessibilityNeedsReview], function(values){

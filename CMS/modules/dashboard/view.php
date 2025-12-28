@@ -67,6 +67,7 @@
                         <div class="a11y-overview-value" data-stat="views">0</div>
                         <div class="a11y-overview-label">Total Views</div>
                         <div class="dashboard-overview-meta" data-stat="views-average">Average per page: 0</div>
+                        <div class="dashboard-overview-meta" data-stat="views-top-page">No views recorded yet</div>
                     </div>
                 </div>
                 <div class="a11y-overview-card dashboard-overview-card">
