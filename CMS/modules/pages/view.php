@@ -253,16 +253,15 @@ if ($homepagePageData !== null) {
                         data-view="list">
                         <td class="pages-list-cell pages-list-cell--title" data-label="Page">
                             <div class="pages-list-title">
-                                <span class="pages-list-title-text"><?php echo htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></span>
+                                <span class="pages-list-title-text">
+                                    <?php if ($isHomepageRow): ?>
+                                        <i class="fa-solid fa-house pages-list-title-icon pages-list-title-icon--home" aria-hidden="true"></i>
+                                    <?php endif; ?>
+                                    <?php echo htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>
+                                </span>
                                 <span class="pages-list-slug"><?php echo '/' . htmlspecialchars($slug, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></span>
                             </div>
                             <div class="pages-list-badges">
-                                <?php if ($isHomepageRow): ?>
-                                    <span class="pages-card__badge pages-card__badge--home">
-                                        <i class="fa-solid fa-house" aria-hidden="true"></i>
-                                        Homepage
-                                    </span>
-                                <?php endif; ?>
                                 <?php if ($isRestricted): ?>
                                     <span class="pages-card__badge pages-card__badge--restricted">
                                         <i class="fa-solid fa-lock" aria-hidden="true"></i>
