@@ -591,8 +591,12 @@ if ($totalPages === 0) {
     $pagesStatus = 'warning';
 }
 $pagesTrend = $pagesDraft > 0
-    ? dashboard_format_number($pagesDraft) . ' drafts awaiting review'
-    : 'All pages published';
+    ? [
+        'template' => '{drafts} drafts awaiting review',
+        'values' => ['drafts' => $pagesDraft],
+        'formats' => ['drafts' => 'number'],
+    ]
+    : ['text' => 'All pages published'];
 $pagesCta = $totalPages === 0
     ? 'Create your first page'
     : ($pagesDraft > 0 ? 'Review drafts' : 'Manage pages');
@@ -600,8 +604,12 @@ $pagesCta = $totalPages === 0
 $mediaCount = count($media);
 $mediaStatus = $mediaCount === 0 ? 'urgent' : 'ok';
 $mediaTrend = $mediaCount === 0
-    ? 'Library is empty'
-    : dashboard_format_bytes($mediaTotalSize) . ' stored';
+    ? ['text' => 'Library is empty']
+    : [
+        'template' => '{size} stored',
+        'values' => ['size' => $mediaTotalSize],
+        'formats' => ['size' => 'bytes'],
+    ];
 $mediaCta = $mediaCount === 0 ? 'Upload media' : 'Open media library';
 
 $postsTotal = count($posts);
@@ -614,22 +622,38 @@ if ($postsTotal === 0) {
     $blogsStatus = 'warning';
 }
 $blogsTrend = $postsDraft > 0
-    ? dashboard_format_number($postsDraft) . ' drafts awaiting publication'
+    ? [
+        'template' => '{drafts} drafts awaiting publication',
+        'values' => ['drafts' => $postsDraft],
+        'formats' => ['drafts' => 'number'],
+    ]
     : ($postsScheduled > 0
-        ? dashboard_format_number($postsScheduled) . ' posts scheduled'
-        : 'Publishing cadence on track');
+        ? [
+            'template' => '{scheduled} posts scheduled',
+            'values' => ['scheduled' => $postsScheduled],
+            'formats' => ['scheduled' => 'number'],
+        ]
+        : ['text' => 'Publishing cadence on track']);
 $blogsCta = $postsTotal === 0 ? 'Write your first post' : ($postsDraft > 0 ? 'Publish drafts' : 'Manage posts');
 
 $formsCount = count($forms);
 $formsStatus = $formsCount === 0 ? 'urgent' : 'ok';
-$formsTrend = 'Fields configured: ' . dashboard_format_number((int)$formsFields);
+$formsTrend = [
+    'template' => 'Fields configured: {fields}',
+    'values' => ['fields' => (int)$formsFields],
+    'formats' => ['fields' => 'number'],
+];
 $formsCta = $formsCount === 0 ? 'Create a form' : 'Review submissions';
 
 $menusCount = count($menus);
 $menusStatus = $menuItems === 0 ? 'urgent' : 'ok';
 $menusTrend = $menuItems === 0
-    ? 'No navigation items configured'
-    : dashboard_format_number((int)$menuItems) . ' navigation items live';
+    ? ['text' => 'No navigation items configured']
+    : [
+        'template' => '{items} navigation items live',
+        'values' => ['items' => (int)$menuItems],
+        'formats' => ['items' => 'number'],
+    ];
 $menusCta = $menusCount === 0 ? 'Create a menu' : 'Manage navigation';
 
 $usersCount = count($users);
@@ -637,12 +661,20 @@ $adminCount = (int)($usersByRole['admin'] ?? 0);
 $editorCount = (int)($usersByRole['editor'] ?? 0);
 $usersStatus = $adminCount === 0 ? 'urgent' : ($usersCount === 0 ? 'urgent' : 'ok');
 $usersTrend = $editorCount > 0
-    ? dashboard_format_number($editorCount) . ' editors collaborating'
-    : 'Invite collaborators to join';
+    ? [
+        'template' => '{editors} editors collaborating',
+        'values' => ['editors' => $editorCount],
+        'formats' => ['editors' => 'number'],
+    ]
+    : ['text' => 'Invite collaborators to join'];
 $usersCta = $adminCount === 0 ? 'Add an admin' : 'Manage team';
 
 $analyticsStatus = $analyticsSummary['totalViews'] === 0 ? 'warning' : 'ok';
-$analyticsTrend = 'Average views per page: ' . dashboard_format_number((int)$analyticsSummary['averageViews']);
+$analyticsTrend = [
+    'template' => 'Average views per page: {average}',
+    'values' => ['average' => (int)$analyticsSummary['averageViews']],
+    'formats' => ['average' => 'number'],
+];
 $analyticsCta = $analyticsSummary['totalViews'] === 0 ? 'Set up tracking' : 'Explore analytics';
 
 $accessibilityStatus = 'ok';
@@ -653,8 +685,12 @@ if ($accessibilitySummary['accessible'] === 0 && ($accessibilitySummary['needs_r
     $accessibilityStatus = 'urgent';
 }
 $accessibilityTrend = $accessibilitySummary['missing_alt'] > 0
-    ? dashboard_format_number($accessibilitySummary['missing_alt']) . ' images missing alt text'
-    : 'Alt text coverage looks good';
+    ? [
+        'template' => '{missing} images missing alt text',
+        'values' => ['missing' => $accessibilitySummary['missing_alt']],
+        'formats' => ['missing' => 'number'],
+    ]
+    : ['text' => 'Alt text coverage looks good'];
 $accessibilityCta = $accessibilitySummary['needs_review'] > 0 || $accessibilitySummary['missing_alt'] > 0
     ? 'Audit accessibility'
     : 'Review accessibility';
@@ -664,19 +700,31 @@ $logsTrend = $logsLastActivity ? 'Last activity ' . $logsLastActivity : 'No acti
 $logsCta = 'View history';
 
 $searchStatus = $searchIndexCount === 0 ? 'urgent' : 'ok';
-$searchTrend = 'Indexed records: ' . dashboard_format_number((int)$searchIndexCount);
+$searchTrend = [
+    'template' => 'Indexed records: {records}',
+    'values' => ['records' => (int)$searchIndexCount],
+    'formats' => ['records' => 'number'],
+];
 $searchCta = $searchIndexCount === 0 ? 'Build the search index' : 'Manage search index';
 
 $settingsStatus = $socialCount === 0 ? 'warning' : 'ok';
 $settingsTrend = $socialCount === 0
-    ? 'No social links configured'
-    : dashboard_format_number((int)$socialCount) . ' social links live';
+    ? ['text' => 'No social links configured']
+    : [
+        'template' => '{links} social links live',
+        'values' => ['links' => (int)$socialCount],
+        'formats' => ['links' => 'number'],
+    ];
 $settingsCta = $socialCount === 0 ? 'Add social links' : 'Adjust settings';
 
 $sitemapStatus = $sitemapEntries === 0 ? 'warning' : 'ok';
 $sitemapTrend = $sitemapEntries === 0
-    ? 'Publish pages to populate the sitemap'
-    : dashboard_format_number((int)$sitemapEntries) . ' URLs ready for sitemap.xml';
+    ? ['text' => 'Publish pages to populate the sitemap']
+    : [
+        'template' => '{urls} URLs ready for sitemap.xml',
+        'values' => ['urls' => (int)$sitemapEntries],
+        'formats' => ['urls' => 'number'],
+    ];
 $sitemapCta = $sitemapEntries === 0 ? 'Publish pages' : 'Review sitemap';
 
 $speedStatus = 'ok';
@@ -685,7 +733,11 @@ if ($speedSummary['slow'] > 0) {
 } elseif ($speedSummary['monitor'] > 0) {
     $speedStatus = 'warning';
 }
-$speedTrend = 'Slow pages: ' . dashboard_format_number((int)$speedSummary['slow']);
+$speedTrend = [
+    'template' => 'Slow pages: {slow}',
+    'values' => ['slow' => (int)$speedSummary['slow']],
+    'formats' => ['slow' => 'number'],
+];
 $speedCta = $speedSummary['slow'] > 0 ? 'Optimise slow pages' : 'Review performance';
 
 $seoStatus = 'ok';
@@ -694,13 +746,25 @@ if ($seoSummary['missing_title'] > 0 || $seoSummary['missing_description'] > 0 |
 } elseif ($seoSummary['long_title'] > 0 || $seoSummary['description_length'] > 0) {
     $seoStatus = 'warning';
 }
-$seoTrend = 'Meta descriptions within best practice range';
+$seoTrend = ['text' => 'Meta descriptions within best practice range'];
 if ($seoSummary['duplicate_slugs'] > 0) {
-    $seoTrend = 'Duplicate slugs detected: ' . dashboard_format_number((int)$seoSummary['duplicate_slugs']);
+    $seoTrend = [
+        'template' => 'Duplicate slugs detected: {slugs}',
+        'values' => ['slugs' => (int)$seoSummary['duplicate_slugs']],
+        'formats' => ['slugs' => 'number'],
+    ];
 } elseif ($seoSummary['missing_description'] > 0 || $seoSummary['missing_title'] > 0) {
-    $seoTrend = dashboard_format_number((int)($seoSummary['missing_title'] + $seoSummary['missing_description'])) . ' meta fields missing';
+    $seoTrend = [
+        'template' => '{fields} meta fields missing',
+        'values' => ['fields' => (int)($seoSummary['missing_title'] + $seoSummary['missing_description'])],
+        'formats' => ['fields' => 'number'],
+    ];
 } elseif ($seoSummary['long_title'] > 0 || $seoSummary['description_length'] > 0) {
-    $seoTrend = 'Metadata length alerts: ' . dashboard_format_number((int)($seoSummary['long_title'] + $seoSummary['description_length']));
+    $seoTrend = [
+        'template' => 'Metadata length alerts: {alerts}',
+        'values' => ['alerts' => (int)($seoSummary['long_title'] + $seoSummary['description_length'])],
+        'formats' => ['alerts' => 'number'],
+    ];
 }
 $seoCta = $seoStatus === 'urgent' ? 'Fix SEO issues' : 'Review SEO settings';
 
@@ -710,12 +774,24 @@ if ($eventsTotal === 0) {
 } elseif ($eventsPublished === 0 || $eventsUpcoming === 0 || $eventsPendingOrders > 0) {
     $eventsStatus = 'warning';
 }
-$eventsSecondary = 'Upcoming: ' . dashboard_format_number($eventsUpcoming) . ' • Tickets sold: ' . dashboard_format_number($eventsTicketsSold);
+$eventsSecondary = [
+    'template' => 'Upcoming: {upcoming} • Tickets sold: {tickets}',
+    'values' => ['upcoming' => $eventsUpcoming, 'tickets' => $eventsTicketsSold],
+    'formats' => ['upcoming' => 'number', 'tickets' => 'number'],
+];
 $eventsTrend = $eventsPendingOrders > 0
-    ? 'Pending orders: ' . dashboard_format_number($eventsPendingOrders)
+    ? [
+        'template' => 'Pending orders: {pending}',
+        'values' => ['pending' => $eventsPendingOrders],
+        'formats' => ['pending' => 'number'],
+    ]
     : ($eventsRevenue > 0
-        ? 'Revenue: ' . dashboard_format_currency($eventsRevenue, $eventsCurrency)
-        : 'No ticket sales yet');
+        ? [
+            'template' => 'Revenue: {revenue}',
+            'values' => ['revenue' => $eventsRevenue],
+            'formats' => ['revenue' => ['type' => 'currency', 'currency' => $eventsCurrency]],
+        ]
+        : ['text' => 'No ticket sales yet']);
 $eventsCta = $eventsTotal === 0
     ? 'Create an event'
     : ($eventsPendingOrders > 0 ? 'Review event orders' : 'Open events');
@@ -724,8 +800,16 @@ $moduleSummaries = [
     [
         'id' => 'pages',
         'module' => 'Pages',
-        'primary' => dashboard_format_number($totalPages) . ' total pages',
-        'secondary' => 'Published: ' . dashboard_format_number($pagesPublished) . ' • Drafts: ' . dashboard_format_number($pagesDraft),
+        'primary' => [
+            'template' => '{total} total pages',
+            'values' => ['total' => $totalPages],
+            'formats' => ['total' => 'number'],
+        ],
+        'secondary' => [
+            'template' => 'Published: {published} • Drafts: {drafts}',
+            'values' => ['published' => $pagesPublished, 'drafts' => $pagesDraft],
+            'formats' => ['published' => 'number', 'drafts' => 'number'],
+        ],
         'status' => $pagesStatus,
         'statusLabel' => dashboard_status_label($pagesStatus),
         'trend' => $pagesTrend,
@@ -734,8 +818,16 @@ $moduleSummaries = [
     [
         'id' => 'media',
         'module' => 'Media',
-        'primary' => dashboard_format_number($mediaCount) . ' files',
-        'secondary' => 'Library size: ' . dashboard_format_bytes($mediaTotalSize),
+        'primary' => [
+            'template' => '{files} files',
+            'values' => ['files' => $mediaCount],
+            'formats' => ['files' => 'number'],
+        ],
+        'secondary' => [
+            'template' => 'Library size: {size}',
+            'values' => ['size' => $mediaTotalSize],
+            'formats' => ['size' => 'bytes'],
+        ],
         'status' => $mediaStatus,
         'statusLabel' => dashboard_status_label($mediaStatus),
         'trend' => $mediaTrend,
@@ -744,8 +836,24 @@ $moduleSummaries = [
     [
         'id' => 'blogs',
         'module' => 'Blogs',
-        'primary' => dashboard_format_number($postsTotal) . ' posts',
-        'secondary' => 'Published: ' . dashboard_format_number($postsByStatus['published']) . ' • Draft: ' . dashboard_format_number($postsByStatus['draft']) . ' • Scheduled: ' . dashboard_format_number($postsByStatus['scheduled']),
+        'primary' => [
+            'template' => '{posts} posts',
+            'values' => ['posts' => $postsTotal],
+            'formats' => ['posts' => 'number'],
+        ],
+        'secondary' => [
+            'template' => 'Published: {published} • Draft: {draft} • Scheduled: {scheduled}',
+            'values' => [
+                'published' => $postsByStatus['published'],
+                'draft' => $postsByStatus['draft'],
+                'scheduled' => $postsByStatus['scheduled'],
+            ],
+            'formats' => [
+                'published' => 'number',
+                'draft' => 'number',
+                'scheduled' => 'number',
+            ],
+        ],
         'status' => $blogsStatus,
         'statusLabel' => dashboard_status_label($blogsStatus),
         'trend' => $blogsTrend,
@@ -754,7 +862,11 @@ $moduleSummaries = [
     [
         'id' => 'events',
         'module' => 'Events',
-        'primary' => dashboard_format_number($eventsTotal) . ' events',
+        'primary' => [
+            'template' => '{events} events',
+            'values' => ['events' => $eventsTotal],
+            'formats' => ['events' => 'number'],
+        ],
         'secondary' => $eventsSecondary,
         'status' => $eventsStatus,
         'statusLabel' => dashboard_status_label($eventsStatus),
@@ -764,8 +876,16 @@ $moduleSummaries = [
     [
         'id' => 'forms',
         'module' => 'Forms',
-        'primary' => dashboard_format_number($formsCount) . ' forms',
-        'secondary' => 'Fields configured: ' . dashboard_format_number($formsFields),
+        'primary' => [
+            'template' => '{forms} forms',
+            'values' => ['forms' => $formsCount],
+            'formats' => ['forms' => 'number'],
+        ],
+        'secondary' => [
+            'template' => 'Fields configured: {fields}',
+            'values' => ['fields' => $formsFields],
+            'formats' => ['fields' => 'number'],
+        ],
         'status' => $formsStatus,
         'statusLabel' => dashboard_status_label($formsStatus),
         'trend' => $formsTrend,
@@ -774,8 +894,16 @@ $moduleSummaries = [
     [
         'id' => 'menus',
         'module' => 'Menus',
-        'primary' => dashboard_format_number($menusCount) . ' menus',
-        'secondary' => 'Navigation items: ' . dashboard_format_number($menuItems),
+        'primary' => [
+            'template' => '{menus} menus',
+            'values' => ['menus' => $menusCount],
+            'formats' => ['menus' => 'number'],
+        ],
+        'secondary' => [
+            'template' => 'Navigation items: {items}',
+            'values' => ['items' => $menuItems],
+            'formats' => ['items' => 'number'],
+        ],
         'status' => $menusStatus,
         'statusLabel' => dashboard_status_label($menusStatus),
         'trend' => $menusTrend,
@@ -784,8 +912,16 @@ $moduleSummaries = [
     [
         'id' => 'users',
         'module' => 'Users',
-        'primary' => dashboard_format_number($usersCount) . ' users',
-        'secondary' => 'Admins: ' . dashboard_format_number($adminCount) . ' • Editors: ' . dashboard_format_number($editorCount),
+        'primary' => [
+            'template' => '{users} users',
+            'values' => ['users' => $usersCount],
+            'formats' => ['users' => 'number'],
+        ],
+        'secondary' => [
+            'template' => 'Admins: {admins} • Editors: {editors}',
+            'values' => ['admins' => $adminCount, 'editors' => $editorCount],
+            'formats' => ['admins' => 'number', 'editors' => 'number'],
+        ],
         'status' => $usersStatus,
         'statusLabel' => dashboard_status_label($usersStatus),
         'trend' => $usersTrend,
@@ -794,8 +930,21 @@ $moduleSummaries = [
     [
         'id' => 'analytics',
         'module' => 'Analytics',
-        'primary' => dashboard_format_number($analyticsSummary['totalViews']) . ' total views',
-        'secondary' => $analyticsSummary['topPage'] ? 'Top page: ' . $analyticsSummary['topPage'] . ' (' . dashboard_format_number($analyticsSummary['topViews']) . ')' : 'No views recorded yet',
+        'primary' => [
+            'template' => '{views} total views',
+            'values' => ['views' => $analyticsSummary['totalViews']],
+            'formats' => ['views' => 'number'],
+        ],
+        'secondary' => $analyticsSummary['topPage']
+            ? [
+                'template' => 'Top page: {title} ({views})',
+                'values' => [
+                    'title' => $analyticsSummary['topPage'],
+                    'views' => $analyticsSummary['topViews'],
+                ],
+                'formats' => ['views' => 'number'],
+            ]
+            : ['text' => 'No views recorded yet'],
         'status' => $analyticsStatus,
         'statusLabel' => dashboard_status_label($analyticsStatus),
         'trend' => $analyticsTrend,
@@ -804,8 +953,16 @@ $moduleSummaries = [
     [
         'id' => 'accessibility',
         'module' => 'Accessibility',
-        'primary' => dashboard_format_number($accessibilitySummary['accessible']) . ' compliant pages',
-        'secondary' => 'Alt text issues: ' . dashboard_format_number($accessibilitySummary['missing_alt']),
+        'primary' => [
+            'template' => '{compliant} compliant pages',
+            'values' => ['compliant' => $accessibilitySummary['accessible']],
+            'formats' => ['compliant' => 'number'],
+        ],
+        'secondary' => [
+            'template' => 'Alt text issues: {missing}',
+            'values' => ['missing' => $accessibilitySummary['missing_alt']],
+            'formats' => ['missing' => 'number'],
+        ],
         'status' => $accessibilityStatus,
         'statusLabel' => dashboard_status_label($accessibilityStatus),
         'trend' => $accessibilityTrend,
@@ -814,8 +971,14 @@ $moduleSummaries = [
     [
         'id' => 'logs',
         'module' => 'Logs',
-        'primary' => dashboard_format_number($logEntries) . ' history entries',
-        'secondary' => $logsLastActivity ? 'Last activity: ' . $logsLastActivity : 'No activity recorded yet',
+        'primary' => [
+            'template' => '{entries} history entries',
+            'values' => ['entries' => $logEntries],
+            'formats' => ['entries' => 'number'],
+        ],
+        'secondary' => $logsLastActivity
+            ? ['text' => 'Last activity: ' . $logsLastActivity]
+            : ['text' => 'No activity recorded yet'],
         'status' => $logsStatus,
         'statusLabel' => dashboard_status_label($logsStatus),
         'trend' => $logsTrend,
@@ -824,8 +987,20 @@ $moduleSummaries = [
     [
         'id' => 'search',
         'module' => 'Search',
-        'primary' => dashboard_format_number($searchIndexCount) . ' indexed records',
-        'secondary' => 'Pages: ' . dashboard_format_number($searchBreakdown['pages']) . ' • Posts: ' . dashboard_format_number($searchBreakdown['posts']) . ' • Media: ' . dashboard_format_number($searchBreakdown['media']),
+        'primary' => [
+            'template' => '{records} indexed records',
+            'values' => ['records' => $searchIndexCount],
+            'formats' => ['records' => 'number'],
+        ],
+        'secondary' => [
+            'template' => 'Pages: {pages} • Posts: {posts} • Media: {media}',
+            'values' => [
+                'pages' => $searchBreakdown['pages'],
+                'posts' => $searchBreakdown['posts'],
+                'media' => $searchBreakdown['media'],
+            ],
+            'formats' => ['pages' => 'number', 'posts' => 'number', 'media' => 'number'],
+        ],
         'status' => $searchStatus,
         'statusLabel' => dashboard_status_label($searchStatus),
         'trend' => $searchTrend,
@@ -834,8 +1009,16 @@ $moduleSummaries = [
     [
         'id' => 'settings',
         'module' => 'Settings',
-        'primary' => dashboard_format_number($settingsCount) . ' configuration values',
-        'secondary' => 'Social profiles: ' . dashboard_format_number($socialCount),
+        'primary' => [
+            'template' => '{settings} configuration values',
+            'values' => ['settings' => $settingsCount],
+            'formats' => ['settings' => 'number'],
+        ],
+        'secondary' => [
+            'template' => 'Social profiles: {profiles}',
+            'values' => ['profiles' => $socialCount],
+            'formats' => ['profiles' => 'number'],
+        ],
         'status' => $settingsStatus,
         'statusLabel' => dashboard_status_label($settingsStatus),
         'trend' => $settingsTrend,
@@ -844,8 +1027,19 @@ $moduleSummaries = [
     [
         'id' => 'seo',
         'module' => 'SEO',
-        'primary' => dashboard_format_number($seoSummary['optimised']) . ' pages optimised',
-        'secondary' => 'Meta issues: ' . dashboard_format_number((int)$seoSummary['issues']) . ' • Duplicate slugs: ' . dashboard_format_number((int)$seoSummary['duplicate_slugs']),
+        'primary' => [
+            'template' => '{optimised} pages optimised',
+            'values' => ['optimised' => $seoSummary['optimised']],
+            'formats' => ['optimised' => 'number'],
+        ],
+        'secondary' => [
+            'template' => 'Meta issues: {issues} • Duplicate slugs: {duplicates}',
+            'values' => [
+                'issues' => (int)$seoSummary['issues'],
+                'duplicates' => (int)$seoSummary['duplicate_slugs'],
+            ],
+            'formats' => ['issues' => 'number', 'duplicates' => 'number'],
+        ],
         'status' => $seoStatus,
         'statusLabel' => dashboard_status_label($seoStatus),
         'trend' => $seoTrend,
@@ -854,8 +1048,12 @@ $moduleSummaries = [
     [
         'id' => 'sitemap',
         'module' => 'Sitemap',
-        'primary' => dashboard_format_number($sitemapEntries) . ' published URLs',
-        'secondary' => 'Ready for export to sitemap.xml',
+        'primary' => [
+            'template' => '{urls} published URLs',
+            'values' => ['urls' => $sitemapEntries],
+            'formats' => ['urls' => 'number'],
+        ],
+        'secondary' => ['text' => 'Ready for export to sitemap.xml'],
         'status' => $sitemapStatus,
         'statusLabel' => dashboard_status_label($sitemapStatus),
         'trend' => $sitemapTrend,
@@ -864,8 +1062,18 @@ $moduleSummaries = [
     [
         'id' => 'speed',
         'module' => 'Speed',
-        'primary' => 'Fast: ' . dashboard_format_number($speedSummary['fast']) . ' • Monitor: ' . dashboard_format_number($speedSummary['monitor']) . ' • Slow: ' . dashboard_format_number($speedSummary['slow']),
-        'secondary' => $largestPage['title'] ? 'Heaviest content: ' . $largestPage['title'] : 'Content analysis based on page length',
+        'primary' => [
+            'template' => 'Fast: {fast} • Monitor: {monitor} • Slow: {slow}',
+            'values' => [
+                'fast' => $speedSummary['fast'],
+                'monitor' => $speedSummary['monitor'],
+                'slow' => $speedSummary['slow'],
+            ],
+            'formats' => ['fast' => 'number', 'monitor' => 'number', 'slow' => 'number'],
+        ],
+        'secondary' => $largestPage['title']
+            ? ['text' => 'Heaviest content: ' . $largestPage['title']]
+            : ['text' => 'Content analysis based on page length'],
         'status' => $speedStatus,
         'statusLabel' => dashboard_status_label($speedStatus),
         'trend' => $speedTrend,

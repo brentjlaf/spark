@@ -1,12 +1,18 @@
 // File: dashboard.js
 $(function(){
-    function formatNumber(value) {
+    function formatNumber(value, options) {
         if (typeof value === 'number') {
+            if (typeof Intl !== 'undefined' && Intl.NumberFormat) {
+                return new Intl.NumberFormat(undefined, options).format(value);
+            }
             return value.toLocaleString();
         }
         const numeric = parseInt(value, 10);
         if (Number.isNaN(numeric)) {
             return '0';
+        }
+        if (typeof Intl !== 'undefined' && Intl.NumberFormat) {
+            return new Intl.NumberFormat(undefined, options).format(numeric);
         }
         return numeric.toLocaleString();
     }
@@ -34,7 +40,28 @@ $(function(){
             return `${formatNumber(size)} ${units[power]}`;
         }
         const display = value >= 10 ? Math.round(value) : Math.round(value * 10) / 10;
-        return `${formatNumber(display)} ${units[power]}`;
+        const fractionDigits = display >= 10 ? 0 : 1;
+        return `${formatNumber(display, { minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits })} ${units[power]}`;
+    }
+
+    function formatCurrency(amount, currency) {
+        const value = Number(amount);
+        if (!Number.isFinite(value)) {
+            return formatNumber(0, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        if (typeof Intl !== 'undefined' && Intl.NumberFormat && currency) {
+            try {
+                return new Intl.NumberFormat(undefined, {
+                    style: 'currency',
+                    currency: currency,
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(value);
+            } catch (error) {
+                return `${formatNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
+            }
+        }
+        return `${formatNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency || ''}`.trim();
     }
 
     function updateText(selector, value, formatter) {
@@ -209,12 +236,69 @@ $(function(){
             })
             : modules;
 
+        function formatModuleValue(value, formatSpec) {
+            if (formatSpec && typeof formatSpec === 'object') {
+                if (formatSpec.type === 'currency') {
+                    return formatCurrency(value, formatSpec.currency);
+                }
+                if (formatSpec.type === 'bytes') {
+                    return formatBytes(value);
+                }
+                if (formatSpec.type === 'number') {
+                    return formatNumber(value);
+                }
+            }
+
+            switch (formatSpec) {
+                case 'bytes':
+                    return formatBytes(value);
+                case 'currency':
+                    return formatCurrency(value);
+                case 'number':
+                    return formatNumber(value);
+                default:
+                    if (value === null || typeof value === 'undefined') {
+                        return '—';
+                    }
+                    return String(value);
+            }
+        }
+
+        function formatTemplateText(template, values, formats) {
+            if (!template || !values) {
+                return '';
+            }
+            return template.replace(/\{([\w-]+)\}/g, function (match, key) {
+                if (!Object.prototype.hasOwnProperty.call(values, key)) {
+                    return match;
+                }
+                const formatSpec = formats && Object.prototype.hasOwnProperty.call(formats, key) ? formats[key] : null;
+                return formatModuleValue(values[key], formatSpec);
+            });
+        }
+
+        function resolveModuleText(field) {
+            if (typeof field === 'string') {
+                return field;
+            }
+            if (!field || typeof field !== 'object') {
+                return '';
+            }
+            if (field.text) {
+                return field.text;
+            }
+            if (field.template) {
+                return formatTemplateText(field.template, field.values || {}, field.formats || {});
+            }
+            return '';
+        }
+
         sortedModules.forEach(function (module) {
             const id = module.id || module.module || module.name || '';
             const name = module.module || module.name || id || '';
-            const primary = module.primary || '—';
-            const secondary = module.secondary || '';
-            const trend = module.trend || '';
+            const primary = resolveModuleText(module.primary) || '—';
+            const secondary = resolveModuleText(module.secondary);
+            const trend = resolveModuleText(module.trend);
             const statusKey = String(module.status || 'ok').toLowerCase();
             const statusClass = statusClassMap[statusKey] || statusClassMap.ok;
             const statusLabel = module.statusLabel || statusLabelFallback[statusKey] || statusLabelFallback.ok;
