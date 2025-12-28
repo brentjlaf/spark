@@ -127,7 +127,7 @@ $lastSubmissionLabel = $latestSubmission > 0
             </div>
         </header>
 
-        <div class="forms-main-grid">
+        <div class="forms-main-grid forms-main-grid--single">
             <div class="forms-main-grid__column forms-main-grid__column--library">
                 <section class="a11y-detail-card forms-table-card">
                     <header class="forms-card-header">
@@ -154,32 +154,6 @@ $lastSubmissionLabel = $latestSubmission > 0
                     </div>
                 </section>
             </div>
-
-            <aside class="forms-main-grid__column forms-main-grid__column--submissions" aria-label="Form submissions overview">
-                <section class="a11y-detail-card forms-submissions-card" id="formSubmissionsCard">
-                    <header class="forms-card-header forms-submissions-header">
-                        <div>
-                            <h3>Submission activity</h3>
-                            <p id="selectedFormName" class="form-submissions-label">Select a form to view submissions</p>
-                        </div>
-                        <div class="forms-submissions-meta">
-                            <span class="forms-submissions-count" id="formSubmissionsCount">—</span>
-                            <form class="forms-submissions-export" id="exportSubmissionsForm" method="get" action="modules/forms/export_submissions.php">
-                                <input type="hidden" name="form_id" id="exportFormId" value="">
-                                <button type="submit" class="a11y-btn a11y-btn--ghost" id="exportSubmissionsBtn" disabled aria-disabled="true">
-                                    <i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i>
-                                    <span>Export CSV</span>
-                                </button>
-                            </form>
-                        </div>
-                    </header>
-                    <div class="forms-submissions-container">
-                        <div class="forms-submissions-list" id="formSubmissionsList" role="list" aria-live="polite">
-                            <div class="forms-submissions-empty">Select a form to view submissions.</div>
-                        </div>
-                    </div>
-                </section>
-            </aside>
         </div>
 
         <div class="a11y-page-detail forms-drawer" id="formBuilderDrawer" hidden role="dialog" aria-modal="true" aria-labelledby="formBuilderTitle" aria-describedby="formBuilderDescription">
@@ -362,6 +336,41 @@ $lastSubmissionLabel = $latestSubmission > 0
             <div class="modal-body forms-submission-modal__body" id="submissionModalBody">
                 <div class="forms-submission-modal__empty">Select a form submission to view the collected data.</div>
             </div>
+        </div>
+    </div>
+    <div class="modal forms-submissions-modal" id="formSubmissionsModal" role="dialog" aria-modal="true" aria-labelledby="formSubmissionsTitle" aria-describedby="formSubmissionsDescription" aria-hidden="true">
+        <div class="modal-content">
+            <button type="button" class="modal-close" id="closeSubmissionsModal" aria-label="Close submission activity">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
+            <header class="modal-header forms-submissions-modal__header">
+                <span class="forms-submissions-modal__eyebrow">Submission activity</span>
+                <h2 id="formSubmissionsTitle">Submission activity</h2>
+                <p id="formSubmissionsDescription" class="forms-submissions-modal__description">Review and export submissions for your selected form.</p>
+            </header>
+            <section class="a11y-detail-card forms-submissions-card" id="formSubmissionsCard">
+                <header class="forms-card-header forms-submissions-header">
+                    <div>
+                        <h3 class="forms-submissions-card__title">Submissions</h3>
+                        <p id="selectedFormName" class="form-submissions-label">Select a form to view submissions</p>
+                    </div>
+                    <div class="forms-submissions-meta">
+                        <span class="forms-submissions-count" id="formSubmissionsCount">—</span>
+                        <form class="forms-submissions-export" id="exportSubmissionsForm" method="get" action="modules/forms/export_submissions.php">
+                            <input type="hidden" name="form_id" id="exportFormId" value="">
+                            <button type="submit" class="a11y-btn a11y-btn--ghost" id="exportSubmissionsBtn" disabled aria-disabled="true">
+                                <i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i>
+                                <span>Export CSV</span>
+                            </button>
+                        </form>
+                    </div>
+                </header>
+                <div class="forms-submissions-container">
+                    <div class="forms-submissions-list" id="formSubmissionsList" role="list" aria-live="polite">
+                        <div class="forms-submissions-empty">Select a form to view submissions.</div>
+                    </div>
+                </div>
+            </section>
         </div>
     </div>
 </div>
