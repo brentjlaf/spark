@@ -1,0 +1,17 @@
+{
+  "dashboard_checks": {
+    "accessibility": {
+      "alt_text": true,
+      "headings": true,
+      "link_labels": true,
+      "landmarks": true
+    },
+    "seo": {
+      "meta_title": true,
+      "meta_description": true,
+      "title_length": true,
+      "description_length": true,
+      "duplicate_slugs": true
+    }
+  }
+}

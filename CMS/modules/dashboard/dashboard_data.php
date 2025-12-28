@@ -239,7 +239,87 @@ function dashboard_status_label(string $status): string
     }
 }
 
+function dashboard_check_enabled(array $config, string $key, bool $default = true): bool
+{
+    if (!array_key_exists($key, $config)) {
+        return $default;
+    }
+
+    $value = $config[$key];
+    if (is_bool($value)) {
+        return $value;
+    }
+
+    if (is_numeric($value)) {
+        return (bool)$value;
+    }
+
+    if (is_string($value)) {
+        $filtered = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        return $filtered ?? $default;
+    }
+
+    return $default;
+}
+
+function dashboard_enabled_checks_label(array $checks, array $labels): string
+{
+    $enabled = [];
+    foreach ($checks as $key => $isEnabled) {
+        if ($isEnabled && isset($labels[$key])) {
+            $enabled[] = $labels[$key];
+        }
+    }
+
+    if (empty($enabled)) {
+        return 'none';
+    }
+
+    if (count($enabled) === 1) {
+        return $enabled[0] . ' only';
+    }
+
+    return implode(', ', $enabled);
+}
+
 $libxmlPrevious = libxml_use_internal_errors(true);
+
+$dashboardChecks = is_array($settings['dashboard_checks'] ?? null) ? $settings['dashboard_checks'] : [];
+$accessibilityConfig = is_array($dashboardChecks['accessibility'] ?? null) ? $dashboardChecks['accessibility'] : [];
+$seoConfig = is_array($dashboardChecks['seo'] ?? null) ? $dashboardChecks['seo'] : [];
+
+$accessibilityChecks = [
+    'alt_text' => dashboard_check_enabled($accessibilityConfig, 'alt_text'),
+    'headings' => dashboard_check_enabled($accessibilityConfig, 'headings'),
+    'link_labels' => dashboard_check_enabled($accessibilityConfig, 'link_labels'),
+    'landmarks' => dashboard_check_enabled($accessibilityConfig, 'landmarks'),
+];
+
+$seoChecks = [
+    'meta_title' => dashboard_check_enabled($seoConfig, 'meta_title'),
+    'meta_description' => dashboard_check_enabled($seoConfig, 'meta_description'),
+    'title_length' => dashboard_check_enabled($seoConfig, 'title_length'),
+    'description_length' => dashboard_check_enabled($seoConfig, 'description_length'),
+    'duplicate_slugs' => dashboard_check_enabled($seoConfig, 'duplicate_slugs'),
+];
+
+$accessibilityCheckLabels = [
+    'alt_text' => 'alt text',
+    'headings' => 'headings',
+    'link_labels' => 'link labels',
+    'landmarks' => 'landmarks',
+];
+
+$seoCheckLabels = [
+    'meta_title' => 'meta titles',
+    'meta_description' => 'meta descriptions',
+    'title_length' => 'title length',
+    'description_length' => 'description length',
+    'duplicate_slugs' => 'duplicate slugs',
+];
+
+$accessibilityChecksLabel = dashboard_enabled_checks_label($accessibilityChecks, $accessibilityCheckLabels);
+$seoChecksLabel = dashboard_enabled_checks_label($seoChecks, $seoCheckLabels);
 
 $accessibilitySummary = [
     'accessible' => 0,
@@ -283,7 +363,8 @@ foreach ($pages as $page) {
     $pageHtml = dashboard_build_page_html($page, $settings, $menus, $scriptBase, $templateDir);
 
     $doc = new DOMDocument();
-    $loaded = trim($pageHtml) !== '' && $doc->loadHTML('<?xml encoding="utf-8" ?>' . $pageHtml);
+    $shouldParseAccessibility = in_array(true, $accessibilityChecks, true);
+    $loaded = $shouldParseAccessibility && trim($pageHtml) !== '' && $doc->loadHTML('<?xml encoding="utf-8" ?>' . $pageHtml);
 
     $missingAlt = 0;
     $genericLinks = 0;
@@ -293,50 +374,58 @@ foreach ($pages as $page) {
 
     if ($loaded) {
         $images = $doc->getElementsByTagName('img');
-        foreach ($images as $img) {
-            $alt = trim($img->getAttribute('alt'));
-            if ($alt === '') {
-                $missingAlt++;
+        if ($accessibilityChecks['alt_text']) {
+            foreach ($images as $img) {
+                $alt = trim($img->getAttribute('alt'));
+                if ($alt === '') {
+                    $missingAlt++;
+                }
             }
         }
 
-        $h1Count = $doc->getElementsByTagName('h1')->length;
+        if ($accessibilityChecks['headings']) {
+            $h1Count = $doc->getElementsByTagName('h1')->length;
+        }
 
         $anchors = $doc->getElementsByTagName('a');
-        foreach ($anchors as $anchor) {
-            $text = strtolower(trim($anchor->textContent));
-            if ($text !== '') {
-                foreach ($genericLinkTerms as $term) {
-                    if ($text === $term) {
-                        $genericLinks++;
-                        break;
+        if ($accessibilityChecks['link_labels']) {
+            foreach ($anchors as $anchor) {
+                $text = strtolower(trim($anchor->textContent));
+                if ($text !== '') {
+                    foreach ($genericLinkTerms as $term) {
+                        if ($text === $term) {
+                            $genericLinks++;
+                            break;
+                        }
                     }
                 }
             }
         }
 
         $landmarkTags = ['main', 'nav', 'header', 'footer'];
-        foreach ($landmarkTags as $tag) {
-            $landmarks += $doc->getElementsByTagName($tag)->length;
+        if ($accessibilityChecks['landmarks']) {
+            foreach ($landmarkTags as $tag) {
+                $landmarks += $doc->getElementsByTagName($tag)->length;
+            }
         }
     }
 
     $issues = [];
 
-    if ($missingAlt > 0) {
+    if ($accessibilityChecks['alt_text'] && $missingAlt > 0) {
         $issues[] = 'missing_alt';
         $accessibilitySummary['missing_alt'] += $missingAlt;
     }
 
-    if ($h1Count === 0 || $h1Count > 1) {
+    if ($accessibilityChecks['headings'] && ($h1Count === 0 || $h1Count > 1)) {
         $issues[] = 'h1_count';
     }
 
-    if ($genericLinks > 0) {
+    if ($accessibilityChecks['link_labels'] && $genericLinks > 0) {
         $issues[] = 'generic_links';
     }
 
-    if ($landmarks === 0) {
+    if ($accessibilityChecks['landmarks'] && $landmarks === 0) {
         $issues[] = 'landmarks';
     }
 
@@ -349,24 +438,24 @@ foreach ($pages as $page) {
     $accessibilitySummary['issues'] += count($issues);
 
     $metaTitle = trim((string)($page['meta_title'] ?? ''));
-    if ($metaTitle === '') {
+    if ($seoChecks['meta_title'] && $metaTitle === '') {
         $seoSummary['missing_title']++;
         $seoIssues++;
     } else {
         $titleLength = dashboard_strlen($metaTitle);
-        if ($titleLength > 60) {
+        if ($metaTitle !== '' && $seoChecks['title_length'] && $titleLength > 60) {
             $seoSummary['long_title']++;
             $seoIssues++;
         }
     }
 
     $metaDescription = trim((string)($page['meta_description'] ?? ''));
-    if ($metaDescription === '') {
+    if ($seoChecks['meta_description'] && $metaDescription === '') {
         $seoSummary['missing_description']++;
         $seoIssues++;
     } else {
         $descriptionLength = dashboard_strlen($metaDescription);
-        if ($descriptionLength < 50 || $descriptionLength > 160) {
+        if ($metaDescription !== '' && $seoChecks['description_length'] && ($descriptionLength < 50 || $descriptionLength > 160)) {
             $seoSummary['description_length']++;
             $seoIssues++;
         }
@@ -382,10 +471,12 @@ foreach ($pages as $page) {
 libxml_clear_errors();
 libxml_use_internal_errors($libxmlPrevious);
 
-foreach ($slugCounts as $slug => $count) {
-    if ($count > 1) {
-        $seoSummary['duplicate_slugs'] += $count - 1;
-        $seoSummary['issues'] += $count - 1;
+if ($seoChecks['duplicate_slugs']) {
+    foreach ($slugCounts as $slug => $count) {
+        if ($count > 1) {
+            $seoSummary['duplicate_slugs'] += $count - 1;
+            $seoSummary['issues'] += $count - 1;
+        }
     }
 }
 
@@ -805,7 +896,7 @@ $moduleSummaries = [
         'id' => 'accessibility',
         'module' => 'Accessibility',
         'primary' => dashboard_format_number($accessibilitySummary['accessible']) . ' compliant pages',
-        'secondary' => 'Alt text issues: ' . dashboard_format_number($accessibilitySummary['missing_alt']),
+        'secondary' => 'Accessibility checks: ' . $accessibilityChecksLabel,
         'status' => $accessibilityStatus,
         'statusLabel' => dashboard_status_label($accessibilityStatus),
         'trend' => $accessibilityTrend,
@@ -845,7 +936,7 @@ $moduleSummaries = [
         'id' => 'seo',
         'module' => 'SEO',
         'primary' => dashboard_format_number($seoSummary['optimised']) . ' pages optimised',
-        'secondary' => 'Meta issues: ' . dashboard_format_number((int)$seoSummary['issues']) . ' • Duplicate slugs: ' . dashboard_format_number((int)$seoSummary['duplicate_slugs']),
+        'secondary' => 'SEO checks: ' . $seoChecksLabel,
         'status' => $seoStatus,
         'statusLabel' => dashboard_status_label($seoStatus),
         'trend' => $seoTrend,

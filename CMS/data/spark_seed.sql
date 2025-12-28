@@ -108,7 +108,8 @@ INSERT INTO `cms_settings` (`setting_key`,`payload`) VALUES
 ('items_per_page','{\"setting_key\":\"items_per_page\",\"value\":10}'),
 ('logo','{\"setting_key\":\"logo\",\"value\":\"/images/logo.png\"}'),
 ('canvas_placeholder','{\"setting_key\":\"canvas_placeholder\",\"value\":\"Drag blocks from the palette to start building your page\"}'),
-('social','{\"setting_key\":\"social\",\"value\":{\"facebook\":\"https://facebook.com/mywebsite\",\"twitter\":\"https://twitter.com/mywebsite\",\"instagram\":\"https://instagram.com/mywebsite\"}}');
+('social','{\"setting_key\":\"social\",\"value\":{\"facebook\":\"https://facebook.com/mywebsite\",\"twitter\":\"https://twitter.com/mywebsite\",\"instagram\":\"https://instagram.com/mywebsite\"}}'),
+('dashboard_checks','{\"setting_key\":\"dashboard_checks\",\"value\":{\"accessibility\":{\"alt_text\":true,\"headings\":true,\"link_labels\":true,\"landmarks\":true},\"seo\":{\"meta_title\":true,\"meta_description\":true,\"title_length\":true,\"description_length\":true,\"duplicate_slugs\":true}}}');
 
 DROP TABLE IF EXISTS `cms_forms`;
 
