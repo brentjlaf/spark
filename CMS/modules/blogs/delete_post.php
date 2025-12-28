@@ -1,6 +1,8 @@
 <?php
 // File: delete_post.php
+require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/data.php';
+require_login();
 
 header('Content-Type: application/json');
 
