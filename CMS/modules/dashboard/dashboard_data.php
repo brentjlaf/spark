@@ -86,14 +86,13 @@ function dashboard_capture_template_html(string $templateFile, array $settings, 
     $namespace = '__DashboardTemplate' . md5($templateFile);
     $wrappedContents = "<?php namespace {$namespace}; ?>\n" . $templateContents;
 
-    $temporaryFile = @tempnam(dirname($templateFile), 'dash_tpl_');
-    if ($temporaryFile === false) {
+    $tempDirectory = $settings['temp_dir'] ?? $settings['temp_path'] ?? sys_get_temp_dir();
+    if (!is_string($tempDirectory) || trim($tempDirectory) === '' || !is_dir($tempDirectory) || !is_writable($tempDirectory)) {
         return '{{CONTENT}}';
     }
 
-    $bytesWritten = @file_put_contents($temporaryFile, $wrappedContents);
-    if ($bytesWritten === false) {
-        @unlink($temporaryFile);
+    $temporaryFile = @tempnam($tempDirectory, 'dash_tpl_');
+    if ($temporaryFile === false) {
         return '{{CONTENT}}';
     }
 
@@ -102,6 +101,13 @@ function dashboard_capture_template_html(string $templateFile, array $settings, 
     ob_start();
 
     try {
+        $bytesWritten = @file_put_contents($temporaryFile, $wrappedContents);
+        if ($bytesWritten === false) {
+            ob_end_clean();
+            $html = '{{CONTENT}}';
+            return $html;
+        }
+
         chdir(dirname($templateFile));
         include $temporaryFile;
         $html = (string)ob_get_clean();
@@ -110,7 +116,9 @@ function dashboard_capture_template_html(string $templateFile, array $settings, 
         $html = '{{CONTENT}}';
     } finally {
         chdir($currentWorkingDirectory);
-        @unlink($temporaryFile);
+        if (is_string($temporaryFile) && $temporaryFile !== '') {
+            @unlink($temporaryFile);
+        }
     }
 
     if ($html === '') {
