@@ -79,43 +79,43 @@
 
 :root[data-theme="dark"],
 [data-theme="dark"] {
-    --color-surface: #0f172a;
-    --color-surface-subtle: #111827;
-    --color-surface-muted: #1f2937;
-    --color-border: #334155;
-    --color-border-strong: #475569;
-    --color-text-primary: #e2e8f0;
-    --color-text-secondary: #cbd5f5;
+    --color-surface: #111b2e;
+    --color-surface-subtle: #0b1220;
+    --color-surface-muted: #16233b;
+    --color-border: #24324d;
+    --color-border-strong: #24324d;
+    --color-text-primary: #e6edf6;
+    --color-text-secondary: #cbd5e1;
     --color-text-muted: #94a3b8;
-    --color-text-inverse: #0f172a;
+    --color-text-inverse: #0b1220;
 
-    --color-primary: #818cf8;
-    --color-primary-strong: #a5b4fc;
-    --color-primary-soft: #312e81;
-    --color-primary-subtle: #1e1b4b;
+    --color-primary: #3b82f6;
+    --color-primary-strong: #2563eb;
+    --color-primary-soft: #1d4ed8;
+    --color-primary-subtle: rgba(59, 130, 246, 0.18);
 
-    --color-success: #4ade80;
-    --color-success-strong: #22c55e;
-    --color-success-soft: #14532d;
+    --color-success: #22c55e;
+    --color-success-strong: #16a34a;
+    --color-success-soft: rgba(34, 197, 94, 0.16);
 
-    --color-warning: #fbbf24;
-    --color-warning-strong: #f59e0b;
-    --color-warning-soft: #78350f;
+    --color-warning: #f59e0b;
+    --color-warning-strong: #d97706;
+    --color-warning-soft: rgba(245, 158, 11, 0.2);
 
-    --color-danger: #f87171;
-    --color-danger-strong: #ef4444;
-    --color-danger-soft: #7f1d1d;
+    --color-danger: #ef4444;
+    --color-danger-strong: #dc2626;
+    --color-danger-soft: rgba(239, 68, 68, 0.18);
 
     --color-info: #38bdf8;
     --color-info-strong: #0ea5e9;
-    --color-info-soft: #0c4a6e;
+    --color-info-soft: rgba(56, 189, 248, 0.18);
 
-    --color-accent: #2dd4bf;
-    --color-accent-strong: #14b8a6;
-    --color-accent-soft: #134e4a;
+    --color-accent: #14b8a6;
+    --color-accent-strong: #0d9488;
+    --color-accent-soft: rgba(20, 184, 166, 0.18);
 
-    --color-focus: #93c5fd;
-    --button-focus-ring: 0 0 0 3px rgba(147, 197, 253, 0.45);
+    --color-focus: #7dd3fc;
+    --button-focus-ring: 0 0 0 3px rgba(125, 211, 252, 0.45);
 }
 
         * {
