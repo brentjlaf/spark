@@ -14,17 +14,17 @@ $social = $settings['social'] ?? [];
 
 require_once __DIR__ . '/includes/menu_helpers.php';
 ?>
+<?php $bodyClass = 'page-template min-h-screen flex flex-col'; ?>
 <?php include __DIR__ . "/../partials/head.php"; ?>
 
 
 		<!-- Default Page -->
 		<div id="app" class="min-h-screen bg-slate-50 flex flex-col">
 
-                        <!-- Header -->
-                        <!-- Header moved to block palette -->
+                        <?php include __DIR__ . "/../partials/header.php"; ?>
 
                         <!-- Main -->
-                        <main id="main-area">
+                        <main id="main-area" class="flex-1">
                                 <div class="drop-area"></div>
                         </main>
 
