@@ -50,8 +50,6 @@ $(function(){
     const $lastUpdated = $('#dashboardLastUpdated');
     const $metricsGrid = $('.dashboard-overview-grid');
     const $metricsStatus = $('#dashboardMetricsStatus');
-    const $quickActions = $('#dashboardQuickActions');
-    const $quickActionsStatus = $('#dashboardQuickActionsStatus');
     const refreshButtonDefaultText = $refreshButton.length ? $refreshButton.find('span').text().trim() : '';
     const dateFormatter = typeof Intl !== 'undefined'
         ? new Intl.DateTimeFormat(undefined, {
@@ -66,13 +64,6 @@ $(function(){
         loading: 'Loading dashboard metrics…',
         updated: 'Dashboard metrics updated.',
         error: 'Unable to load dashboard metrics. Please try again.'
-    };
-
-    const quickActionMessages = {
-        loading: 'Loading quick action recommendations…',
-        updated: 'Quick action recommendations ready.',
-        empty: 'No quick actions available. Everything looks good.',
-        error: 'Unable to load quick actions at this time.'
     };
 
     function setRefreshState(isLoading) {
@@ -152,204 +143,6 @@ $(function(){
         warning: 'Needs attention',
         ok: 'On track'
     };
-
-    const moduleIconMap = {
-        pages: 'fa-file-lines',
-        media: 'fa-images',
-        blogs: 'fa-blog',
-        events: 'fa-calendar-days',
-        forms: 'fa-clipboard-list',
-        menus: 'fa-bars',
-        users: 'fa-users',
-        analytics: 'fa-chart-line',
-        accessibility: 'fa-universal-access',
-        logs: 'fa-clock-rotate-left',
-        search: 'fa-magnifying-glass',
-        settings: 'fa-sliders',
-        seo: 'fa-chart-simple',
-        sitemap: 'fa-sitemap',
-        speed: 'fa-gauge-high'
-    };
-
-    function setQuickActionsLoading(isLoading, statusText) {
-        if (!$quickActions.length) {
-            return;
-        }
-
-        $quickActions.attr('aria-busy', isLoading ? 'true' : 'false');
-
-        if ($quickActionsStatus.length) {
-            const message = statusText || (isLoading ? quickActionMessages.loading : quickActionMessages.updated);
-            $quickActionsStatus.text(message);
-        }
-    }
-
-    function renderQuickActions(modules, options) {
-        if (!$quickActions.length) {
-            return;
-        }
-
-        const settings = options || {};
-        $quickActions.empty();
-
-        if (settings.state === 'error') {
-            $quickActions.append(
-                $('<article>', {
-                    class: 'dashboard-quick-card error',
-                    role: 'listitem',
-                    tabindex: 0,
-                    'aria-label': settings.message || quickActionMessages.error
-                }).append(
-                    $('<span>', {
-                        class: 'dashboard-quick-icon',
-                        'aria-hidden': 'true'
-                    }).append(
-                        $('<i>', { class: 'fa-solid fa-circle-exclamation' })
-                    )
-                ).append(
-                    $('<div>', { class: 'dashboard-quick-content' }).append(
-                        $('<span>', {
-                            class: 'dashboard-module-name',
-                            text: 'Quick actions unavailable'
-                        })
-                    ).append(
-                        $('<span>', {
-                            class: 'dashboard-module-status',
-                            text: settings.message || quickActionMessages.error
-                        })
-                    )
-                )
-            );
-            setQuickActionsLoading(false, settings.message || quickActionMessages.error);
-            return;
-        }
-
-        if (!Array.isArray(modules) || modules.length === 0) {
-            $quickActions.append(
-                $('<article>', {
-                    class: 'dashboard-quick-card empty',
-                    role: 'listitem',
-                    tabindex: 0,
-                    'aria-label': quickActionMessages.empty
-                }).append(
-                    $('<span>', {
-                        class: 'dashboard-quick-icon',
-                        'aria-hidden': 'true'
-                    }).append(
-                        $('<i>', { class: 'fa-solid fa-circle-check' })
-                    )
-                ).append(
-                    $('<div>', { class: 'dashboard-quick-content' }).append(
-                        $('<span>', {
-                            class: 'dashboard-module-name',
-                            text: 'All clear'
-                        })
-                    ).append(
-                        $('<span>', {
-                            class: 'dashboard-module-status',
-                            text: quickActionMessages.empty
-                        })
-                    )
-                )
-            );
-            const emptyMessage = settings.message || quickActionMessages.empty;
-            setQuickActionsLoading(false, emptyMessage);
-            return;
-        }
-
-        const priority = {
-            urgent: 0,
-            warning: 1,
-            ok: 2
-        };
-
-        const sorted = modules.slice().sort(function (a, b) {
-            const statusA = String(a && a.status ? a.status : 'ok').toLowerCase();
-            const statusB = String(b && b.status ? b.status : 'ok').toLowerCase();
-            const priorityA = Object.prototype.hasOwnProperty.call(priority, statusA) ? priority[statusA] : priority.ok;
-            const priorityB = Object.prototype.hasOwnProperty.call(priority, statusB) ? priority[statusB] : priority.ok;
-
-            if (priorityA === priorityB) {
-                const nameA = (a && (a.module || a.name || '')) || '';
-                const nameB = (b && (b.module || b.name || '')) || '';
-                return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
-            }
-
-            return priorityA - priorityB;
-        });
-
-        const attention = sorted.filter(function (module) {
-            const status = String(module && module.status ? module.status : 'ok').toLowerCase();
-            return status === 'urgent' || status === 'warning';
-        });
-
-        const items = (attention.length > 0 ? attention : sorted).slice(0, 4);
-
-        items.forEach(function (module) {
-            const id = module.id || module.module || module.name || '';
-            const name = module.module || module.name || id || '';
-            const statusKey = String(module.status || 'ok').toLowerCase();
-            const statusClass = statusClassMap[statusKey] || statusClassMap.ok;
-            const statusLabel = module.statusLabel || statusLabelFallback[statusKey] || statusLabelFallback.ok;
-            const primary = module.primary || '';
-            const icon = moduleIconMap[id] || 'fa-clipboard-check';
-
-            const $card = $('<article>', {
-                class: `dashboard-quick-card ${statusClass}`,
-                role: 'listitem',
-                tabindex: 0,
-                'data-module': id,
-                'aria-label': `${name} – ${statusLabel}${primary ? `. ${primary}` : ''}`
-            });
-
-            $card.append(
-                $('<span>', {
-                    class: `dashboard-quick-icon ${id}`,
-                    'aria-hidden': 'true'
-                }).append(
-                    $('<i>', { class: `fa-solid ${icon}` })
-                )
-            );
-
-            const $content = $('<div>', { class: 'dashboard-quick-content' });
-            $content.append(
-                $('<span>', {
-                    class: 'dashboard-module-name',
-                    text: name
-                })
-            );
-            $content.append(
-                $('<span>', {
-                    class: 'dashboard-module-status',
-                    text: statusLabel
-                })
-            );
-            if (primary) {
-                $content.append(
-                    $('<span>', {
-                        class: 'dashboard-module-primary',
-                        text: primary
-                    })
-                );
-            }
-
-            $card.append($content);
-
-            $card.append(
-                $('<span>', {
-                    class: 'dashboard-quick-arrow',
-                    'aria-hidden': 'true'
-                }).append(
-                    $('<i>', { class: 'fa-solid fa-arrow-right' })
-                )
-            );
-
-            $quickActions.append($card);
-        });
-
-        const message = settings.message || quickActionMessages.updated;
-        setQuickActionsLoading(false, message);
-    }
 
     function renderModuleSummaries(modules, options) {
         const $grid = $('#dashboardModuleCards');
@@ -518,18 +311,6 @@ $(function(){
     }
 
     function bindModuleNavigation() {
-        $('#dashboardQuickActions')
-            .on('click', '.dashboard-quick-card', function (event) {
-                event.preventDefault();
-                navigateToModule($(this).data('module'));
-            })
-            .on('keydown', '.dashboard-quick-card', function (event) {
-                if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    navigateToModule($(this).data('module'));
-                }
-            });
-
         $('#dashboardModuleCards')
             .on('click', '.dashboard-module-card', function (event) {
                 if ($(event.target).closest('.dashboard-module-cta').length) {
@@ -564,7 +345,6 @@ $(function(){
     function loadStats(){
         setRefreshState(true);
         setMetricsLoading(true);
-        setQuickActionsLoading(true);
         $('#dashboardModuleCards').attr('aria-busy', 'true');
 
         const request = $.getJSON('modules/dashboard/dashboard_data.php', function(data){
@@ -605,7 +385,6 @@ $(function(){
             });
 
             renderModuleSummaries(data.moduleSummaries || data.modules || []);
-            renderQuickActions(data.moduleSummaries || data.modules || []);
         });
 
         return request
@@ -613,15 +392,11 @@ $(function(){
                 const generatedAt = response && response.generatedAt ? response.generatedAt : Date.now();
                 updateLastUpdated(generatedAt);
                 setMetricsLoading(false, metricsMessages.updated);
-                if (!response || !response.moduleSummaries) {
-                    setQuickActionsLoading(false, quickActionMessages.updated);
-                }
             })
             .fail(function(){
                 updateLastUpdated(null);
                 renderModuleSummaries([], { message: 'Unable to load module data' });
                 setMetricsLoading(false, metricsMessages.error);
-                renderQuickActions([], { state: 'error', message: quickActionMessages.error });
             })
             .always(function(){
                 setRefreshState(false);
