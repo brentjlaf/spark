@@ -172,11 +172,6 @@ tailwind.config = {
   .media-grid, .gallery-grid { @apply grid gap-4 sm:grid-cols-2 lg:grid-cols-3; }
   .media-card { @apply rounded-xl border border-slate-200 bg-white shadow-sm p-4 flex flex-col gap-3; }
 
-  .fundraising-tabs { @apply flex flex-wrap gap-4 border-b border-slate-200; }
-  .fundraising-tab { @apply px-2 pb-3 text-sm font-semibold text-slate-500 border-b-2 border-transparent transition-colors; }
-  .fundraising-tab.is-active { @apply text-primary-600 border-primary-600; }
-  .fundraising-tabpanel { @apply space-y-6; }
-
   .search-box input::placeholder { @apply text-slate-400; }
 }
 </style>

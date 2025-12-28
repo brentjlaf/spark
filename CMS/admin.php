@@ -76,10 +76,6 @@ if (is_string($faviconSetting) && $faviconSetting !== '' && preg_match('#^https?
                         <div class="nav-icon"><i class="fas fa-ticket"></i></div>
                         <div class="nav-text">Events</div>
                     </div>
-                    <div class="nav-item" data-section="fundraising">
-                        <div class="nav-icon"><i class="fas fa-hand-holding-dollar"></i></div>
-                        <div class="nav-text">Fundraising</div>
-                    </div>
                 </div>
 
                 <div class="nav-section">
