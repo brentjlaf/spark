@@ -41,7 +41,7 @@ tailwind.config = {
 
 @layer components {
   .admin-container { @apply min-h-screen flex bg-slate-50 text-slate-900; }
-  .sidebar { @apply fixed md:static inset-y-0 left-0 w-72 bg-white border-r border-slate-200 shadow-lg md:shadow-none overflow-y-auto transform -translate-x-full md:translate-x-0 transition-transform duration-200 ease-out z-40; }
+  .sidebar { @apply fixed md:sticky md:top-0 md:h-screen inset-y-0 left-0 w-72 bg-white border-r border-slate-200 shadow-lg md:shadow-none overflow-y-auto transform -translate-x-full md:translate-x-0 transition-transform duration-200 ease-out z-40; }
   .sidebar.mobile-open { @apply translate-x-0; }
   .sidebar-header { @apply flex items-center justify-between px-5 py-4 border-b border-slate-200; }
   .sidebar-logo { @apply text-lg font-semibold text-slate-800; }
