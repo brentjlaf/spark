@@ -9772,6 +9772,11 @@
     grid-template-areas: "library submissions";
 }
 
+.forms-main-grid--single {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "library";
+}
+
 .forms-main-grid__column {
     display: flex;
     flex-direction: column;
@@ -10065,6 +10070,36 @@
     text-align: center;
     color: #64748b;
     font-style: italic;
+}
+
+.forms-submissions-modal .modal-content {
+    max-width: 980px;
+    width: min(95%, 980px);
+}
+
+.forms-submissions-modal__header {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.forms-submissions-modal__eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.forms-submissions-modal__description {
+    margin: 0;
+    color: #475569;
+    font-size: 14px;
+}
+
+.forms-submissions-card__title {
+    margin: 0;
+    font-size: 18px;
 }
 
 .forms-submission-card {

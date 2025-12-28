@@ -7,6 +7,7 @@ $(function(){
     let currentFormName = '';
     let currentSubmissions = [];
     let lastSubmissionTrigger = null;
+    let lastSubmissionsTrigger = null;
     let confirmationPreviewTrigger = null;
     let formsCache = [];
 
@@ -761,7 +762,9 @@ $(function(){
         };
     }
 
-    function loadFormSubmissions(formId, formName){
+    function loadFormSubmissions(formId, formName, options){
+        options = options || {};
+        const shouldOpenModal = options.openModal === true;
         currentFormId = formId;
         currentFormName = formName;
         currentSubmissions = [];
@@ -777,6 +780,9 @@ $(function(){
             .attr('data-state', 'loading')
             .attr('aria-busy', 'true')
             .html('<div class="forms-submissions-empty">Loading submissions...</div>');
+        if(shouldOpenModal){
+            openSubmissionsModal(options.trigger);
+        }
         $.getJSON('modules/forms/list_submissions.php', { form_id: formId }, function(data){
             const submissions = Array.isArray(data) ? data : [];
             currentSubmissions = submissions.map(normalizeSubmissionRecord);
@@ -906,6 +912,30 @@ $(function(){
         setTimeout(function(){
             $('#submissionModalClose').trigger('focus');
         }, 0);
+    }
+
+    function openSubmissionsModal(trigger){
+        const $modal = $('#formSubmissionsModal');
+        if(!$modal.length){
+            return;
+        }
+        lastSubmissionsTrigger = trigger ? $(trigger) : null;
+        $modal.addClass('active').attr('aria-hidden', 'false');
+        setTimeout(function(){
+            $('#closeSubmissionsModal').trigger('focus');
+        }, 0);
+    }
+
+    function closeSubmissionsModal(){
+        const $modal = $('#formSubmissionsModal');
+        if(!$modal.hasClass('active')){
+            return;
+        }
+        $modal.removeClass('active').attr('aria-hidden', 'true');
+        if(lastSubmissionsTrigger && lastSubmissionsTrigger.length){
+            lastSubmissionsTrigger.trigger('focus');
+        }
+        lastSubmissionsTrigger = null;
     }
 
     function closeSubmissionModal(){
@@ -1493,7 +1523,7 @@ $(function(){
         const $card = $(this).closest('.forms-library-item');
         const id = $card.data('id');
         if(id){
-            loadFormSubmissions(id, getFormCardName($card));
+            loadFormSubmissions(id, getFormCardName($card), { openModal: true, trigger: this });
         }
     });
 
@@ -1504,7 +1534,7 @@ $(function(){
         const $card = $(this);
         const id = $card.data('id');
         if(id){
-            loadFormSubmissions(id, getFormCardName($card));
+            loadFormSubmissions(id, getFormCardName($card), { openModal: true, trigger: this });
         }
     });
 
@@ -1755,6 +1785,22 @@ $(function(){
     $(document).on('keydown.formsSubmissionModal', function(event){
         if(event.key === 'Escape'){
             closeSubmissionModal();
+        }
+    });
+
+    $('#closeSubmissionsModal').on('click', function(){
+        closeSubmissionsModal();
+    });
+
+    $('#formSubmissionsModal').on('click', function(event){
+        if(event.target === this){
+            closeSubmissionsModal();
+        }
+    });
+
+    $(document).on('keydown.formsSubmissionsModal', function(event){
+        if(event.key === 'Escape'){
+            closeSubmissionsModal();
         }
     });
 
