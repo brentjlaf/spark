@@ -10,7 +10,7 @@ $(function(){
         let activeFilter = 'all';
         const sortState = { key: null, direction: 'asc' };
         let homepageSlug = ($listView.data('homepageSlug') || '').toString();
-        const homepageBadgeHtml = '<span class="pages-card__badge pages-card__badge--home"><i class="fa-solid fa-house" aria-hidden="true"></i>Homepage</span>';
+        const homepageIconHtml = '<i class="fa-solid fa-house pages-list-title-icon pages-list-title-icon--home" aria-hidden="true"></i>';
         const ROBOTS_DEFAULT = 'index,follow';
         const $templateSelect = $('#template');
         const TEMP_TEMPLATE_CLASS = 'template-option--temporary';
@@ -403,11 +403,11 @@ $(function(){
                 const isHomepageRow = normalizedSlug !== '' && rowSlug === normalizedSlug;
                 $row.attr('data-homepage', isHomepageRow ? 1 : 0);
                 $row.data('homepage', isHomepageRow ? 1 : 0);
-                const $badges = $row.find('.pages-list-badges');
-                if ($badges.length) {
-                    $badges.find('.pages-card__badge--home').remove();
+                const $titleText = $row.find('.pages-list-title-text');
+                if ($titleText.length) {
+                    $titleText.find('.pages-list-title-icon--home').remove();
                     if (isHomepageRow) {
-                        $badges.prepend(homepageBadgeHtml);
+                        $titleText.prepend(homepageIconHtml);
                     }
                 }
             });
@@ -897,12 +897,16 @@ $(function(){
                 $rowViews.text(Number(viewsCount).toLocaleString());
             }
 
+            const $titleText = $row.find('.pages-list-title-text');
+            if ($titleText.length) {
+                $titleText.find('.pages-list-title-icon--home').remove();
+                if (isHomepageRow) {
+                    $titleText.prepend(homepageIconHtml);
+                }
+            }
+
             const $badges = $row.find('.pages-list-badges');
             if ($badges.length) {
-                $badges.find('.pages-card__badge--home').remove();
-                if (isHomepageRow) {
-                    $badges.prepend(homepageBadgeHtml);
-                }
                 if (isRestricted) {
                     if (!$badges.find('.pages-card__badge--restricted').length) {
                         $badges.append('<span class="pages-card__badge pages-card__badge--restricted"><i class="fa-solid fa-lock" aria-hidden="true"></i>Private</span>');

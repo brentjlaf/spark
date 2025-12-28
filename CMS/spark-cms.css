@@ -3322,8 +3322,15 @@
         }
 
         .pages-list-title-text {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             font-weight: 600;
             color: #1e293b;
+        }
+
+        .pages-list-title-icon {
+            color: #475569;
         }
 
         .pages-list-slug {
