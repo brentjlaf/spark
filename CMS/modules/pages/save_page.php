@@ -4,6 +4,8 @@ require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/data.php';
 require_once __DIR__ . '/../../includes/sanitize.php';
 require_once __DIR__ . '/../../includes/page_schedule.php';
+
+require_login();
 $pagesFile = __DIR__ . '/../../data/pages.json';
 $pages = read_json_file($pagesFile);
 if (!is_array($pages)) {
