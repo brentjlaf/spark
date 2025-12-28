@@ -239,6 +239,56 @@ function dashboard_status_label(string $status): string
     }
 }
 
+function dashboard_normalize_capabilities($value): array
+{
+    if (is_string($value)) {
+        $value = array_filter(array_map('trim', explode(',', $value)));
+    }
+
+    if (!is_array($value)) {
+        return [];
+    }
+
+    $normalized = [];
+    foreach ($value as $capability) {
+        if (!is_string($capability)) {
+            continue;
+        }
+        $capability = strtolower(trim($capability));
+        if ($capability !== '') {
+            $normalized[] = $capability;
+        }
+    }
+
+    return array_values(array_unique($normalized));
+}
+
+function dashboard_user_can_access_module(string $moduleId, string $role, array $capabilities, array $roleAccessMap): bool
+{
+    if ($moduleId === '') {
+        return true;
+    }
+
+    if (!empty($capabilities)) {
+        if (in_array('*', $capabilities, true) || in_array('all', $capabilities, true)) {
+            return true;
+        }
+
+        return in_array($moduleId, $capabilities, true);
+    }
+
+    if ($role === '') {
+        return true;
+    }
+
+    $allowedRoles = $roleAccessMap[$moduleId] ?? [];
+    if (empty($allowedRoles)) {
+        return true;
+    }
+
+    return in_array($role, $allowedRoles, true);
+}
+
 $libxmlPrevious = libxml_use_internal_errors(true);
 
 $accessibilitySummary = [
@@ -873,13 +923,44 @@ $moduleSummaries = [
     ],
 ];
 
+$currentUser = $_SESSION['user'] ?? [];
+$currentRole = strtolower(trim((string)($currentUser['role'] ?? '')));
+$capabilities = dashboard_normalize_capabilities($currentUser['capabilities'] ?? ($currentUser['permissions'] ?? []));
+$moduleAccessByRole = [
+    'pages' => ['admin', 'editor'],
+    'media' => ['admin', 'editor'],
+    'blogs' => ['admin', 'editor'],
+    'events' => ['admin', 'editor'],
+    'forms' => ['admin', 'editor'],
+    'menus' => ['admin', 'editor'],
+    'users' => ['admin'],
+    'analytics' => ['admin', 'editor'],
+    'accessibility' => ['admin', 'editor'],
+    'logs' => ['admin'],
+    'search' => ['admin', 'editor'],
+    'settings' => ['admin'],
+    'seo' => ['admin', 'editor'],
+    'sitemap' => ['admin', 'editor'],
+    'speed' => ['admin', 'editor'],
+];
+$hiddenModules = [];
+$visibleModules = [];
+foreach ($moduleSummaries as $summary) {
+    $moduleId = strtolower((string)($summary['id'] ?? ''));
+    if (dashboard_user_can_access_module($moduleId, $currentRole, $capabilities, $moduleAccessByRole)) {
+        $visibleModules[] = $summary;
+    } else {
+        $hiddenModules[] = $moduleId;
+    }
+}
+
 $statusPriority = [
     'urgent' => 0,
     'warning' => 1,
     'ok' => 2,
 ];
 
-usort($moduleSummaries, function (array $a, array $b) use ($statusPriority): int {
+usort($visibleModules, function (array $a, array $b) use ($statusPriority): int {
     $statusA = strtolower((string)($a['status'] ?? 'ok'));
     $statusB = strtolower((string)($b['status'] ?? 'ok'));
     $priorityA = $statusPriority[$statusA] ?? $statusPriority['ok'];
@@ -891,6 +972,8 @@ usort($moduleSummaries, function (array $a, array $b) use ($statusPriority): int
 
     return $priorityA <=> $priorityB;
 });
+
+$moduleSummaries = $visibleModules;
 
 $data = [
     'pages' => $totalPages,
@@ -945,6 +1028,7 @@ $data = [
     'seoDuplicateSlugs' => $seoSummary['duplicate_slugs'],
     'seoIssues' => $seoSummary['issues'],
     'moduleSummaries' => $moduleSummaries,
+    'hiddenModules' => $hiddenModules,
     'generatedAt' => gmdate(DATE_ATOM),
 ];
 
