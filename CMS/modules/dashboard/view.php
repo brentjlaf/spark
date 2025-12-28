@@ -101,14 +101,16 @@
                 </div>
             </header>
             <div class="dashboard-module-card-grid" aria-live="polite" aria-busy="true" id="dashboardModuleCards" role="list">
-                <article class="dashboard-module-card placeholder" role="listitem" tabindex="0" aria-label="Module data loading">
-                    <header class="dashboard-module-card-header">
-                        <div class="dashboard-module-card-title">
-                            <span class="dashboard-module-name">Loading…</span>
-                            <span class="dashboard-module-status" aria-hidden="true">Please wait</span>
-                        </div>
-                        <p class="dashboard-module-primary">Fetching module insights</p>
-                    </header>
+                <article class="dashboard-module-card placeholder" role="listitem" aria-label="Module data loading">
+                    <a class="dashboard-module-link" href="#" aria-disabled="true" tabindex="-1" aria-labelledby="dashboard-module-placeholder-name dashboard-module-placeholder-status" aria-describedby="dashboard-module-placeholder-primary">
+                        <header class="dashboard-module-card-header">
+                            <div class="dashboard-module-card-title">
+                                <span class="dashboard-module-name" id="dashboard-module-placeholder-name">Loading…</span>
+                                <span class="dashboard-module-status" id="dashboard-module-placeholder-status">Please wait</span>
+                            </div>
+                            <p class="dashboard-module-primary" id="dashboard-module-placeholder-primary">Fetching module insights</p>
+                        </header>
+                    </a>
                     <p class="dashboard-module-secondary">Module metrics will appear here once data is available.</p>
                     <footer class="dashboard-module-card-footer">
                         <span class="dashboard-module-trend" aria-hidden="true">Preparing data</span>
