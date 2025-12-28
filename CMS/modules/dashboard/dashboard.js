@@ -156,6 +156,18 @@ $(function(){
         ok: 'On track'
     };
 
+    function getModuleBaseId(module, index) {
+        const rawId = module && (module.id || module.module || module.name);
+        const fallback = `module-${index + 1}`;
+        const base = rawId ? String(rawId) : fallback;
+        const slug = base
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, '');
+        return `dashboard-module-${slug || fallback}`;
+    }
+
     function renderModuleSummaries(modules, options) {
         const $grid = $('#dashboardModuleCards');
         if (!$grid.length) {
@@ -168,18 +180,39 @@ $(function(){
         const message = settings.message || 'No module data available';
 
         if (!Array.isArray(modules) || modules.length === 0) {
+            const baseId = 'dashboard-module-empty';
             $grid.append(
                 $('<article>', {
                     class: 'dashboard-module-card empty',
-                    role: 'listitem',
-                    tabindex: 0,
-                    'aria-label': message
+                    role: 'listitem'
                 }).append(
-                    $('<header>', { class: 'dashboard-module-card-header' }).append(
-                        $('<div>', { class: 'dashboard-module-card-title' }).append(
-                            $('<span>', {
-                                class: 'dashboard-module-name',
-                                text: 'No insights available'
+                    $('<a>', {
+                        class: 'dashboard-module-link',
+                        href: '#',
+                        'aria-disabled': 'true',
+                        tabindex: -1,
+                        'aria-labelledby': `${baseId}-name ${baseId}-status`,
+                        'aria-describedby': `${baseId}-primary`
+                    }).append(
+                        $('<header>', { class: 'dashboard-module-card-header' }).append(
+                            $('<div>', { class: 'dashboard-module-card-title' }).append(
+                                $('<span>', {
+                                    class: 'dashboard-module-name',
+                                    id: `${baseId}-name`,
+                                    text: 'No insights available'
+                                })
+                            ).append(
+                                $('<span>', {
+                                    class: 'dashboard-module-status',
+                                    id: `${baseId}-status`,
+                                    text: 'Unavailable'
+                                })
+                            )
+                        ).append(
+                            $('<p>', {
+                                class: 'dashboard-module-primary',
+                                id: `${baseId}-primary`,
+                                text: message
                             })
                         )
                     )
@@ -221,7 +254,7 @@ $(function(){
             })
             : modules;
 
-        sortedModules.forEach(function (module) {
+        sortedModules.forEach(function (module, index) {
             const id = module.id || module.module || module.name || '';
             const name = module.module || module.name || id || '';
             const primary = module.primary || '—';
@@ -231,26 +264,42 @@ $(function(){
             const statusClass = statusClassMap[statusKey] || statusClassMap.ok;
             const statusLabel = module.statusLabel || statusLabelFallback[statusKey] || statusLabelFallback.ok;
             const cta = module.cta || `Open ${name}`;
+            const baseId = getModuleBaseId(module, index);
 
             const $card = $('<article>', {
                 class: `dashboard-module-card ${statusClass}`,
                 role: 'listitem',
-                tabindex: module.id ? 0 : -1,
-                'data-module': module.id || '',
-                'aria-label': `${name} module – ${statusLabel}`
+                'data-module': module.id || ''
             });
+
+            const $link = $('<a>', {
+                class: 'dashboard-module-link',
+                href: '#',
+                'data-module': module.id || '',
+                'aria-labelledby': `${baseId}-name ${baseId}-status`,
+                'aria-describedby': `${baseId}-primary`
+            });
+
+            if (!module.id) {
+                $link.attr({
+                    'aria-disabled': 'true',
+                    tabindex: -1
+                });
+            }
 
             const $header = $('<header>', { class: 'dashboard-module-card-header' });
             const $title = $('<div>', { class: 'dashboard-module-card-title' });
             $title.append(
                 $('<span>', {
                     class: 'dashboard-module-name',
+                    id: `${baseId}-name`,
                     text: name
                 })
             );
             $title.append(
                 $('<span>', {
                     class: 'dashboard-module-status',
+                    id: `${baseId}-status`,
                     text: statusLabel,
                     'aria-live': 'polite'
                 })
@@ -259,11 +308,13 @@ $(function(){
             $header.append(
                 $('<p>', {
                     class: 'dashboard-module-primary',
+                    id: `${baseId}-primary`,
                     text: primary
                 })
             );
 
-            $card.append($header);
+            $link.append($header);
+            $card.append($link);
 
             if (secondary) {
                 $card.append(
@@ -324,20 +375,21 @@ $(function(){
 
     function bindModuleNavigation() {
         $('#dashboardModuleCards')
-            .on('click', '.dashboard-module-card', function (event) {
-                if ($(event.target).closest('.dashboard-module-cta').length) {
+            .on('click', '.dashboard-module-link', function (event) {
+                if ($(this).attr('aria-disabled') === 'true') {
+                    event.preventDefault();
                     return;
                 }
 
-                const moduleId = $(this).data('module');
+                const moduleId = $(this).data('module') || $(this).closest('.dashboard-module-card').data('module');
                 if (moduleId) {
                     event.preventDefault();
                     navigateToModule(moduleId);
                 }
             })
-            .on('keydown', '.dashboard-module-card', function (event) {
-                if (event.key === 'Enter' || event.key === ' ') {
-                    const moduleId = $(this).data('module');
+            .on('keydown', '.dashboard-module-link', function (event) {
+                if (event.key === ' ') {
+                    const moduleId = $(this).data('module') || $(this).closest('.dashboard-module-card').data('module');
                     if (moduleId) {
                         event.preventDefault();
                         navigateToModule(moduleId);

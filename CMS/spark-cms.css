@@ -2096,13 +2096,13 @@
         }
 
         .dashboard-module-card:hover,
-        .dashboard-module-card:focus {
+        .dashboard-module-card:focus-within {
             transform: translateY(-4px);
             box-shadow: var(--shadow-card-strong);
             border-color: rgba(79, 70, 229, 0.25);
         }
 
-        .dashboard-module-card:focus-visible {
+        .dashboard-module-card:focus-within {
             outline: 3px solid rgba(79, 70, 229, 0.35);
             outline-offset: 4px;
         }
@@ -2119,6 +2119,14 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+        }
+
+        .dashboard-module-link {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            color: inherit;
+            text-decoration: none;
         }
 
         .dashboard-module-card-title {
