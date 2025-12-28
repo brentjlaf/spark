@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../CMS/includes/auth.php';
 require_once __DIR__ . '/../CMS/includes/data.php';
 require_once __DIR__ . '/../CMS/includes/settings.php';
+require_once __DIR__ . '/../CMS/includes/sanitize.php';
 require_login();
 
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
@@ -68,7 +69,7 @@ $canvasPlaceholder = '
     </div>
   </div>
 </div>';
-$canvasContent = $page['content'] ?: $canvasPlaceholder;
+$canvasContent = $page['content'] ? sanitize_html((string) $page['content']) : $canvasPlaceholder;
 $themeHtml = preg_replace('/<div class="drop-area"><\\/div>/', '<div id="canvas" class="canvas">' . $canvasContent . '</div>', $themeHtml);
 
 $cssFiles = [
