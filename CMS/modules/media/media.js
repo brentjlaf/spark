@@ -447,29 +447,19 @@ $(function(){
                 if(isImage){
                     preview = '<img src="'+src+'" alt="'+img.name+'">';
                 }else{
-                    const ext = img.file.split('.').pop().toLowerCase();
-                    const icons = {
-                        pdf: '<i class="fa-solid fa-file-pdf" aria-hidden="true"></i>',
-                        doc: '<i class="fa-solid fa-file-lines" aria-hidden="true"></i>',
-                        docx: '<i class="fa-solid fa-file-lines" aria-hidden="true"></i>',
-                        txt: '<i class="fa-solid fa-file-lines" aria-hidden="true"></i>',
-                        csv: '<i class="fa-solid fa-file-csv" aria-hidden="true"></i>',
-                        xlsx: '<i class="fa-solid fa-file-excel" aria-hidden="true"></i>',
-                        mp3: '<i class="fa-solid fa-file-audio" aria-hidden="true"></i>',
-                        mp4: '<i class="fa-solid fa-file-video" aria-hidden="true"></i>',
-                        m4v: '<i class="fa-solid fa-file-video" aria-hidden="true"></i>',
-                        webm: '<i class="fa-solid fa-file-video" aria-hidden="true"></i>',
-                        mov: '<i class="fa-solid fa-file-video" aria-hidden="true"></i>'
-                    };
-                    const icon = icons[ext] || '<i class="fa-solid fa-file" aria-hidden="true"></i>';
+                    const ext = getFileExtension(img.file);
+                    const icon = getFileIconMarkup(ext);
                     preview = '<div class="file-icon">'+icon+'</div>';
                 }
+                const editButton = isImage
+                    ? '<button type="button" class="edit-btn action-icon-button has-tooltip" data-id="'+img.id+'" aria-label="Edit media" data-tooltip="Edit media"><i class="fa-solid fa-pen-to-square action-icon" aria-hidden="true"></i></button>'
+                    : '';
                 const card = $('<div class="image-card" data-id="'+img.id+'">\
                         <div class="image-preview">'+preview+'\
                             <div class="image-overlay">\
                                 <div>\
                                     <button type="button" class="info-btn action-icon-button has-tooltip" data-id="'+img.id+'" aria-label="View details" data-tooltip="View details"><i class="fa-solid fa-circle-info action-icon" aria-hidden="true"></i></button>\
-                                    <button type="button" class="edit-btn action-icon-button has-tooltip" data-id="'+img.id+'" aria-label="Edit media" data-tooltip="Edit media"><i class="fa-solid fa-pen-to-square action-icon" aria-hidden="true"></i></button>\
+                                    '+editButton+'\
                                     <button type="button" class="remove-btn action-icon-button has-tooltip" data-id="'+img.id+'" aria-label="Delete media" data-tooltip="Delete media"><i class="fa-solid fa-trash action-icon" aria-hidden="true"></i></button>\
                                 </div>\
                             </div>\
@@ -503,6 +493,23 @@ $(function(){
         const sizes = ['Bytes','KB','MB','GB'];
         const i = Math.floor(Math.log(bytes)/Math.log(k));
         return parseFloat((bytes/Math.pow(k,i)).toFixed(2))+' '+sizes[i];
+    }
+
+    function getFileIconMarkup(ext){
+        const icons = {
+            pdf: '<i class="fa-solid fa-file-pdf" aria-hidden="true"></i>',
+            doc: '<i class="fa-solid fa-file-lines" aria-hidden="true"></i>',
+            docx: '<i class="fa-solid fa-file-lines" aria-hidden="true"></i>',
+            txt: '<i class="fa-solid fa-file-lines" aria-hidden="true"></i>',
+            csv: '<i class="fa-solid fa-file-csv" aria-hidden="true"></i>',
+            xlsx: '<i class="fa-solid fa-file-excel" aria-hidden="true"></i>',
+            mp3: '<i class="fa-solid fa-file-audio" aria-hidden="true"></i>',
+            mp4: '<i class="fa-solid fa-file-video" aria-hidden="true"></i>',
+            m4v: '<i class="fa-solid fa-file-video" aria-hidden="true"></i>',
+            webm: '<i class="fa-solid fa-file-video" aria-hidden="true"></i>',
+            mov: '<i class="fa-solid fa-file-video" aria-hidden="true"></i>'
+        };
+        return icons[ext] || '<i class="fa-solid fa-file" aria-hidden="true"></i>';
     }
 
     function escapeHtml(str){
@@ -1040,20 +1047,84 @@ $(function(){
         });
     }
 
+    function resetInfoPreview(){
+        const $image = $('#infoImage');
+        const $video = $('#infoVideo');
+        const $audio = $('#infoAudio');
+        const $iframe = $('#infoDocumentFrame');
+        const $document = $('#infoDocument');
+
+        $image.hide().attr('src', '');
+        $video.hide().removeAttr('src');
+        $video.each(function(){
+            this.pause();
+            this.load();
+        });
+        $audio.hide().removeAttr('src');
+        $audio.each(function(){
+            this.pause();
+            this.load();
+        });
+        $iframe.hide().attr('src', '');
+        $document.hide();
+    }
+
+    function showDocumentPreview(img, ext){
+        const $doc = $('#infoDocument');
+        const $icon = $('#infoDocumentIcon');
+        const $name = $('#infoDocumentName');
+        const $link = $('#infoDocumentLink');
+        $icon.html(getFileIconMarkup(ext));
+        $name.text(img.name || 'Untitled file');
+        $link.attr('href', img.file || '#');
+        $doc.show();
+    }
+
     function showImageInfo(id){
         const img = currentImages.find(i=>i.id===id);
         if(!img) return;
-        $('#infoImage').attr('src', img.thumbnail?img.thumbnail:img.file);
+        const ext = getFileExtension(img.file || img.name || '');
+        const fileUrl = img.file || '';
+        const isImage = img.type === 'images';
+        resetInfoPreview();
+        if(isImage){
+            $('#infoImage').attr('src', img.thumbnail?img.thumbnail:img.file).show();
+        }else if(img.type === 'videos'){
+            const $video = $('#infoVideo');
+            $video.attr('src', fileUrl);
+            if(img.thumbnail){
+                $video.attr('poster', img.thumbnail);
+            } else {
+                $video.removeAttr('poster');
+            }
+            $video.show();
+            $video.each(function(){ this.load(); });
+        }else if(img.type === 'audio'){
+            const $audio = $('#infoAudio');
+            $audio.attr('src', fileUrl).show();
+            $audio.each(function(){ this.load(); });
+        }else{
+            if(ext === 'pdf' && fileUrl){
+                $('#infoDocumentFrame').attr('src', fileUrl).show();
+            }else{
+                showDocumentPreview(img, ext);
+            }
+        }
         $('#edit-name').val(img.name);
         $('#edit-fileName').val(img.name);
         $('#infoType').text(img.type||'');
         $('#infoFile').text(img.name||'');
         $('#infoSize').text(formatFileSize(parseInt(img.size)||0));
-        $('#infoDimensions').text((img.width||'?')+' x '+(img.height||'?'));
-        $('#infoExt').text(img.file.split('.').pop());
+        $('#infoDimensions').text(isImage ? ((img.width||'?')+' x '+(img.height||'?')) : '—');
+        $('#infoExt').text(ext || '—');
         const d = img.modified_at ? new Date(img.modified_at*1000) : new Date(img.uploaded_at*1000);
         $('#infoDate').text(d.toLocaleString());
         $('#infoFolder').text(img.folder||'');
+        if(isImage){
+            $('#imageEditorBtn').show();
+        }else{
+            $('#imageEditorBtn').hide();
+        }
         resetUsageUI();
         $('#imageInfoModal').data('id', id);
         resetImageInfoSaveState();
@@ -1231,6 +1302,14 @@ $(function(){
         const id = $('#imageInfoModal').data('id');
         deleteImage(id);
         closeModal('imageInfoModal');
+    });
+    $('#imageEditorBtn').click(function(){
+        const id = $('#imageInfoModal').data('id');
+        if(!id){
+            return;
+        }
+        closeModal('imageInfoModal');
+        openEditor(id);
     });
     $('#imageInfoModal').on('input change', '#edit-name, #edit-fileName, #renamePhysicalCheckbox', function(){
         markImageInfoDirty();

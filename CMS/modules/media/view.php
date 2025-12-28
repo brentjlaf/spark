@@ -181,7 +181,7 @@
                     <div class="modal" id="imageInfoModal">
                         <div class="modal-content">
                             <div class="modal-header media-modal-header">
-                                <h2>Image Details</h2>
+                                <h2>Media Details</h2>
                                 <div class="editor-save-state" data-save-state data-state="saved" role="status" aria-live="polite" aria-atomic="true" tabindex="0">
                                     <span class="editor-save-state__dot" aria-hidden="true"></span>
                                     <span class="editor-save-state__text" data-save-state-text>Saved</span>
@@ -189,7 +189,19 @@
                             </div>
                             <div class="modal-body info-layout">
                                 <div class="info-preview">
-                                    <img id="infoImage" src="" alt="Preview">
+                                    <div class="media-preview">
+                                        <img id="infoImage" src="" alt="Image preview">
+                                        <video id="infoVideo" controls playsinline></video>
+                                        <audio id="infoAudio" controls></audio>
+                                        <iframe id="infoDocumentFrame" title="Document preview"></iframe>
+                                        <div id="infoDocument" class="info-document">
+                                            <div class="info-document-icon" id="infoDocumentIcon" aria-hidden="true"></div>
+                                            <div class="info-document-body">
+                                                <p id="infoDocumentName"></p>
+                                                <a id="infoDocumentLink" href="#" target="_blank" rel="noopener">Open file</a>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="info-meta">
                                     <div class="media-info-card" aria-labelledby="mediaFileDetailsTitle">
@@ -249,6 +261,7 @@
                                         </div>
                                     </div>
                                     <div class="form-actions" id="infoActions">
+                                        <button class="btn btn-secondary" id="imageEditorBtn"><i class="fa-solid fa-pen-to-square btn-icon" aria-hidden="true"></i><span class="btn-label">Image editor</span></button>
                                         <button class="btn btn-danger" id="deleteBtn"><i class="fa-solid fa-trash btn-icon" aria-hidden="true"></i><span class="btn-label">Delete</span></button>
                                         <button class="btn btn-primary" id="saveEditBtn"><i class="fa-solid fa-floppy-disk btn-icon" aria-hidden="true"></i><span class="btn-label">Save</span></button>
                                     </div>
