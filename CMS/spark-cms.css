@@ -24,8 +24,8 @@
     --color-border: #e2e8f0;
     --color-border-strong: #cbd5f5;
     --color-text-primary: #1f2937;
-    --color-text-secondary: #334155;
-    --color-text-muted: #475569;
+    --color-text-secondary: #475569;
+    --color-text-muted: #64748b;
     --color-text-inverse: #ffffff;
     --color-focus: #1d4ed8;
 
@@ -982,6 +982,7 @@
         .nav-text {
             font-size: var(--font-size-base);
             font-weight: 500;
+            color: #fff;
         }
 
         .nav-badge {
