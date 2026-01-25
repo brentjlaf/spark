@@ -4,6 +4,7 @@ session_start();
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/schema.php';
 require_once __DIR__ . '/data.php';
+require_once __DIR__ . '/payload.php';
 require_once __DIR__ . '/settings.php';
 
 ensure_site_timezone();
@@ -33,7 +34,7 @@ function initialize_users_table(string $table): void
             `created_at` INT DEFAULT 0,
             `last_login` INT NULL,
             `password` VARCHAR(255) NOT NULL,
-            `payload` JSON NOT NULL,
+            `payload` LONGTEXT NOT NULL,
             INDEX `idx_status` (`status`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
     } catch (Throwable $e) {
@@ -63,7 +64,7 @@ function seed_default_admin(string $table): void
         ];
         $stmt = $pdo->prepare("INSERT INTO `{$table}` (`id`,`payload`,`username`,`role`,`status`,`created_at`,`last_login`,`password`) VALUES (1,?,?,?,?,?,?,?)");
         $stmt->execute([
-            json_encode($payload, JSON_UNESCAPED_SLASHES),
+            cms_encode_payload($payload),
             $payload['username'],
             $payload['role'],
             $payload['status'],

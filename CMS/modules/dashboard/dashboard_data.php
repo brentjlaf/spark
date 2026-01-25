@@ -110,9 +110,14 @@ function dashboard_load_cache(string $cacheFile): ?array
         return null;
     }
 
-    $decoded = json_decode($contents, true);
+    $format = null;
+    $decoded = cms_decode_payload_with_format($contents, $format);
     if (!is_array($decoded)) {
         return null;
+    }
+
+    if ($format === 'json') {
+        @file_put_contents($cacheFile, cms_encode_payload($decoded));
     }
 
     return $decoded;
@@ -657,7 +662,7 @@ if (!$cacheIsValid) {
     ];
 
     if (is_dir($dataDirectory)) {
-        @file_put_contents($cacheFile, json_encode($cachePayload, JSON_PRETTY_PRINT));
+        @file_put_contents($cacheFile, cms_encode_payload($cachePayload));
     }
 }
 

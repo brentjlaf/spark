@@ -1,9 +1,10 @@
 <?php
 // File: data.php
-// Utility functions for reading/writing JSON files with simple in-memory caching
+// Utility functions for reading/writing CMS payload files with simple in-memory caching
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/schema.php';
 require_once __DIR__ . '/migration.php';
+require_once __DIR__ . '/payload.php';
 
 /**
  * Ensure the mapped database table exists for the provided schema.
@@ -39,7 +40,7 @@ function ensure_schema_table(array $schema): void
         $primaryType = $isNumericId ? 'INT' : 'VARCHAR(191)';
         $primaryExtras = $isNumericId ? 'AUTO_INCREMENT' : '';
 
-        $columnDefs = ["`{$primary}` {$primaryType} {$primaryExtras} PRIMARY KEY", "`{$jsonColumn}` JSON NOT NULL"];
+        $columnDefs = ["`{$primary}` {$primaryType} {$primaryExtras} PRIMARY KEY", "`{$jsonColumn}` LONGTEXT NOT NULL"];
 
         foreach ($columns as $columnName => $sourceKey) {
             if ($columnName === $primary || $columnName === $jsonColumn) {
@@ -91,8 +92,18 @@ function read_json_file($file) {
     if (!file_exists($file)) {
         return [];
     }
-    $data = json_decode(file_get_contents($file), true);
-    return $data ?: [];
+    $contents = file_get_contents($file);
+    if ($contents === false) {
+        return [];
+    }
+
+    $format = null;
+    $decoded = cms_decode_payload_with_format($contents, $format);
+    if ($format === 'json') {
+        @file_put_contents($file, cms_encode_payload($decoded));
+    }
+
+    return is_array($decoded) ? $decoded : [];
 }
 
 /**
@@ -125,7 +136,7 @@ function write_json_file($file, $data) {
         return false;
     }
 
-    return file_put_contents($file, json_encode($data, JSON_PRETTY_PRINT)) !== false;
+    return file_put_contents($file, cms_encode_payload($data)) !== false;
 }
 
 /**
@@ -190,7 +201,22 @@ function read_table_as_array(array $schema): array
         $rows = db_fetch_all("SELECT {$quotedColumns} FROM `{$schema['table']}` ORDER BY `{$schema['primary']}`");
         $decoded = [];
         foreach ($rows as $row) {
-            $payload = json_decode($row[$schema['json_column']], true) ?: [];
+            $format = null;
+            $payload = cms_decode_payload_with_format((string) $row[$schema['json_column']], $format);
+            if (!is_array($payload)) {
+                $payload = [];
+            }
+
+            if ($format === 'json') {
+                try {
+                    db_execute(
+                        "UPDATE `{$schema['table']}` SET `{$schema['json_column']}` = ? WHERE `{$schema['primary']}` = ?",
+                        [cms_encode_payload($payload), $row[$schema['primary']]]
+                    );
+                } catch (Throwable $e) {
+                    // Best-effort conversion; ignore failures.
+                }
+            }
             if (!isset($payload[$schema['primary']])) {
                 $payload[$schema['primary']] = $row[$schema['primary']];
             }
@@ -281,7 +307,7 @@ function write_table_from_array(array $schema, $data): bool
             foreach ($excludedKeys as $excludedKey) {
                 unset($payloadData[$excludedKey]);
             }
-            $payload = json_encode($payloadData, JSON_UNESCAPED_SLASHES);
+            $payload = cms_encode_payload($payloadData);
             $values = [$primaryValue, $payload];
             foreach ($schemaColumns as $columnKey => $sourceKey) {
                 $values[] = $row[$sourceKey] ?? null;

@@ -2,7 +2,7 @@ DROP TABLE IF EXISTS `cms_pages`;
 
 CREATE TABLE `cms_pages` (
 `id` INT AUTO_INCREMENT PRIMARY KEY,
-`payload` JSON NOT NULL,
+`payload` LONGTEXT NOT NULL,
 `slug` VARCHAR(255) NULL,
 `title` VARCHAR(255) NULL,
 `published` VARCHAR(255) NULL,
@@ -26,7 +26,7 @@ DROP TABLE IF EXISTS `cms_menus`;
 
 CREATE TABLE `cms_menus` (
 `id` INT AUTO_INCREMENT PRIMARY KEY,
-`payload` JSON NOT NULL,
+`payload` LONGTEXT NOT NULL,
 `name` VARCHAR(255) NULL,
 INDEX `idx_cms_menus_name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -39,7 +39,7 @@ DROP TABLE IF EXISTS `cms_blog_posts`;
 
 CREATE TABLE `cms_blog_posts` (
 `id` INT AUTO_INCREMENT PRIMARY KEY,
-`payload` JSON NOT NULL,
+`payload` LONGTEXT NOT NULL,
 `slug` VARCHAR(255) NULL,
 `status` VARCHAR(255) NULL,
 `publishDate` VARCHAR(255) NULL,
@@ -61,7 +61,7 @@ DROP TABLE IF EXISTS `cms_media`;
 
 CREATE TABLE `cms_media` (
 `id` VARCHAR(191) PRIMARY KEY,
-`payload` JSON NOT NULL,
+`payload` LONGTEXT NOT NULL,
 `name` VARCHAR(255) NULL,
 `folder` VARCHAR(255) NULL,
 `type` VARCHAR(255) NULL,
@@ -75,7 +75,7 @@ DROP TABLE IF EXISTS `cms_users`;
 
 CREATE TABLE `cms_users` (
 `id` INT AUTO_INCREMENT PRIMARY KEY,
-`payload` JSON NOT NULL,
+`payload` LONGTEXT NOT NULL,
 `username` VARCHAR(255) NULL,
 `role` VARCHAR(255) NULL,
 `status` VARCHAR(255) NULL,
@@ -96,7 +96,7 @@ DROP TABLE IF EXISTS `cms_settings`;
 
 CREATE TABLE `cms_settings` (
 `setting_key` VARCHAR(191) PRIMARY KEY,
-`payload` JSON NOT NULL,
+`payload` LONGTEXT NOT NULL,
 INDEX `idx_cms_settings_setting_key` (`setting_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -114,7 +114,7 @@ DROP TABLE IF EXISTS `cms_forms`;
 
 CREATE TABLE `cms_forms` (
 `id` INT AUTO_INCREMENT PRIMARY KEY,
-`payload` JSON NOT NULL,
+`payload` LONGTEXT NOT NULL,
 `name` VARCHAR(255) NULL,
 INDEX `idx_cms_forms_name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -127,7 +127,7 @@ DROP TABLE IF EXISTS `cms_form_submissions`;
 
 CREATE TABLE `cms_form_submissions` (
 `id` VARCHAR(191) PRIMARY KEY,
-`payload` JSON NOT NULL,
+`payload` LONGTEXT NOT NULL,
 `form_id` VARCHAR(255) NULL,
 `submitted_at` VARCHAR(255) NULL,
 INDEX `idx_cms_form_submissions_form_id` (`form_id`),
@@ -148,7 +148,7 @@ DROP TABLE IF EXISTS `cms_events`;
 
 CREATE TABLE `cms_events` (
 `id` VARCHAR(191) PRIMARY KEY,
-`payload` JSON NOT NULL,
+`payload` LONGTEXT NOT NULL,
 `status` VARCHAR(255) NULL,
 `start` VARCHAR(255) NULL,
 `end` VARCHAR(255) NULL,
@@ -170,7 +170,7 @@ DROP TABLE IF EXISTS `cms_event_orders`;
 
 CREATE TABLE `cms_event_orders` (
 `id` VARCHAR(191) PRIMARY KEY,
-`payload` JSON NOT NULL,
+`payload` LONGTEXT NOT NULL,
 `event_id` VARCHAR(255) NULL,
 `status` VARCHAR(255) NULL,
 `ordered_at` VARCHAR(255) NULL,
@@ -189,7 +189,7 @@ DROP TABLE IF EXISTS `cms_event_categories`;
 
 CREATE TABLE `cms_event_categories` (
 `id` VARCHAR(191) PRIMARY KEY,
-`payload` JSON NOT NULL,
+`payload` LONGTEXT NOT NULL,
 `slug` VARCHAR(255) NULL,
 INDEX `idx_cms_event_categories_slug` (`slug`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -203,7 +203,7 @@ DROP TABLE IF EXISTS `cms_event_forms`;
 
 CREATE TABLE `cms_event_forms` (
 `id` VARCHAR(191) PRIMARY KEY,
-`payload` JSON NOT NULL,
+`payload` LONGTEXT NOT NULL,
 `name` VARCHAR(255) NULL,
 INDEX `idx_cms_event_forms_name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -218,7 +218,7 @@ DROP TABLE IF EXISTS `cms_map_locations`;
 
 CREATE TABLE `cms_map_locations` (
 `id` VARCHAR(191) PRIMARY KEY,
-`payload` JSON NOT NULL,
+`payload` LONGTEXT NOT NULL,
 `category` VARCHAR(255) NULL,
 `title` VARCHAR(255) NULL,
 INDEX `idx_cms_map_locations_category` (`category`)
@@ -238,7 +238,7 @@ DROP TABLE IF EXISTS `cms_map_categories`;
 
 CREATE TABLE `cms_map_categories` (
 `id` VARCHAR(191) PRIMARY KEY,
-`payload` JSON NOT NULL,
+`payload` LONGTEXT NOT NULL,
 `slug` VARCHAR(255) NULL,
 `name` VARCHAR(255) NULL,
 INDEX `idx_cms_map_categories_slug` (`slug`)
@@ -254,7 +254,7 @@ DROP TABLE IF EXISTS `cms_page_history`;
 
 CREATE TABLE `cms_page_history` (
 `id` VARCHAR(191) PRIMARY KEY,
-`payload` JSON NOT NULL,
+`payload` LONGTEXT NOT NULL,
 `page_id` VARCHAR(255) NULL,
 `saved_at` VARCHAR(255) NULL,
 INDEX `idx_cms_page_history_page_id` (`page_id`),
@@ -265,7 +265,7 @@ DROP TABLE IF EXISTS `cms_speed_snapshots`;
 
 CREATE TABLE `cms_speed_snapshots` (
 `id` VARCHAR(191) PRIMARY KEY,
-`payload` JSON NOT NULL,
+`payload` LONGTEXT NOT NULL,
 `captured_at` VARCHAR(255) NULL,
 INDEX `idx_cms_speed_snapshots_captured_at` (`captured_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
