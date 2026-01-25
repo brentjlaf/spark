@@ -6,6 +6,7 @@ import { initUndoRedo } from './modules/undoRedo.js';
 import { initWysiwyg } from './modules/wysiwyg.js';
 import { initMediaPicker, openMediaPicker } from './modules/mediaPicker.js';
 import { executeScripts } from "./modules/executeScripts.js";
+import { appendApiAction, getApiUrl } from './modules/api.js';
 
 let allBlockFiles = [];
 let favorites = [];
@@ -27,7 +28,8 @@ function storeDraft() {
   fd.append('id', window.builderPageId);
   fd.append('content', data.html);
   fd.append('timestamp', data.timestamp);
-  fetch(window.builderBase + '/liveed/save-draft.php', {
+  appendApiAction(fd, 'save-draft');
+  fetch(getApiUrl(window.builderBase, 'save-draft'), {
     method: 'POST',
     body: fd,
   }).catch(() => {});
@@ -230,7 +232,8 @@ function savePage() {
 
     if (statusEl) statusEl.textContent = 'Saving...';
 
-    fetch(window.builderBase + '/liveed/save-content.php', {
+    appendApiAction(fd, 'save-content');
+    fetch(getApiUrl(window.builderBase, 'save-content'), {
       method: 'POST',
       body: fd,
     })
@@ -306,9 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  fetch(
-    window.builderBase + '/liveed/load-draft.php?id=' + window.builderPageId
-  )
+  fetch(getApiUrl(window.builderBase, 'load-draft', { id: window.builderPageId }))
     .then((r) => (r.ok ? r.json() : null))
     .then((serverDraft) => {
       if (serverDraft && serverDraft.timestamp > lastSavedTimestamp) {
@@ -338,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const searchInput = palette.querySelector('.palette-search');
 
-  fetch(window.builderBase + '/liveed/list-blocks.php')
+  fetch(getApiUrl(window.builderBase, 'list-blocks'))
     .then((r) => r.json())
     .then((data) => {
       allBlockFiles = data.blocks || [];
