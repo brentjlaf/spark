@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/schema.php';
+require_once __DIR__ . '/payload.php';
 
 function cms_load_json_records(string $path, array $schema): array
 {
@@ -47,7 +48,7 @@ function cms_ensure_table(PDO $pdo, array $schema, array $records = []): void
         $schema['table'],
         implode(",\n", array_filter(array_merge([
             "`{$primary}` {$primaryDef} PRIMARY KEY",
-            "`{$jsonCol}` JSON NOT NULL",
+            "`{$jsonCol}` LONGTEXT NOT NULL",
         ], $columnSql, $indexSql)))
     );
 
@@ -72,7 +73,7 @@ function cms_import_records(PDO $pdo, array $schema, array $records): void
         }
         $primaryValue = $record[$schema['primary']] ?? $nextId;
         $nextId = is_numeric($primaryValue) ? max($nextId + 1, (int)$primaryValue + 1) : $nextId + 1;
-        $values = [$primaryValue, json_encode($record, JSON_UNESCAPED_SLASHES)];
+        $values = [$primaryValue, cms_encode_payload($record)];
         foreach ($schema['columns'] as $columnName => $sourceKey) {
             if ($schema['primary'] === 'setting_key' && $sourceKey === 'setting_key' && !isset($record['setting_key'])) {
                 $values[] = $record['key'] ?? null;

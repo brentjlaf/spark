@@ -25,7 +25,7 @@ function ensure_settings_table(): void
         $pdo = get_db_connection();
         $pdo->exec("CREATE TABLE IF NOT EXISTS `{$table}` (
             `{$primary}` VARCHAR(191) PRIMARY KEY,
-            `{$jsonColumn}` JSON NOT NULL,
+            `{$jsonColumn}` LONGTEXT NOT NULL,
             INDEX `idx_{$table}_{$primary}` (`{$primary}`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
         $ensured = true;
