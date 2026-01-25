@@ -84,7 +84,6 @@ $summaryComparisons = [
     ],
 ];
 ?>
-<link rel="stylesheet" href="modules/analytics/analytics.css">
 <div class="content-section" id="analytics">
     <div class="analytics-dashboard">
         <header class="a11y-hero analytics-hero">
