@@ -3772,7 +3772,7 @@
             text-transform: uppercase;
             letter-spacing: 0.18em;
             font-weight: 600;
-            color: rgba(224, 231, 255, 0.88);
+            color: var(--module-text-eyebrow);
             margin-bottom: 6px;
         }
 
@@ -3827,8 +3827,8 @@
         }
 
         #accessibility .accessibility-hero {
-            background: linear-gradient(135deg, #1e3a8a, #0891b2);
-            box-shadow: 0 28px 56px rgba(8, 145, 178, 0.32);
+            background: var(--module-hero-gradient);
+            box-shadow: var(--module-shadow-hero);
         }
 
         #accessibility .accessibility-hero::before,
@@ -3836,7 +3836,7 @@
             content: '';
             position: absolute;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.14);
+            background: var(--module-hero-overlay);
             filter: blur(1px);
         }
 
@@ -3869,7 +3869,7 @@
         }
 
         #accessibility .accessibility-hero-subtitle {
-            color: rgba(240, 253, 250, 0.85);
+            color: var(--module-text-muted);
             max-width: 560px;
         }
 
@@ -11905,11 +11905,12 @@
             --module-radius-lg: 24px;
             --module-radius-md: 18px;
             --module-radius-sm: 12px;
-            --module-hero-gradient: linear-gradient(135deg, #312e81 0%, #6366f1 100%);
-            --module-hero-overlay: rgba(255, 255, 255, 0.12);
+            --module-hero-gradient: linear-gradient(135deg, #1e1b4b 0%, #1d4ed8 100%);
+            --module-hero-overlay: rgba(255, 255, 255, 0.16);
             --module-surface: #ffffff;
             --module-border: rgba(148, 163, 184, 0.28);
-            --module-text-muted: rgba(226, 232, 240, 0.9);
+            --module-text-muted: rgba(241, 245, 249, 0.92);
+            --module-text-eyebrow: rgba(248, 250, 252, 0.92);
             --module-shadow-hero: 0 32px 60px rgba(15, 23, 42, 0.35);
             --module-shadow-card: 0 18px 40px rgba(15, 23, 42, 0.12);
         }
@@ -12131,6 +12132,7 @@
             .media-hero-meta,
             .pages-hero-meta,
             .blog-hero-meta,
+            .dashboard-hero-meta,
             .search-hero-meta,
             .import-hero-meta,
             .seo-hero-meta,
