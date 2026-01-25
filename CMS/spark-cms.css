@@ -890,6 +890,7 @@
         .admin-container {
             display: flex;
             min-height: 100vh;
+            min-width: 0;
         }
 
         /* Sidebar */
@@ -902,6 +903,7 @@
             top: 0;
             height: 100vh;
             overflow-y: auto;
+            transform: translateX(0);
             z-index: 1000;
         }
 
@@ -998,6 +1000,7 @@
             margin-left: 0;
             flex: 1;
             min-height: 100vh;
+            min-width: 0;
         }
 
         .top-bar {
@@ -2117,6 +2120,7 @@
         /* Content Area */
         .content-area {
             padding: 30px;
+            min-width: 0;
         }
 
         .content-section {

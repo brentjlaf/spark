@@ -85,7 +85,7 @@ a:hover {
   border-right: 1px solid var(--slate-200);
   box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.1);
   overflow-y: auto;
-  transform: translateX(-100%);
+  transform: translateX(0);
   transition: transform 0.2s ease-out;
   z-index: 40;
 }
