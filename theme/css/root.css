@@ -50,49 +50,49 @@
   --green: #28a745;
   --teal: #20c997;
   --cyan: #17a2b8;
-  --type-page: #60C4B3;
-  --type-post: #7CAAC7;
-  --type-event: #AA89B9;
-  --type-form: #D999B7;
-  --type-gallery: #E88686;
-  --type-image: #E5AF36;
-  --type-video: #B5AC82;
-  --type-doc: #83B583;
+  --type-page: #60c4b3;
+  --type-post: #7caac7;
+  --type-event: #aa89b9;
+  --type-form: #d999b7;
+  --type-gallery: #e88686;
+  --type-image: #e5af36;
+  --type-video: #b5ac82;
+  --type-doc: #83b583;
   --type-unknown: var(--gray);
-  --info-1: #A6D1FF;
-  --info-2: #6FB4FF;
-  --info-3: #3798FF;
-  --info-4: #007BFF;
-  --info-5: #0060C8;
+  --info-1: #a6d1ff;
+  --info-2: #6fb4ff;
+  --info-3: #3798ff;
+  --info-4: #007bff;
+  --info-5: #0060c8;
   --info-6: #004691;
-  --info-7: #002B59;
+  --info-7: #002b59;
   --info: var(--info-4);
   --text-color-on-info: var(--white);
-  --success-1: #B4E0BE;
-  --success-2: #85CD96;
-  --success-3: #57BA6D;
+  --success-1: #b4e0be;
+  --success-2: #85cd96;
+  --success-3: #57ba6d;
   --success-4: #28a745;
-  --success-5: #1F8336;
-  --success-6: #175F27;
-  --success-7: #0E3A18;
+  --success-5: #1f8336;
+  --success-6: #175f27;
+  --success-7: #0e3a18;
   --success: var(--success-4);
   --text-color-on-sucess: var(--white);
-  --warning-1: #FFF0CA;
-  --warning-2: #FFE7A9;
-  --warning-3: #FFDE89;
-  --warning-4: #FFD568;
-  --warning-5: #C8A752;
-  --warning-6: #91793B;
-  --warning-7: #594B24;
+  --warning-1: #fff0ca;
+  --warning-2: #ffe7a9;
+  --warning-3: #ffde89;
+  --warning-4: #ffd568;
+  --warning-5: #c8a752;
+  --warning-6: #91793b;
+  --warning-7: #594b24;
   --warning: var(--warning-4);
   --text-color-on-warning: var(--dark);
-  --danger-1: #F3B8BE;
-  --danger-2: #EB8D96;
-  --danger-3: #E4616D;
+  --danger-1: #f3b8be;
+  --danger-2: #eb8d96;
+  --danger-3: #e4616d;
   --danger-4: #dc3545;
-  --danger-5: #AC2A36;
-  --danger-6: #7D1E27;
-  --danger-7: #4D1318;
+  --danger-5: #ac2a36;
+  --danger-6: #7d1e27;
+  --danger-7: #4d1318;
   --danger: var(--danger-4);
   --text-color-on-danger: var(--white);
   /*
@@ -103,49 +103,49 @@
   --light: var(--gray-2);
   --gray: var(--gray-5);
   --dark: var(--gray-10);
-  --primary-1: #E3F2FD;
---primary-2: #BBDEFB;
---primary-3: #64B5F6;
---primary-4: #1976D2;
---primary-5: #1565C0;
---primary-6: #0D47A1;
---primary-7: #08306B;
---primary: var(--primary-4);
---text-color-on-primary: var(--white);
---text-color-on-primary-dark: var(--white);
+  --primary-1: #e3f2fd;
+  --primary-2: #bbdefb;
+  --primary-3: #64b5f6;
+  --primary-4: #1976d2;
+  --primary-5: #1565c0;
+  --primary-6: #0d47a1;
+  --primary-7: #08306b;
+  --primary: var(--primary-4);
+  --text-color-on-primary: var(--white);
+  --text-color-on-primary-dark: var(--white);
 
---secondary-1: #F1F8E9;
---secondary-2: #C5E1A5;
---secondary-3: #9CCC65;
---secondary-4: #7CB342;
---secondary-5: #558B2F;
---secondary-6: #33691E;
---secondary-7: #1B5E20;
---secondary: var(--secondary-4);
---text-color-on-secondary: var(--white);
---text-color-on-secondary-dark: var(--white);
+  --secondary-1: #f1f8e9;
+  --secondary-2: #c5e1a5;
+  --secondary-3: #9ccc65;
+  --secondary-4: #7cb342;
+  --secondary-5: #558b2f;
+  --secondary-6: #33691e;
+  --secondary-7: #1b5e20;
+  --secondary: var(--secondary-4);
+  --text-color-on-secondary: var(--white);
+  --text-color-on-secondary-dark: var(--white);
 
---third-1: #FFFDE7;
---third-2: #FFF59D;
---third-3: #FFF176;
---third-4: #FFD54F;
---third-5: #FFCA28;
---third-6: #FFA000;
---third-7: #FF8F00;
---third: var(--third-4);
---text-color-on-third: var(--dark);
---text-color-on-third-dark: var(--white);
+  --third-1: #fffde7;
+  --third-2: #fff59d;
+  --third-3: #fff176;
+  --third-4: #ffd54f;
+  --third-5: #ffca28;
+  --third-6: #ffa000;
+  --third-7: #ff8f00;
+  --third: var(--third-4);
+  --text-color-on-third: var(--dark);
+  --text-color-on-third-dark: var(--white);
 
---fourth-1: #EFEBE9;
---fourth-2: #D7CCC8;
---fourth-3: #A1887F;
---fourth-4: #795548;
---fourth-5: #6D4C41;
---fourth-6: #4E342E;
---fourth-7: #3E2723;
---fourth: var(--fourth-4);
---text-color-on-fourth: var(--white);
---text-color-on-fourth-dark: var(--white);
+  --fourth-1: #efebe9;
+  --fourth-2: #d7ccc8;
+  --fourth-3: #a1887f;
+  --fourth-4: #795548;
+  --fourth-5: #6d4c41;
+  --fourth-6: #4e342e;
+  --fourth-7: #3e2723;
+  --fourth: var(--fourth-4);
+  --text-color-on-fourth: var(--white);
+  --text-color-on-fourth-dark: var(--white);
   /*
    |-----------------------------------------------------------
    |
@@ -294,7 +294,7 @@
    |-----------------------------------------------------------
   */
   --table-border-color: var(--border-color-dark);
-  --table-accent-bg: rgba(0,0,0, 0.1);
+  --table-accent-bg: rgba(0, 0, 0, 0.1);
   /*
    |-----------------------------------------------------------
    |
@@ -380,14 +380,21 @@
    | Shadow
    |--------------------------------
   */
-  --form-shadow: 0 0 0 0 var(--border-color-dark), 0 0 0 0 rgba(67, 207, 214, 0.25);
-  --form-shadow-focus: 0 0 0 1px var(--primary), 0 0 0 5px rgba(67, 207, 214, 0.25);
+  --form-shadow:
+    0 0 0 0 var(--border-color-dark), 0 0 0 0 rgba(67, 207, 214, 0.25);
+  --form-shadow-focus:
+    0 0 0 1px var(--primary), 0 0 0 5px rgba(67, 207, 214, 0.25);
   --form-shadow-error: 0 0 0 0 var(--danger), 0 0 0 0 rgba(220, 53, 69, 0.25);
-  --form-shadow-error-focus: 0 0 0 1px var(--danger), 0 0 0 5px rgba(220, 53, 69, 0.25);
-  --form-checkbox-shadow: 0 0 0 0 var(--border-color-dark), 0 0 0 0 rgba(67, 207, 214, 0.25);
-  --form-checkbox-shadow-focus: 0 0 0 1px var(--primary), 0 0 0 5px rgba(67, 207, 214, 0.25);
-  --form-checkbox-shadow-error: 0 0 0 0 var(--danger), 0 0 0 0 rgba(220, 53, 69, 0.25);
-  --form-checkbox-shadow-error-focus: 0 0 0 1px var(--danger), 0 0 0 5px rgba(220, 53, 69, 0.25);
+  --form-shadow-error-focus:
+    0 0 0 1px var(--danger), 0 0 0 5px rgba(220, 53, 69, 0.25);
+  --form-checkbox-shadow:
+    0 0 0 0 var(--border-color-dark), 0 0 0 0 rgba(67, 207, 214, 0.25);
+  --form-checkbox-shadow-focus:
+    0 0 0 1px var(--primary), 0 0 0 5px rgba(67, 207, 214, 0.25);
+  --form-checkbox-shadow-error:
+    0 0 0 0 var(--danger), 0 0 0 0 rgba(220, 53, 69, 0.25);
+  --form-checkbox-shadow-error-focus:
+    0 0 0 1px var(--danger), 0 0 0 5px rgba(220, 53, 69, 0.25);
   /*
    |-----------------------------------------------------------
    |
@@ -551,7 +558,7 @@
    |
    |-----------------------------------------------------------
   */
-  --transition-style-1: cubic-bezier(.25, .46, .45, .94);
+  --transition-style-1: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   --transition-200: var(--transition-style-1) 200ms;
   --transition-300: var(--transition-style-1) 300ms;
   --transition-360: var(--transition-style-1) 360ms;
@@ -565,24 +572,43 @@
    |-----------------------------------------------------------
   */
   --shadow-0: 0 0 0 0 rgba(0, 0, 0, 0);
-  --shadow-0-hover: 0 8px 17px 2px rgba(0, 0, 0, 0.06), 0 3px 14px 2px rgba(0, 0, 0, 0.04), 0 5px 5px -3px rgba(0, 0, 0, 0.06);
+  --shadow-0-hover:
+    0 8px 17px 2px rgba(0, 0, 0, 0.06), 0 3px 14px 2px rgba(0, 0, 0, 0.04),
+    0 5px 5px -3px rgba(0, 0, 0, 0.06);
   --shadow-1: 0 2px 5px 0 rgba(0, 0, 0, 0.16);
   --shadow-1-hover: 0 8px 15px 2px rgba(0, 0, 0, 0.2);
-  --shadow-2: 0 4px 5px 0 rgba(0, 0, 0, 0.06), 0 1px 10px 0 rgba(0, 0, 0, 0.04), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-2-hover: 0 16px 24px 2px rgba(0, 0, 0, 0.08), 0 6px 30px 5px rgba(0, 0, 0, 0.06), 0 8px 10px -7px rgba(0, 0, 0, 0.08);
-  --shadow-3: 0 8px 17px 2px rgba(0, 0, 0, 0.06), 0 3px 14px 2px rgba(0, 0, 0, 0.04), 0 5px 5px -3px rgba(0, 0, 0, 0.06);
-  --shadow-3-hover: 0 24px 38px 3px rgba(0, 0, 0, 0.08), 0 9px 46px 8px rgba(0, 0, 0, 0.06), 0 11px 15px -7px rgba(0, 0, 0, 0.08);
-  --shadow-4: 0 16px 24px 2px rgba(0, 0, 0, 0.08), 0 6px 30px 5px rgba(0, 0, 0, 0.06), 0 8px 10px -7px rgba(0, 0, 0, 0.08);
-  --shadow-4-hover: 0 8px 17px 2px rgba(0, 0, 0, 0.06), 0 3px 14px 2px rgba(0, 0, 0, 0.04), 0 5px 5px -3px rgba(0, 0, 0, 0.06);
-  --shadow-5: 0 24px 38px 3px rgba(0, 0, 0, 0.08), 0 9px 46px 8px rgba(0, 0, 0, 0.06), 0 11px 15px -7px rgba(0, 0, 0, 0.08);
-  --shadow-5-hover: 0 8px 17px 2px rgba(0, 0, 0, 0.06), 0 3px 14px 2px rgba(0, 0, 0, 0.04), 0 5px 5px -3px rgba(0, 0, 0, 0.06);
-  --shadow-6: 0 10px 30px rgba(0,0,0, 0.08);
-  --shadow-6-hover: 0 20px 30px rgba(0,0,0, 0.12);
-  --shadow-7: 0 10px 30px rgba(0,0,0, 0.2);
-  --shadow-7-hover: 0 20px 30px rgba(0,0,0, 0.3);
+  --shadow-2:
+    0 4px 5px 0 rgba(0, 0, 0, 0.06), 0 1px 10px 0 rgba(0, 0, 0, 0.04),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-2-hover:
+    0 16px 24px 2px rgba(0, 0, 0, 0.08), 0 6px 30px 5px rgba(0, 0, 0, 0.06),
+    0 8px 10px -7px rgba(0, 0, 0, 0.08);
+  --shadow-3:
+    0 8px 17px 2px rgba(0, 0, 0, 0.06), 0 3px 14px 2px rgba(0, 0, 0, 0.04),
+    0 5px 5px -3px rgba(0, 0, 0, 0.06);
+  --shadow-3-hover:
+    0 24px 38px 3px rgba(0, 0, 0, 0.08), 0 9px 46px 8px rgba(0, 0, 0, 0.06),
+    0 11px 15px -7px rgba(0, 0, 0, 0.08);
+  --shadow-4:
+    0 16px 24px 2px rgba(0, 0, 0, 0.08), 0 6px 30px 5px rgba(0, 0, 0, 0.06),
+    0 8px 10px -7px rgba(0, 0, 0, 0.08);
+  --shadow-4-hover:
+    0 8px 17px 2px rgba(0, 0, 0, 0.06), 0 3px 14px 2px rgba(0, 0, 0, 0.04),
+    0 5px 5px -3px rgba(0, 0, 0, 0.06);
+  --shadow-5:
+    0 24px 38px 3px rgba(0, 0, 0, 0.08), 0 9px 46px 8px rgba(0, 0, 0, 0.06),
+    0 11px 15px -7px rgba(0, 0, 0, 0.08);
+  --shadow-5-hover:
+    0 8px 17px 2px rgba(0, 0, 0, 0.06), 0 3px 14px 2px rgba(0, 0, 0, 0.04),
+    0 5px 5px -3px rgba(0, 0, 0, 0.06);
+  --shadow-6: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --shadow-6-hover: 0 20px 30px rgba(0, 0, 0, 0.12);
+  --shadow-7: 0 10px 30px rgba(0, 0, 0, 0.2);
+  --shadow-7-hover: 0 20px 30px rgba(0, 0, 0, 0.3);
   --shadow-carousel: 0 2px 5px 0 rgba(0, 0, 0, 0.16);
   --shadow-carousel-hover: 0 7px 8px 0 rgba(0, 0, 0, 0.15);
-  --shadow-dropdown: 0 0 0 1px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.15);
+  --shadow-dropdown:
+    0 0 0 1px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.15);
   /*
    |-----------------------------------------------------------
    |
