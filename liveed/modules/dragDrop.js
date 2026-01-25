@@ -1,6 +1,7 @@
 // File: dragDrop.js
 import { ensureBlockState } from './state.js';
 import { executeScripts } from "./executeScripts.js";
+import { getApiUrl } from './api.js';
 
 const templateCache = new Map();
 
@@ -9,9 +10,7 @@ function loadTemplate(file) {
   if (cached) {
     return typeof cached === 'string' ? Promise.resolve(cached) : cached;
   }
-  const p = fetch(
-    basePath + '/liveed/load-block.php?file=' + encodeURIComponent(file)
-  )
+  const p = fetch(getApiUrl(basePath, 'load-block', { file }))
     .then((r) => r.text())
     .then((html) => {
       templateCache.set(file, html);
