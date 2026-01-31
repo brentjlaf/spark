@@ -1096,6 +1096,7 @@
 
         .search-suggestions.is-active {
             display: block;
+
         }
 
         .search-suggestion {
@@ -3798,9 +3799,8 @@
         }
 
         .a11y-hero .a11y-btn--ghost {
-            color: rgba(255, 255, 255, 0.92);
+            /* color: rgba(255, 255, 255, 0.92); */
             border-color: rgba(255, 255, 255, 0.35);
-            background: rgba(255, 255, 255, 0.08);
         }
 
         .a11y-hero .a11y-btn--ghost:hover {
@@ -7756,6 +7756,7 @@
     transform: translateY(-1px);
 }
 
+
 .blog-btn--subtle {
     background: #eef2ff;
     color: #4c51bf;
@@ -8810,6 +8811,7 @@
 
 .gallery-actions .btn-danger {
     background: #fee2e2;
+
     color: #b91c1c;
     border: 1px solid #fecaca;
 }
@@ -9613,6 +9615,7 @@
 #imageInfoModal .info-document-body {
     display: flex;
     flex-direction: column;
+
     gap: 6px;
 }
 
@@ -9880,7 +9883,7 @@
 }
 
 .logo::before {
-    content: "⚡";
+    content: "?";
     margin-right: 10px;
     font-size: 28px;
 }
@@ -10056,7 +10059,7 @@
 }
 
 .canvas-placeholder::before {
-    content: "🎨";
+    content: "??";
     font-size: 48px;
     display: block;
     margin-bottom: 20px;
@@ -12363,6 +12366,7 @@
 }
 
 .seo-view-toggle {
+
     display: inline-flex;
     align-items: center;
     flex-wrap: wrap;
@@ -15157,7 +15161,7 @@ a:hover {
 }
 
 .nav-item:hover {
-    background-color: var(--primary-50);
+    background-color: ;
     color: var(--primary-700);
 }
 
