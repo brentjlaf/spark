@@ -15349,17 +15349,17 @@ a:hover {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.15em;
-    color: var(--primary-600);
+    color: #ffffff;
 }
 
 .a11y-hero-title {
     font-size: 1.5rem;
     font-weight: 600;
-    color: var(--slate-900);
+    color: #ffffff;
 }
 
 .a11y-hero-subtitle {
-    color: var(--slate-600);
+    color: #ffffff;
     max-width: 48rem;
 }
 
@@ -15372,7 +15372,7 @@ a:hover {
 
 .a11y-hero-meta {
     font-size: 0.875rem;
-    color: var(--slate-500);
+    color: #ffffff;
     display: flex;
     align-items: center;
     gap: 0.5rem;
