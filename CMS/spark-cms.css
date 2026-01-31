@@ -3800,6 +3800,7 @@
         .a11y-hero .a11y-btn--ghost {
             color: rgba(255, 255, 255, 0.92);
             border-color: rgba(255, 255, 255, 0.35);
+            background: rgba(255, 255, 255, 0.08);
         }
 
         .a11y-hero .a11y-btn--ghost:hover {
