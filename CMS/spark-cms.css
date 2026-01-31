@@ -4480,7 +4480,6 @@
         .analytics-overview-value {
             font-size: 30px;
             font-weight: 600;
-            text-shadow: 0 0 4px var(--analytics-delta-shadow);
         }
 
         .analytics-overview-label {
@@ -4499,7 +4498,6 @@
             font-size: 13px;
             font-weight: 600;
             color: var(--analytics-delta-neutral);
-            text-shadow: 0 0 4px var(--analytics-delta-shadow);
         }
 
         .analytics-overview-delta__icon {
@@ -12307,7 +12305,6 @@
 .seo-overview-value {
     font-size: 28px;
     font-weight: 600;
-    text-shadow: 0 0 4px var(--seo-shadow-soft);
 }
 
 .seo-overview-label {
