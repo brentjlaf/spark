@@ -354,6 +354,21 @@ $(function () {
       return null;
     }
 
+    function normalizeSelectedImageValue(value) {
+      const normalized = typeof value === "string" ? value.trim() : "";
+      if (!normalized) {
+        return "";
+      }
+      if (/^(?:[a-z]+:)?\/\//i.test(normalized) || normalized.startsWith("data:")) {
+        return normalized;
+      }
+      try {
+        return new URL(normalized, `${window.location.origin}/`).toString();
+      } catch {
+        return normalized;
+      }
+    }
+
     function updatePreview(value, { updateInput = true } = {}) {
       const normalized = typeof value === "string" ? value.trim() : "";
       if (updateInput) {
@@ -374,7 +389,7 @@ $(function () {
     chooseBtn.addEventListener("click", (event) => {
       event.preventDefault();
       pageMediaState.currentSetter = (value) => {
-        updatePreview(value);
+        updatePreview(normalizeSelectedImageValue(value));
       };
       openPageMediaPicker();
     });
