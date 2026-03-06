@@ -29,6 +29,7 @@ let applyStoredSettings;
 
 let dragSource = null;
 let fromPalette = false;
+let liveRegion;
 // caching block control markup avoids rebuilding the DOM for each block
 const controlsTemplate = `
   <span class="control edit" title="Edit"><i class="fa-solid fa-pen-to-square"></i></span>
@@ -71,6 +72,32 @@ function throttleRAF(fn) {
   };
 }
 
+function ensureLiveRegion() {
+  if (liveRegion) return liveRegion;
+  liveRegion = document.createElement('div');
+  liveRegion.className = 'sr-only';
+  liveRegion.setAttribute('aria-live', 'polite');
+  liveRegion.setAttribute('aria-atomic', 'true');
+  document.body.appendChild(liveRegion);
+  return liveRegion;
+}
+
+function announce(message) {
+  if (!message) return;
+  const region = ensureLiveRegion();
+  region.textContent = '';
+  requestAnimationFrame(() => {
+    region.textContent = message;
+  });
+}
+
+function clearDragOverState() {
+  if (!canvas) return;
+  canvas.querySelectorAll('.drag-over').forEach((el) => {
+    el.classList.remove('drag-over');
+  });
+}
+
 export function initDragDrop(options = {}) {
   palette = options.palette;
   canvas = options.canvas;
@@ -99,6 +126,8 @@ function paletteDragStart(e) {
     e.dataTransfer.setData('text/plain', item.dataset.file || '');
     e.dataTransfer.effectAllowed = 'copy';
     item.classList.add('dragging');
+    item.setAttribute('aria-grabbed', 'true');
+    announce(`Dragging ${item.textContent.trim() || 'block'} from palette.`);
 
     const dragImage = item.cloneNode(true);
     dragImage.classList.add('drag-ghost');
@@ -118,6 +147,8 @@ function canvasDragStart(e) {
     dragSource.classList.add('dragging');
     e.dataTransfer.setData('text/plain', 'reorder');
     e.dataTransfer.effectAllowed = 'move';
+    dragSource.setAttribute('aria-grabbed', 'true');
+    announce('Block picked up. Move to a drop area and release to place.');
 
     const dragImage = dragSource.cloneNode(true);
     dragImage.classList.add('drag-ghost');
@@ -214,6 +245,16 @@ function handleDrop(e) {
   if (!area) return;
   e.preventDefault();
   const after = getDragAfterElement(area, e.clientY);
+  if (!fromPalette && dragSource && (area === dragSource || dragSource.contains(area))) {
+    announce('Cannot drop a block inside itself.');
+    placeholder.remove();
+    insertionIndicator.remove();
+    clearDragOverState();
+    dragSource.classList.remove('dragging');
+    dragSource.setAttribute('aria-grabbed', 'false');
+    dragSource = null;
+    return;
+  }
   if (fromPalette && dragSource) {
     const file = dragSource.dataset.file;
     if (file) {
@@ -243,6 +284,7 @@ function handleDrop(e) {
           
           if (openSettings) openSettings(wrapper);
           document.dispatchEvent(new Event('canvasUpdated'));
+          announce(`${label} block added.`);
         });
     }
   } else if (dragSource) {
@@ -251,10 +293,12 @@ function handleDrop(e) {
     else area.insertBefore(dragSource, after);
 
     document.dispatchEvent(new Event('canvasUpdated'));
+    announce('Block moved.');
   }
   placeholder.remove();
   insertionIndicator.remove();
-  area.classList.remove('drag-over');
+  clearDragOverState();
+  if (dragSource) dragSource.setAttribute('aria-grabbed', 'false');
   dragSource = null;
   fromPalette = false;
 }
@@ -262,8 +306,13 @@ function handleDrop(e) {
 function handleDragEnd() {
   placeholder.remove();
   insertionIndicator.remove();
-  if (dragSource) dragSource.classList.remove('dragging');
+  clearDragOverState();
+  if (dragSource) {
+    dragSource.classList.remove('dragging');
+    dragSource.setAttribute('aria-grabbed', 'false');
+  }
   dragSource = null;
+  fromPalette = false;
 }
 
 function getDragAfterElement(container, y) {
