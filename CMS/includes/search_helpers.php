@@ -183,12 +183,16 @@ function extract_search_terms($query)
 {
     $query = search_normalize_text($query);
     preg_match_all('/"([^"]+)"|\'([^\']+)\'|(\S+)/u', $query, $matches);
+    $stopWords = [
+        'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'from', 'in',
+        'is', 'it', 'of', 'on', 'or', 'that', 'the', 'to', 'with',
+    ];
     $terms = [];
     foreach ($matches[0] as $i => $match) {
         $term = $matches[1][$i] ?? $matches[2][$i] ?? $matches[3][$i] ?? '';
         $term = trim($term);
         $term = trim(preg_replace('/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/u', '', $term));
-        if ($term !== '' && $term !== 'and') {
+        if ($term !== '' && !in_array($term, $stopWords, true)) {
             $terms[] = $term;
         }
     }
@@ -243,16 +247,28 @@ function match_term_against_entry(array $entry, $term)
     $allowFuzzy = !$isPhrase && $termLength >= 3;
     $threshold = max(1, (int) ceil(strlen($term) * 0.4));
 
-    $wordDistance = $allowFuzzy ? minimum_levenshtein_distance($term, $entry['words']) : null;
-
     foreach ($entry['fields'] as $field) {
         $text = $field['value'];
         if ($text === '') {
             continue;
         }
 
+        $fieldWeight = (float) $field['weight'];
+
         if (strpos($text, $term) !== false) {
-            $score = $field['weight'];
+            $score = $fieldWeight;
+
+            // Reward stronger signal when the field starts with the term.
+            if (strpos($text, $term) === 0) {
+                $score -= 0.35;
+            }
+
+            // Reward exact token matches (e.g. searching "hero" in title words).
+            $fieldWords = extract_tokens($text);
+            if (in_array($term, $fieldWords, true)) {
+                $score -= 0.2;
+            }
+
             if ($bestScore === null || $score < $bestScore) {
                 $bestScore = $score;
             }
@@ -263,18 +279,48 @@ function match_term_against_entry(array $entry, $term)
             continue;
         }
 
-        $distance = $wordDistance;
+        // Calculate fuzzy match per-field to avoid over-ranking unrelated fields.
+        $distance = minimum_levenshtein_distance($term, extract_tokens($text));
         if ($distance === null || $distance > $threshold) {
             continue;
         }
 
-        $score = $field['weight'] + ($distance * 0.1);
+        $score = $fieldWeight + ($distance * 0.1);
         if ($bestScore === null || $score < $bestScore) {
             $bestScore = $score;
         }
     }
 
     return $bestScore;
+}
+
+/**
+ * Extract normalized tokens from a field for ranking and fuzzy matching.
+ *
+ * @param string $value
+ * @return array
+ */
+function extract_tokens($value)
+{
+    $value = search_normalize_text((string) $value);
+    if ($value === '') {
+        return [];
+    }
+
+    $parts = preg_split('/[^\p{L}\p{N}]+/u', $value);
+    if (!is_array($parts)) {
+        return [];
+    }
+
+    $tokens = [];
+    foreach ($parts as $part) {
+        if ($part === '') {
+            continue;
+        }
+        $tokens[] = $part;
+    }
+
+    return array_values(array_unique($tokens));
 }
 
 /**
@@ -589,17 +635,7 @@ function extract_words_from_fields(array $fields)
 {
     $words = [];
     foreach ($fields as $field) {
-        $value = search_normalize_text((string) $field['value']);
-        if ($value === '') {
-            continue;
-        }
-        $parts = preg_split('/[^\p{L}\p{N}]+/u', $value);
-        foreach ($parts as $part) {
-            if ($part === '') {
-                continue;
-            }
-            $words[] = $part;
-        }
+        $words = array_merge($words, extract_tokens((string) $field['value']));
     }
     return array_values(array_unique(array_slice($words, 0, 2000)));
 }
