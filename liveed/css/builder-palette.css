@@ -205,6 +205,7 @@
   top: -12px;
   right: -12px;
   background: var(--color-surface, #ffffff);
+  color: var(--color-text-primary, #1e293b);
   padding: 6px;
   border-radius: 8px;
   gap: 4px;
@@ -216,6 +217,7 @@
 .block-controls .control {
   padding: 4px 6px;
   border-radius: 4px;
+  color: var(--color-text-secondary, #475569);
   transition: all 0.2s ease;
 }
 
@@ -227,6 +229,22 @@
 
 .block-controls .control.drag {
   cursor: grab;
+}
+
+.block-controls .control.edit:hover {
+  color: var(--color-info, #2563eb);
+}
+
+.block-controls .control.drag:hover {
+  color: var(--color-primary-strong, #4f46e5);
+}
+
+.block-controls .control.duplicate:hover {
+  color: var(--color-success, #059669);
+}
+
+.block-controls .control.delete:hover {
+  color: var(--color-danger, #dc2626);
 }
 
 .block-controls .control.drag:active {
