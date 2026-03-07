@@ -1,14 +1,34 @@
 // File: dashboard.js
 $(function () {
+  const hasIntl = typeof Intl !== "undefined";
+  const numberFormatter = hasIntl ? new Intl.NumberFormat(undefined) : null;
+
   function formatNumber(value) {
-    if (typeof value === "number") {
-      return value.toLocaleString();
-    }
-    const numeric = parseInt(value, 10);
-    if (Number.isNaN(numeric)) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
       return "0";
     }
-    return numeric.toLocaleString();
+    return numberFormatter ? numberFormatter.format(numeric) : String(numeric);
+  }
+
+  function formatCurrency(value, currencyCode) {
+    const numeric = Number(value);
+    const currency = String(currencyCode || "").trim().toUpperCase();
+    if (!Number.isFinite(numeric)) {
+      return formatNumber(0);
+    }
+    if (!currency || !hasIntl) {
+      return formatNumber(Math.round(numeric * 100) / 100);
+    }
+
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency,
+      }).format(numeric);
+    } catch (error) {
+      return `${currency} ${formatNumber(Math.round(numeric * 100) / 100)}`;
+    }
   }
 
   function formatPercent(value) {
@@ -36,6 +56,24 @@ $(function () {
     const display =
       value >= 10 ? Math.round(value) : Math.round(value * 10) / 10;
     return `${formatNumber(display)} ${units[power]}`;
+  }
+
+  function formatNumbersInText(text) {
+    const source = String(text || "");
+    if (!source) {
+      return "";
+    }
+
+    const withCurrency = source.replace(
+      /\b([A-Z]{3})\s+(-?\d+(?:\.\d+)?)\b/g,
+      function (_match, currency, amount) {
+        return formatCurrency(amount, currency);
+      },
+    );
+
+    return withCurrency.replace(/\b-?\d+(?:\.\d+)?\b/g, function (number) {
+      return formatNumber(number);
+    });
   }
 
   function updateText(selector, value, formatter) {
@@ -283,9 +321,9 @@ $(function () {
     sortedModules.forEach(function (module, index) {
       const id = module.id || module.module || module.name || "";
       const name = module.module || module.name || id || "";
-      const primary = module.primary || "—";
-      const secondary = module.secondary || "";
-      const trend = module.trend || "";
+      const primary = formatNumbersInText(module.primary || "—");
+      const secondary = formatNumbersInText(module.secondary || "");
+      const trend = formatNumbersInText(module.trend || "");
       const statusKey = String(module.status || "ok").toLowerCase();
       const statusClass = statusClassMap[statusKey] || statusClassMap.ok;
       const statusLabel =

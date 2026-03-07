@@ -254,57 +254,6 @@ function dashboard_count_menu_items(array $items): int
     return $total;
 }
 
-function dashboard_format_bytes(int $bytes): string
-{
-    if ($bytes <= 0) {
-        return '0 KB';
-    }
-
-    $units = ['bytes', 'KB', 'MB', 'GB'];
-    $power = (int)floor(log($bytes, 1024));
-    $power = max(0, min($power, count($units) - 1));
-    $value = $bytes / (1024 ** $power);
-
-    if ($power === 0) {
-        return number_format($bytes) . ' ' . $units[$power];
-    }
-
-    return number_format($value, $value >= 10 ? 0 : 1) . ' ' . $units[$power];
-}
-
-function dashboard_format_number(int $value): string
-{
-    return number_format($value);
-}
-
-function dashboard_currency_symbol(string $currency): string
-{
-    $upper = strtoupper(trim($currency));
-    if ($upper === '') {
-        return '$';
-    }
-
-    $map = [
-        'USD' => '$',
-        'EUR' => '€',
-        'GBP' => '£',
-        'AUD' => 'A$',
-        'CAD' => 'C$',
-        'JPY' => '¥',
-        'NZD' => 'NZ$',
-    ];
-
-    return $map[$upper] ?? ($upper . ' ');
-}
-
-function dashboard_format_currency(float $amount, string $currency = 'USD'): string
-{
-    $symbol = dashboard_currency_symbol($currency);
-    $formatted = number_format($amount, 2);
-
-    return $symbol . $formatted;
-}
-
 function dashboard_strlen(string $value): int
 {
     if (function_exists('mb_strlen')) {
@@ -724,7 +673,7 @@ if ($totalPages === 0) {
     $pagesStatus = 'warning';
 }
 $pagesTrend = $pagesDraft > 0
-    ? dashboard_format_number($pagesDraft) . ' drafts awaiting review'
+    ? $pagesDraft . ' drafts awaiting review'
     : 'All pages published';
 $pagesCta = $totalPages === 0
     ? 'Create your first page'
@@ -734,7 +683,7 @@ $mediaCount = count($media);
 $mediaStatus = $mediaCount === 0 ? 'urgent' : 'ok';
 $mediaTrend = $mediaCount === 0
     ? 'Library is empty'
-    : dashboard_format_bytes($mediaTotalSize) . ' stored';
+    : $mediaTotalSize . ' bytes stored';
 $mediaCta = $mediaCount === 0 ? 'Upload media' : 'Open media library';
 
 $postsTotal = count($posts);
@@ -747,22 +696,22 @@ if ($postsTotal === 0) {
     $blogsStatus = 'warning';
 }
 $blogsTrend = $postsDraft > 0
-    ? dashboard_format_number($postsDraft) . ' drafts awaiting publication'
+    ? $postsDraft . ' drafts awaiting publication'
     : ($postsScheduled > 0
-        ? dashboard_format_number($postsScheduled) . ' posts scheduled'
+        ? $postsScheduled . ' posts scheduled'
         : 'Publishing cadence on track');
 $blogsCta = $postsTotal === 0 ? 'Write your first post' : ($postsDraft > 0 ? 'Publish drafts' : 'Manage posts');
 
 $formsCount = count($forms);
 $formsStatus = $formsCount === 0 ? 'urgent' : 'ok';
-$formsTrend = 'Fields configured: ' . dashboard_format_number((int)$formsFields);
+$formsTrend = 'Fields configured: ' . (int)$formsFields;
 $formsCta = $formsCount === 0 ? 'Create a form' : 'Review submissions';
 
 $menusCount = count($menus);
 $menusStatus = $menuItems === 0 ? 'urgent' : 'ok';
 $menusTrend = $menuItems === 0
     ? 'No navigation items configured'
-    : dashboard_format_number((int)$menuItems) . ' navigation items live';
+    : (int)$menuItems . ' navigation items live';
 $menusCta = $menusCount === 0 ? 'Create a menu' : 'Manage navigation';
 
 $usersCount = count($users);
@@ -770,12 +719,12 @@ $adminCount = (int)($usersByRole['admin'] ?? 0);
 $editorCount = (int)($usersByRole['editor'] ?? 0);
 $usersStatus = $adminCount === 0 ? 'urgent' : ($usersCount === 0 ? 'urgent' : 'ok');
 $usersTrend = $editorCount > 0
-    ? dashboard_format_number($editorCount) . ' editors collaborating'
+    ? $editorCount . ' editors collaborating'
     : 'Invite collaborators to join';
 $usersCta = $adminCount === 0 ? 'Add an admin' : 'Manage team';
 
 $analyticsStatus = $analyticsSummary['totalViews'] === 0 ? 'warning' : 'ok';
-$analyticsTrend = 'Average views per page: ' . dashboard_format_number((int)$analyticsSummary['averageViews']);
+$analyticsTrend = 'Average views per page: ' . (int)$analyticsSummary['averageViews'];
 $analyticsCta = $analyticsSummary['totalViews'] === 0 ? 'Set up tracking' : 'Explore analytics';
 
 $accessibilityStatus = 'ok';
@@ -786,7 +735,7 @@ if ($accessibilitySummary['accessible'] === 0 && ($accessibilitySummary['needs_r
     $accessibilityStatus = 'urgent';
 }
 $accessibilityTrend = $accessibilitySummary['missing_alt'] > 0
-    ? dashboard_format_number($accessibilitySummary['missing_alt']) . ' images missing alt text'
+    ? $accessibilitySummary['missing_alt'] . ' images missing alt text'
     : 'Alt text coverage looks good';
 $accessibilityCta = $accessibilitySummary['needs_review'] > 0 || $accessibilitySummary['missing_alt'] > 0
     ? 'Audit accessibility'
@@ -797,19 +746,19 @@ $logsTrend = $logsLastActivity ? 'Last activity ' . $logsLastActivity : 'No acti
 $logsCta = 'View history';
 
 $searchStatus = $searchIndexCount === 0 ? 'urgent' : 'ok';
-$searchTrend = 'Indexed records: ' . dashboard_format_number((int)$searchIndexCount);
+$searchTrend = 'Indexed records: ' . (int)$searchIndexCount;
 $searchCta = $searchIndexCount === 0 ? 'Build the search index' : 'Manage search index';
 
 $settingsStatus = $socialCount === 0 ? 'warning' : 'ok';
 $settingsTrend = $socialCount === 0
     ? 'No social links configured'
-    : dashboard_format_number((int)$socialCount) . ' social links live';
+    : (int)$socialCount . ' social links live';
 $settingsCta = $socialCount === 0 ? 'Add social links' : 'Adjust settings';
 
 $sitemapStatus = $sitemapEntries === 0 ? 'warning' : 'ok';
 $sitemapTrend = $sitemapEntries === 0
     ? 'Publish pages to populate the sitemap'
-    : dashboard_format_number((int)$sitemapEntries) . ' URLs ready for sitemap.xml';
+    : (int)$sitemapEntries . ' URLs ready for sitemap.xml';
 $sitemapCta = $sitemapEntries === 0 ? 'Publish pages' : 'Review sitemap';
 
 $speedStatus = 'ok';
@@ -818,7 +767,7 @@ if ($speedSummary['slow'] > 0) {
 } elseif ($speedSummary['monitor'] > 0) {
     $speedStatus = 'warning';
 }
-$speedTrend = 'Slow pages: ' . dashboard_format_number((int)$speedSummary['slow']);
+$speedTrend = 'Slow pages: ' . (int)$speedSummary['slow'];
 $speedCta = $speedSummary['slow'] > 0 ? 'Optimise slow pages' : 'Review performance';
 
 $seoStatus = 'ok';
@@ -829,11 +778,11 @@ if ($seoSummary['missing_title'] > 0 || $seoSummary['missing_description'] > 0 |
 }
 $seoTrend = 'Meta descriptions within best practice range';
 if ($seoSummary['duplicate_slugs'] > 0) {
-    $seoTrend = 'Duplicate slugs detected: ' . dashboard_format_number((int)$seoSummary['duplicate_slugs']);
+    $seoTrend = 'Duplicate slugs detected: ' . (int)$seoSummary['duplicate_slugs'];
 } elseif ($seoSummary['missing_description'] > 0 || $seoSummary['missing_title'] > 0) {
-    $seoTrend = dashboard_format_number((int)($seoSummary['missing_title'] + $seoSummary['missing_description'])) . ' meta fields missing';
+    $seoTrend = (int)($seoSummary['missing_title'] + $seoSummary['missing_description']) . ' meta fields missing';
 } elseif ($seoSummary['long_title'] > 0 || $seoSummary['description_length'] > 0) {
-    $seoTrend = 'Metadata length alerts: ' . dashboard_format_number((int)($seoSummary['long_title'] + $seoSummary['description_length']));
+    $seoTrend = 'Metadata length alerts: ' . (int)($seoSummary['long_title'] + $seoSummary['description_length']);
 }
 $seoCta = $seoStatus === 'urgent' ? 'Fix SEO issues' : 'Review SEO settings';
 
@@ -843,11 +792,11 @@ if ($eventsTotal === 0) {
 } elseif ($eventsPublished === 0 || $eventsUpcoming === 0 || $eventsPendingOrders > 0) {
     $eventsStatus = 'warning';
 }
-$eventsSecondary = 'Upcoming: ' . dashboard_format_number($eventsUpcoming) . ' • Tickets sold: ' . dashboard_format_number($eventsTicketsSold);
+$eventsSecondary = 'Upcoming: ' . $eventsUpcoming . ' • Tickets sold: ' . $eventsTicketsSold;
 $eventsTrend = $eventsPendingOrders > 0
-    ? 'Pending orders: ' . dashboard_format_number($eventsPendingOrders)
+    ? 'Pending orders: ' . $eventsPendingOrders
     : ($eventsRevenue > 0
-        ? 'Revenue: ' . dashboard_format_currency($eventsRevenue, $eventsCurrency)
+        ? 'Revenue: ' . $eventsCurrency . ' ' . round($eventsRevenue, 2)
         : 'No ticket sales yet');
 $eventsCta = $eventsTotal === 0
     ? 'Create an event'
@@ -857,8 +806,8 @@ $moduleSummaries = [
     [
         'id' => 'pages',
         'module' => 'Pages',
-        'primary' => dashboard_format_number($totalPages) . ' total pages',
-        'secondary' => 'Published: ' . dashboard_format_number($pagesPublished) . ' • Drafts: ' . dashboard_format_number($pagesDraft),
+        'primary' => $totalPages . ' total pages',
+        'secondary' => 'Published: ' . $pagesPublished . ' • Drafts: ' . $pagesDraft,
         'status' => $pagesStatus,
         'statusLabel' => dashboard_status_label($pagesStatus),
         'trend' => $pagesTrend,
@@ -867,8 +816,8 @@ $moduleSummaries = [
     [
         'id' => 'media',
         'module' => 'Media',
-        'primary' => dashboard_format_number($mediaCount) . ' files',
-        'secondary' => 'Library size: ' . dashboard_format_bytes($mediaTotalSize),
+        'primary' => $mediaCount . ' files',
+        'secondary' => 'Library size: ' . $mediaTotalSize . ' bytes',
         'status' => $mediaStatus,
         'statusLabel' => dashboard_status_label($mediaStatus),
         'trend' => $mediaTrend,
@@ -877,8 +826,8 @@ $moduleSummaries = [
     [
         'id' => 'blogs',
         'module' => 'Blogs',
-        'primary' => dashboard_format_number($postsTotal) . ' posts',
-        'secondary' => 'Published: ' . dashboard_format_number($postsByStatus['published']) . ' • Draft: ' . dashboard_format_number($postsByStatus['draft']) . ' • Scheduled: ' . dashboard_format_number($postsByStatus['scheduled']),
+        'primary' => $postsTotal . ' posts',
+        'secondary' => 'Published: ' . $postsByStatus['published'] . ' • Draft: ' . $postsByStatus['draft'] . ' • Scheduled: ' . $postsByStatus['scheduled'],
         'status' => $blogsStatus,
         'statusLabel' => dashboard_status_label($blogsStatus),
         'trend' => $blogsTrend,
@@ -887,7 +836,7 @@ $moduleSummaries = [
     [
         'id' => 'events',
         'module' => 'Events',
-        'primary' => dashboard_format_number($eventsTotal) . ' events',
+        'primary' => $eventsTotal . ' events',
         'secondary' => $eventsSecondary,
         'status' => $eventsStatus,
         'statusLabel' => dashboard_status_label($eventsStatus),
@@ -897,8 +846,8 @@ $moduleSummaries = [
     [
         'id' => 'forms',
         'module' => 'Forms',
-        'primary' => dashboard_format_number($formsCount) . ' forms',
-        'secondary' => 'Fields configured: ' . dashboard_format_number($formsFields),
+        'primary' => $formsCount . ' forms',
+        'secondary' => 'Fields configured: ' . $formsFields,
         'status' => $formsStatus,
         'statusLabel' => dashboard_status_label($formsStatus),
         'trend' => $formsTrend,
@@ -907,8 +856,8 @@ $moduleSummaries = [
     [
         'id' => 'menus',
         'module' => 'Menus',
-        'primary' => dashboard_format_number($menusCount) . ' menus',
-        'secondary' => 'Navigation items: ' . dashboard_format_number($menuItems),
+        'primary' => $menusCount . ' menus',
+        'secondary' => 'Navigation items: ' . $menuItems,
         'status' => $menusStatus,
         'statusLabel' => dashboard_status_label($menusStatus),
         'trend' => $menusTrend,
@@ -917,8 +866,8 @@ $moduleSummaries = [
     [
         'id' => 'users',
         'module' => 'Users',
-        'primary' => dashboard_format_number($usersCount) . ' users',
-        'secondary' => 'Admins: ' . dashboard_format_number($adminCount) . ' • Editors: ' . dashboard_format_number($editorCount),
+        'primary' => $usersCount . ' users',
+        'secondary' => 'Admins: ' . $adminCount . ' • Editors: ' . $editorCount,
         'status' => $usersStatus,
         'statusLabel' => dashboard_status_label($usersStatus),
         'trend' => $usersTrend,
@@ -927,8 +876,8 @@ $moduleSummaries = [
     [
         'id' => 'analytics',
         'module' => 'Analytics',
-        'primary' => dashboard_format_number($analyticsSummary['totalViews']) . ' total views',
-        'secondary' => $analyticsSummary['topPage'] ? 'Top page: ' . $analyticsSummary['topPage'] . ' (' . dashboard_format_number($analyticsSummary['topViews']) . ')' : 'No views recorded yet',
+        'primary' => $analyticsSummary['totalViews'] . ' total views',
+        'secondary' => $analyticsSummary['topPage'] ? 'Top page: ' . $analyticsSummary['topPage'] . ' (' . $analyticsSummary['topViews'] . ')' : 'No views recorded yet',
         'status' => $analyticsStatus,
         'statusLabel' => dashboard_status_label($analyticsStatus),
         'trend' => $analyticsTrend,
@@ -937,8 +886,8 @@ $moduleSummaries = [
     [
         'id' => 'accessibility',
         'module' => 'Accessibility',
-        'primary' => dashboard_format_number($accessibilitySummary['accessible']) . ' compliant pages',
-        'secondary' => 'Alt text issues: ' . dashboard_format_number($accessibilitySummary['missing_alt']),
+        'primary' => $accessibilitySummary['accessible'] . ' compliant pages',
+        'secondary' => 'Alt text issues: ' . $accessibilitySummary['missing_alt'],
         'status' => $accessibilityStatus,
         'statusLabel' => dashboard_status_label($accessibilityStatus),
         'trend' => $accessibilityTrend,
@@ -947,7 +896,7 @@ $moduleSummaries = [
     [
         'id' => 'logs',
         'module' => 'Logs',
-        'primary' => dashboard_format_number($logEntries) . ' history entries',
+        'primary' => $logEntries . ' history entries',
         'secondary' => $logsLastActivity ? 'Last activity: ' . $logsLastActivity : 'No activity recorded yet',
         'status' => $logsStatus,
         'statusLabel' => dashboard_status_label($logsStatus),
@@ -957,8 +906,8 @@ $moduleSummaries = [
     [
         'id' => 'search',
         'module' => 'Search',
-        'primary' => dashboard_format_number($searchIndexCount) . ' indexed records',
-        'secondary' => 'Pages: ' . dashboard_format_number($searchBreakdown['pages']) . ' • Posts: ' . dashboard_format_number($searchBreakdown['posts']) . ' • Media: ' . dashboard_format_number($searchBreakdown['media']),
+        'primary' => $searchIndexCount . ' indexed records',
+        'secondary' => 'Pages: ' . $searchBreakdown['pages'] . ' • Posts: ' . $searchBreakdown['posts'] . ' • Media: ' . $searchBreakdown['media'],
         'status' => $searchStatus,
         'statusLabel' => dashboard_status_label($searchStatus),
         'trend' => $searchTrend,
@@ -967,8 +916,8 @@ $moduleSummaries = [
     [
         'id' => 'settings',
         'module' => 'Settings',
-        'primary' => dashboard_format_number($settingsCount) . ' configuration values',
-        'secondary' => 'Social profiles: ' . dashboard_format_number($socialCount),
+        'primary' => $settingsCount . ' configuration values',
+        'secondary' => 'Social profiles: ' . $socialCount,
         'status' => $settingsStatus,
         'statusLabel' => dashboard_status_label($settingsStatus),
         'trend' => $settingsTrend,
@@ -977,8 +926,8 @@ $moduleSummaries = [
     [
         'id' => 'seo',
         'module' => 'SEO',
-        'primary' => dashboard_format_number($seoSummary['optimised']) . ' pages optimised',
-        'secondary' => 'Meta issues: ' . dashboard_format_number((int)$seoSummary['issues']) . ' • Duplicate slugs: ' . dashboard_format_number((int)$seoSummary['duplicate_slugs']),
+        'primary' => $seoSummary['optimised'] . ' pages optimised',
+        'secondary' => 'Meta issues: ' . (int)$seoSummary['issues'] . ' • Duplicate slugs: ' . (int)$seoSummary['duplicate_slugs'],
         'status' => $seoStatus,
         'statusLabel' => dashboard_status_label($seoStatus),
         'trend' => $seoTrend,
@@ -987,7 +936,7 @@ $moduleSummaries = [
     [
         'id' => 'sitemap',
         'module' => 'Sitemap',
-        'primary' => dashboard_format_number($sitemapEntries) . ' published URLs',
+        'primary' => $sitemapEntries . ' published URLs',
         'secondary' => 'Ready for export to sitemap.xml',
         'status' => $sitemapStatus,
         'statusLabel' => dashboard_status_label($sitemapStatus),
@@ -997,7 +946,7 @@ $moduleSummaries = [
     [
         'id' => 'speed',
         'module' => 'Speed',
-        'primary' => 'Fast: ' . dashboard_format_number($speedSummary['fast']) . ' • Monitor: ' . dashboard_format_number($speedSummary['monitor']) . ' • Slow: ' . dashboard_format_number($speedSummary['slow']),
+        'primary' => 'Fast: ' . $speedSummary['fast'] . ' • Monitor: ' . $speedSummary['monitor'] . ' • Slow: ' . $speedSummary['slow'],
         'secondary' => $largestPage['title'] ? 'Heaviest content: ' . $largestPage['title'] : 'Content analysis based on page length',
         'status' => $speedStatus,
         'statusLabel' => dashboard_status_label($speedStatus),
